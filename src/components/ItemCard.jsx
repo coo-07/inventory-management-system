@@ -60,7 +60,7 @@ function ItemCard({ item, onClick }) {
               className="pointer-events-none absolute top-[calc(100%+12px)] right-0 z-50 rounded-[10px] border px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-[#333] opacity-0 shadow-md transition-opacity group-hover:opacity-100"
               style={{ background: status.isOut ? "#FEF2F2" : "#FFF7ED", borderColor: status.isOut ? "#FECACA" : "#FED7AA" }}
             >
-              {status.isOut ? "⚠ 在庫切れ" : "⚠ 残りわずか"}
+              {status.isOut ? "在庫切れ" : "残りわずか"}
             </span>
           </span>
         )}
