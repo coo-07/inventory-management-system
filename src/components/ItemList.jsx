@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import ItemCard from "./ItemCard";
 import Pagination from "./Pagination";
 
@@ -6,23 +6,26 @@ import Pagination from "./Pagination";
  * 商品一覧のグリッド表示。列数に応じてページサイズを決め、ページ送りする。
  */
 function ItemList({ items, onSelect, hasAnyItems }) {
-  const gridRef = useRef(null);
+  const [gridEl, setGridEl] = useState(null);
   const [columns, setColumns] = useState(4);
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    const el = gridRef.current;
-    if (!el) return;
+    // items が空の間はグリッド自体が存在しないため、その後グリッドが
+    // マウントされたタイミングでこの effect が再実行される必要がある。
+    // useRef ではマウント有無に関わらず effect が初回しか走らないため、
+    // ここではコールバックref（state化したDOMノード）を依存値にする。
+    if (!gridEl) return;
     const measure = () => {
-      const tracks = getComputedStyle(el).gridTemplateColumns.split(" ").filter(Boolean);
+      const tracks = getComputedStyle(gridEl).gridTemplateColumns.split(" ").filter(Boolean);
       const next = Math.max(1, tracks.length);
       setColumns((prev) => (prev === next ? prev : next));
     };
     measure();
     const observer = new ResizeObserver(measure);
-    observer.observe(el);
+    observer.observe(gridEl);
     return () => observer.disconnect();
-  }, []);
+  }, [gridEl]);
 
   useEffect(() => {
     setPage(1);
@@ -49,7 +52,7 @@ function ItemList({ items, onSelect, hasAnyItems }) {
   return (
     <>
       <div
-        ref={gridRef}
+        ref={setGridEl}
         className="grid justify-center gap-4"
         style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 170px))" }}
       >
