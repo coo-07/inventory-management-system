@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { loadItems, saveItems, loadLogs, saveLogs, seedIfEmpty } from "../services/localStorage";
-import { sampleItems } from "../data/sampleData";
+import { sampleItems, sampleLogs } from "../data/sampleData";
 
 /**
  * 商品データと入出荷履歴のCRUD処理をまとめて管理するフック。
@@ -13,7 +13,7 @@ export function useItems() {
   const [logs, setLogs] = useState([]);
 
   useEffect(() => {
-    seedIfEmpty(sampleItems);
+    seedIfEmpty(sampleItems, sampleLogs);
     setItems(loadItems());
     setLogs(loadLogs());
   }, []);
@@ -28,6 +28,7 @@ export function useItems() {
       saveItems(next);
       return next;
     });
+    return newItem;
   }, []);
 
   const updateItem = useCallback((id, data) => {
@@ -105,5 +106,5 @@ export function useItems() {
     [items]
   );
 
-  return { items, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock };
+  return { items, logs, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock };
 }

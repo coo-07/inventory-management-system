@@ -1,27 +1,29 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
-import ItemInfo from "../components/ItemInfo";
-import StockStatus from "../components/StockStatus";
-import ActionButtons from "../components/ActionButtons";
+import { useToast } from "../context/ToastContext";
+import CategoryIcon, { getCategoryMeta } from "../components/CategoryIcon";
+import { getStockStatus } from "../utils/stockStatus";
 import StockLogList from "../components/StockLogList";
-import ItemModal from "../components/ItemModal";
-import Dialog from "../components/Dialog";
+import ConfirmDialog from "../components/ConfirmDialog";
+import Pagination from "../components/Pagination";
+import Button from "../components/Button";
 
 function ItemDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getItemById, getLogsByItemId, updateItem, deleteItem } = useItems();
-  const [editOpen, setEditOpen] = useState(false);
+  const showToast = useToast();
+  const { items, getItemById, getLogsByItemId, deleteItem } = useItems();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const item = getItemById(id);
 
   if (!item) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-6">
-        <p className="text-sm text-gray-500">商品が見つかりません</p>
-        <Link to="/" className="mt-2 inline-block text-sm text-gray-900 underline">
+      <div className="mx-auto max-w-[720px] px-6 py-5">
+        <p style={{ color: "var(--ink-soft)" }}>商品が見つかりません</p>
+        <Link to="/" className="mt-2 inline-block text-sm underline" style={{ color: "var(--ink)" }}>
           一覧へ戻る
         </Link>
       </div>
@@ -29,45 +31,109 @@ function ItemDetail() {
   }
 
   const logs = getLogsByItemId(id);
+  const status = getStockStatus(item.stock, item.threshold);
+  const meta = getCategoryMeta(item.category);
+  const idx = items.findIndex((i) => i.id === id);
+  const showNav = idx > 0 || (idx >= 0 && idx < items.length - 1);
+
+  const handleConfirmDelete = () => {
+    if (deleteLoading) return;
+    setDeleteLoading(true);
+    setTimeout(() => {
+      deleteItem(id);
+      setDeleteLoading(false);
+      setDeleteOpen(false);
+      showToast("✅ 削除しました");
+      navigate("/");
+    }, 1000);
+  };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6">
-      <Link to="/" className="mb-4 inline-block text-sm text-gray-500 hover:text-gray-900">
-        ← 一覧へ戻る
-      </Link>
+    <div className="mx-auto max-w-[720px] px-6 py-5" style={{ paddingBottom: showNav ? "140px" : "40px" }}>
+      <div className="mb-7 flex flex-wrap gap-6">
+        <div
+          className="flex h-[200px] w-[200px] shrink-0 items-center justify-center rounded-[var(--r-xl)]"
+          style={{ background: meta.bg }}
+        >
+          <CategoryIcon category={item.category} size={56} />
+        </div>
+        <div className="min-w-[260px] flex-1">
+          <p className="m-0 mb-1.5 text-[28px] font-black">{item.name}</p>
+          <div className="mb-1 flex items-center gap-1.5">
+            <CategoryIcon category={item.category} size={17} />
+            <p
+              title={item.category}
+              className="m-0 min-w-0 overflow-hidden text-[17px] font-bold text-ellipsis whitespace-nowrap"
+            >
+              {item.category}
+            </p>
+          </div>
+          <p className="m-0 mb-4 text-[15px]" style={{ color: "var(--ink-soft)" }}>
+            単位：{item.unit}
+          </p>
 
-      <ItemInfo item={item} />
-      <StockStatus stock={item.stock} threshold={item.threshold} />
-      <ActionButtons
-        onEdit={() => setEditOpen(true)}
-        onDelete={() => setDeleteOpen(true)}
-        onRecord={() => navigate(`/items/${id}/record`)}
-      />
-
-      <div className="mt-6 border-t border-gray-200 pt-4">
-        <p className="mb-1 text-sm font-medium text-gray-900">入出荷履歴</p>
-        <StockLogList logs={logs} />
+          <div className="rounded-[var(--r-lg)] p-5" style={{ background: status.bg }}>
+            <p className="m-0 mb-1 text-sm" style={{ color: "var(--ink-soft)" }}>
+              現在の在庫
+            </p>
+            <p className="m-0 text-[40px] font-black" style={{ color: status.isOut ? "var(--red)" : status.isLow ? "var(--orange-dark)" : "var(--green-dark)" }}>
+              {item.stock}
+              <span className="text-[18px] font-bold"> {item.unit}</span>
+            </p>
+            <p className="m-0 mt-1.5 text-sm" style={{ color: "var(--ink-soft)" }}>
+              発注目安：{item.threshold}{item.unit}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <ItemModal
-        isOpen={editOpen}
-        onClose={() => setEditOpen(false)}
-        initialValues={item}
-        onSubmit={(data) => {
-          updateItem(id, data);
-          setEditOpen(false);
-        }}
-      />
+      <div className="mb-9 flex flex-wrap gap-3">
+        <Button variant="secondarySoft" onClick={() => navigate(`/items/${id}/record`)}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path
+              d="M10 3v14M4 9l6-6 6 6"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          入出荷を記録
+        </Button>
+        <Button variant="secondarySoft" onClick={() => navigate(`/items/${id}/edit`)}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <path d="M4 16l1-4L13 4l3 3-8 8-4 1z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+          </svg>
+          編集する
+        </Button>
+        <Button variant="dangerOutline" onClick={() => setDeleteOpen(true)}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <rect x="5" y="7" width="10" height="9" rx="1.5" stroke="var(--red)" strokeWidth="1.6" />
+            <line x1="3" y1="5" x2="17" y2="5" stroke="var(--red)" strokeWidth="1.6" strokeLinecap="round" />
+            <line x1="8" y1="2.5" x2="12" y2="2.5" stroke="var(--red)" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+          削除する
+        </Button>
+      </div>
 
-      <Dialog
-        isOpen={deleteOpen}
-        title="商品を削除しますか？"
-        message="履歴も削除されます。"
+      <h2 className="mb-3 text-[19px] font-bold">入出荷履歴</h2>
+      <StockLogList logs={logs} />
+
+      {showNav && (
+        <Pagination
+          current={idx + 1}
+          total={items.length}
+          onGo={(n) => navigate(`/items/${items[n - 1].id}`)}
+        />
+      )}
+
+      <ConfirmDialog
+        open={deleteOpen}
+        title="本当に削除しますか？"
+        message={`「${item.name}」を削除します。この操作は取り消せません。`}
         onCancel={() => setDeleteOpen(false)}
-        onConfirm={() => {
-          deleteItem(id);
-          navigate("/");
-        }}
+        onConfirm={handleConfirmDelete}
+        loading={deleteLoading}
       />
     </div>
   );

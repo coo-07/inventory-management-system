@@ -1,20 +1,40 @@
 const VARIANT_STYLES = {
-  primary: "bg-gray-900 text-white hover:bg-gray-700",
-  secondary: "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50",
-  danger: "bg-white text-red-600 border border-red-300 hover:bg-red-50",
+  primary: { background: "var(--blue)", color: "white", border: "none" },
+  secondary: { background: "var(--surface)", color: "var(--ink)", border: "2px solid var(--border)" },
+  secondarySoft: { background: "var(--surface)", color: "var(--ink-soft)", border: "2px solid var(--border)" },
+  dangerOutline: { background: "var(--surface)", color: "var(--red)", border: "2px solid var(--border)" },
+  dangerSolid: { background: "var(--red)", color: "white", border: "none" },
+};
+
+const HOVER_CLASS = {
+  primary: "hover:bg-[var(--blue-dark)]!",
+  secondary: "hover:bg-[var(--bg)]!",
+  secondarySoft: "hover:border-[var(--blue)]! hover:text-[var(--blue-dark)]! hover:bg-[var(--blue-light)]!",
+  dangerOutline: "hover:border-[var(--red)]! hover:bg-[var(--red-light)]!",
+  dangerSolid: "hover:bg-[oklch(0.5_0.19_25)]!",
 };
 
 /**
- * 共通ボタン
- * @param {"primary"|"secondary"|"danger"} variant - 見た目の種類
+ * 共通ボタン。デザインのアクセントカラー（CSS変数）に合わせたバリアント。
  */
-function Button({ children, onClick, variant = "secondary", type = "button", disabled = false }) {
+function Button({
+  children,
+  onClick,
+  variant = "secondary",
+  type = "button",
+  disabled = false,
+  loading = false,
+  className = "",
+}) {
   return (
     <button
       type={type}
       onClick={onClick}
-      disabled={disabled}
-      className={`rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${VARIANT_STYLES[variant]}`}
+      disabled={disabled || loading}
+      style={VARIANT_STYLES[variant]}
+      className={`box-border inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[var(--r-lg)] px-6 text-[17px] font-bold transition-colors ${
+        disabled || loading ? "cursor-not-allowed opacity-60" : `cursor-pointer ${HOVER_CLASS[variant]}`
+      } ${className}`}
     >
       {children}
     </button>
