@@ -8,7 +8,7 @@ const VARIANT_STYLES = {
 
 const HOVER_CLASS = {
   primary: "hover:bg-[var(--blue-dark)]!",
-  secondary: "hover:bg-[var(--bg)]!",
+  secondary: "hover:bg-[var(--border)]! hover:border-[var(--ink-soft)]!",
   secondarySoft: "hover:border-[var(--blue)]! hover:text-[var(--blue-dark)]! hover:bg-[var(--blue-light)]!",
   dangerOutline: "hover:border-[var(--red)]! hover:bg-[var(--red-light)]!",
   dangerSolid: "hover:bg-[oklch(0.5_0.19_25)]!",
