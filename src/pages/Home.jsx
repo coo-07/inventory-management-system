@@ -58,11 +58,13 @@ function Home() {
   };
 
   const handleLoadTestData = () => {
-    const confirmed = window.confirm(
-      "テストデータ20件を読み込みます。現在のデータは上書きされますがよろしいですか？"
-    );
+    const confirmed = window.confirm("テストデータを20件追加します。よろしいですか？");
     if (!confirmed) return;
-    loadTestData(generateTestItems());
+    const maxNumber = items.reduce((max, item) => {
+      const match = /^テスト(\d+)$/.exec(item.name);
+      return match ? Math.max(max, Number(match[1])) : max;
+    }, 0);
+    loadTestData(generateTestItems(maxNumber));
     showToast("テストデータを読み込みました");
   };
 

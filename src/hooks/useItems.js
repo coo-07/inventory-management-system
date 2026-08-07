@@ -55,13 +55,14 @@ export function useItems() {
   }, []);
 
   /**
-   * 開発用: テストデータで商品・履歴を一括置き換えする。
+   * 開発用: テストデータを既存の商品リストに追加する（上書きしない）。
    */
   const loadTestData = useCallback((testItems) => {
-    saveItems(testItems);
-    saveLogs([]);
-    setItems(testItems);
-    setLogs([]);
+    setItems((prev) => {
+      const next = [...prev, ...testItems];
+      saveItems(next);
+      return next;
+    });
   }, []);
 
   const getLogsByItemId = useCallback(
