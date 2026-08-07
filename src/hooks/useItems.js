@@ -54,6 +54,16 @@ export function useItems() {
     });
   }, []);
 
+  /**
+   * 開発用: テストデータで商品・履歴を一括置き換えする。
+   */
+  const loadTestData = useCallback((testItems) => {
+    saveItems(testItems);
+    saveLogs([]);
+    setItems(testItems);
+    setLogs([]);
+  }, []);
+
   const getLogsByItemId = useCallback(
     (id) =>
       logs
@@ -106,5 +116,5 @@ export function useItems() {
     [items]
   );
 
-  return { items, logs, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock };
+  return { items, logs, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock, loadTestData };
 }

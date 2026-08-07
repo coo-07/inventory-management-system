@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
+import { useToast } from "../context/ToastContext";
+import { generateTestItems } from "../utils/generateTestData";
 import ItemList from "../components/ItemList";
 import Button from "../components/Button";
 
@@ -11,8 +13,9 @@ const FILTERS = [
 ];
 
 function Home() {
-  const { items, logs } = useItems();
+  const { items, logs, loadTestData } = useItems();
   const navigate = useNavigate();
+  const showToast = useToast();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [filter, setFilter] = useState("all");
@@ -52,6 +55,15 @@ function Home() {
       setAddLoading(false);
       navigate("/items/new");
     }, 500);
+  };
+
+  const handleLoadTestData = () => {
+    const confirmed = window.confirm(
+      "テストデータ20件を読み込みます。現在のデータは上書きされますがよろしいですか？"
+    );
+    if (!confirmed) return;
+    loadTestData(generateTestItems());
+    showToast("テストデータを読み込みました");
   };
 
   return (
@@ -146,13 +158,26 @@ function Home() {
           </div>
         </div>
 
-        <Button variant="primary" loading={addLoading} onClick={handleAddNew} className="ml-auto whitespace-nowrap">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <line x1="10" y1="4" x2="10" y2="16" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-            <line x1="4" y1="10" x2="16" y2="10" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-          </svg>
-          {addLoading ? "登録しています..." : "新しい商品を登録"}
-        </Button>
+        <div className="ml-auto flex items-center gap-2">
+          {import.meta.env.DEV && (
+            <button
+              type="button"
+              onClick={handleLoadTestData}
+              title="開発用: テストデータ20件をLocalStorageに読み込みます"
+              className="box-border inline-flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-md border px-3 text-[13px] font-bold whitespace-nowrap transition-colors hover:bg-[var(--bg)]!"
+              style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink-soft)" }}
+            >
+              🧪 テストデータを読み込む
+            </button>
+          )}
+          <Button variant="primary" loading={addLoading} onClick={handleAddNew} className="whitespace-nowrap">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <line x1="10" y1="4" x2="10" y2="16" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+              <line x1="4" y1="10" x2="16" y2="10" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+            {addLoading ? "登録しています..." : "新しい商品を登録"}
+          </Button>
+        </div>
       </div>
 
       <ItemList items={filteredItems} onSelect={(id) => navigate(`/items/${id}`)} hasAnyItems={items.length > 0} />
