@@ -38,7 +38,7 @@ export function seedIfEmpty(sampleItems, sampleLogs) {
   }
 }
 
-const DEFAULT_SHOP = { name: "マイショップ", address: "", phone: "" };
+const DEFAULT_SHOP = { name: "田中商店", address: "", phone: "" };
 
 export function loadShop() {
   return read(SHOP_KEY, DEFAULT_SHOP);
