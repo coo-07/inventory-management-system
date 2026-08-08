@@ -2189,6 +2189,24 @@ className="box-border min-h-12 w-full rounded-[var(--r-lg)] border-2 py-3 pr-4 p
 
 ---
 
+## 45-1. 状況フィルターの選択中ボタンでhoverが白文字と同化する不具合の修正（45番の見直し）
+
+**経緯：** 45番で追加したhoverクラスが選択中（アクティブ）のボタンにも無条件に適用されていたため、選択中ボタン（白文字＋濃い背景）にマウスを乗せると、背景だけが非選択時の薄い色に変化し、白文字はそのまま残ってしまい、文字が背景と同化して読めなくなる不具合が発生していた（「すべて」に限らず「在庫切れ」「在庫少」「在庫あり」も同様の構造で全て同じ不具合を持っていた）。文字色はJSXのinline style側で選択状態によって固定されており、hover用のTailwindクラスからは制御できないため、Pagination.jsx数字ボタン（`p === current`のときはhoverクラスを付与しない）と同じパターンを採用し、選択中のボタンにはhoverクラス自体を適用しないよう修正した。
+
+```jsx
+// Before（45番）：選択中でも常にhoverクラスが付与される
+className="... transition-colors hover:border-[var(--ink-soft)]! hover:bg-[var(--bg)]!"
+
+// After（45-1番）：選択中のときはhoverクラスを外す
+className={`... transition-colors ${activeFilter === "all" ? "" : "hover:border-[var(--ink-soft)]! hover:bg-[var(--bg)]!"}`}
+```
+
+「在庫切れ」「在庫少」「在庫あり」の3ボタンにも同じ考え方で`activeFilter === "..."`による条件分岐を適用し、選択中は元の濃い背景＋白文字のまま変化しないようにした。
+
+**実装・動作確認済み（2026/08/09）：** Playwrightで4種のフィルターそれぞれをactiveにした状態で他3ボタン・自分自身のhover前後のbackground/colorを計測し、選択中ボタンはhoverで見た目が変化しないこと、非選択中ボタンは文字色とのコントラストが保たれたまま背景hoverが機能することを確認。lintエラーなし。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか
