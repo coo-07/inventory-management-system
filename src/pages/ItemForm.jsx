@@ -5,7 +5,7 @@ import { useToast } from "../context/ToastContext";
 import PhotoUpload from "../components/PhotoUpload";
 import Button from "../components/Button";
 
-const CATEGORY_OPTIONS = ["文房具", "雑貨", "食品", "その他"];
+const CATEGORY_OPTIONS = ["文房具", "雑貨", "食品", "飲み物", "ペット用品", "衣類", "美容・コスメ", "その他"];
 
 const emptyForm = { name: "", categorySelect: "文房具", categoryOther: "", stock: 0, threshold: 0, unit: "個", imageUrl: "" };
 
@@ -151,7 +151,7 @@ function ItemForm() {
     "box-border w-full rounded-[var(--r-md)] px-4 py-3.5 text-[17px]";
 
   return (
-    <div className="mx-auto max-w-[640px] px-6 py-5 lg:max-w-[880px]">
+    <div className="mx-auto max-w-[640px] px-6 py-5 lg:max-w-[960px]">
       <h1 className="mb-6 text-[26px] font-bold">{isEdit ? "商品を編集" : "商品を登録"}</h1>
 
       {showErrorSummary && errorSummaryItems.length > 0 && (
@@ -215,7 +215,7 @@ function ItemForm() {
               <select
                 value={form.categorySelect}
                 onChange={(e) => setForm((prev) => ({ ...prev, categorySelect: e.target.value }))}
-                className="box-border w-full cursor-pointer rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[17px]"
+                className="box-border w-full max-w-[280px] cursor-pointer rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[17px]"
                 style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
               >
                 {CATEGORY_OPTIONS.map((opt) => (
@@ -262,7 +262,7 @@ function ItemForm() {
                     inputMode="numeric"
                     pattern="[0-9]*"
                     autoComplete="off"
-                    className="min-w-0 flex-1 rounded-[var(--r-md)] border-2 p-2.5 text-center text-2xl font-bold"
+                    className="h-[59px] w-[160px] rounded-[var(--r-md)] border-2 p-2.5 text-center text-2xl font-bold"
                     style={{ borderColor: fieldErrors.stock ? "var(--red)" : "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
                   />
                   <button
@@ -306,7 +306,7 @@ function ItemForm() {
                     inputMode="numeric"
                     pattern="[0-9]*"
                     autoComplete="off"
-                    className="min-w-0 flex-1 rounded-[var(--r-md)] border-2 p-2.5 text-center text-2xl font-bold"
+                    className="h-[59px] w-[160px] rounded-[var(--r-md)] border-2 p-2.5 text-center text-2xl font-bold"
                     style={{ borderColor: fieldErrors.threshold ? "var(--red)" : "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
                   />
                   <button
@@ -333,7 +333,7 @@ function ItemForm() {
                 value={form.unit}
                 onChange={(e) => setForm((prev) => ({ ...prev, unit: e.target.value }))}
                 placeholder="個・本・冊 など"
-                className={fieldBase}
+                className={`${fieldBase} max-w-[160px]`}
                 style={{ border: "2px solid var(--border)", background: "var(--surface)", color: "var(--ink)" }}
               />
             </div>
