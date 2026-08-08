@@ -4,6 +4,7 @@ import { useItems } from "../hooks/useItems";
 import { useToast } from "../context/ToastContext";
 import CategoryIcon, { getCategoryMeta } from "../components/CategoryIcon";
 import { getStockStatus } from "../utils/stockStatus";
+import { formatDate } from "../utils/formatDate";
 import StockLogList from "../components/StockLogList";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Pagination from "../components/Pagination";
@@ -49,75 +50,87 @@ function ItemDetail() {
   };
 
   return (
-    <div className="mx-auto max-w-[720px] px-6 py-5" style={{ paddingBottom: showNav ? "140px" : "40px" }}>
-      <div className="mb-7 flex flex-wrap gap-6">
-        <div
-          className="flex h-[200px] w-[200px] shrink-0 items-center justify-center rounded-[var(--r-xl)]"
-          style={{ background: meta.bg }}
-        >
-          <CategoryIcon category={item.category} size={56} />
-        </div>
-        <div className="min-w-[260px] flex-1">
-          <p className="m-0 mb-1.5 text-[28px] font-black">{item.name}</p>
-          <div className="mb-1 flex items-center gap-1.5">
-            <CategoryIcon category={item.category} size={17} />
-            <p
-              title={item.category}
-              className="m-0 min-w-0 overflow-hidden text-[17px] font-bold text-ellipsis whitespace-nowrap"
-            >
-              {item.category}
+    <div
+      className="mx-auto max-w-[720px] px-6 py-5 lg:max-w-[960px]"
+      style={{ paddingBottom: showNav ? "140px" : "40px" }}
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] lg:items-start lg:gap-5">
+        {/* lg:contents unwraps this row so image/info become independent grid columns at lg, while mobile keeps the original side-by-side hero row untouched */}
+        <div className="mb-7 flex flex-wrap gap-6 lg:contents">
+          <div
+            className="flex h-[200px] w-[200px] shrink-0 items-center justify-center rounded-[var(--r-xl)] lg:order-2 lg:w-full"
+            style={{ background: meta.bg }}
+          >
+            <CategoryIcon category={item.category} size={56} />
+          </div>
+          <div className="min-w-[260px] flex-1 lg:order-1 lg:w-full lg:min-w-0">
+            <p className="m-0 mb-1.5 text-[28px] font-black">{item.name}</p>
+            <div className="mb-1 flex items-center gap-1.5">
+              <CategoryIcon category={item.category} size={17} />
+              <p
+                title={item.category}
+                className="m-0 min-w-0 overflow-hidden text-[17px] font-bold text-ellipsis whitespace-nowrap"
+              >
+                {item.category}
+              </p>
+            </div>
+            <p className="m-0 mb-4 text-[15px]" style={{ color: "var(--ink-soft)" }}>
+              単位：{item.unit}
+            </p>
+
+            <div className="rounded-[var(--r-lg)] p-5" style={{ background: status.bg }}>
+              <p className="m-0 mb-1 text-sm" style={{ color: "var(--ink-soft)" }}>
+                現在の在庫
+              </p>
+              <p className="m-0 text-[40px] font-black" style={{ color: status.isOut ? "var(--red)" : status.isLow ? "var(--orange-dark)" : "var(--green-dark)" }}>
+                {item.stock}
+                <span className="text-[18px] font-bold"> {item.unit}</span>
+              </p>
+              <p className="m-0 mt-1.5 text-sm" style={{ color: "var(--ink-soft)" }}>
+                発注目安：{item.threshold}{item.unit}
+              </p>
+            </div>
+
+            <p className="m-0 mt-3 text-sm" style={{ color: "var(--ink-soft)" }}>
+              更新日時：{formatDate(item.updatedAt).split(" ")[0]}
             </p>
           </div>
-          <p className="m-0 mb-4 text-[15px]" style={{ color: "var(--ink-soft)" }}>
-            単位：{item.unit}
-          </p>
+        </div>
 
-          <div className="rounded-[var(--r-lg)] p-5" style={{ background: status.bg }}>
-            <p className="m-0 mb-1 text-sm" style={{ color: "var(--ink-soft)" }}>
-              現在の在庫
-            </p>
-            <p className="m-0 text-[40px] font-black" style={{ color: status.isOut ? "var(--red)" : status.isLow ? "var(--orange-dark)" : "var(--green-dark)" }}>
-              {item.stock}
-              <span className="text-[18px] font-bold"> {item.unit}</span>
-            </p>
-            <p className="m-0 mt-1.5 text-sm" style={{ color: "var(--ink-soft)" }}>
-              発注目安：{item.threshold}{item.unit}
-            </p>
-          </div>
+        <div className="mb-9 flex flex-wrap gap-3 lg:order-4 lg:w-full lg:flex-col">
+          <Button variant="secondarySoft" onClick={() => navigate(`/items/${id}/record`)}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path
+                d="M10 3v14M4 9l6-6 6 6"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            入出荷を記録
+          </Button>
+          <Button variant="secondarySoft" onClick={() => navigate(`/items/${id}/edit`)}>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+              <path d="M4 16l1-4L13 4l3 3-8 8-4 1z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+            </svg>
+            編集する
+          </Button>
+          <Button variant="dangerOutline" onClick={() => setDeleteOpen(true)}>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+              <rect x="5" y="7" width="10" height="9" rx="1.5" stroke="var(--red)" strokeWidth="1.6" />
+              <line x1="3" y1="5" x2="17" y2="5" stroke="var(--red)" strokeWidth="1.6" strokeLinecap="round" />
+              <line x1="8" y1="2.5" x2="12" y2="2.5" stroke="var(--red)" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+            削除する
+          </Button>
+        </div>
+
+        <div className="lg:order-3 lg:w-full">
+          <h2 className="mb-3 text-[19px] font-bold">入出荷履歴</h2>
+          <StockLogList logs={logs} />
         </div>
       </div>
-
-      <div className="mb-9 flex flex-wrap gap-3">
-        <Button variant="secondarySoft" onClick={() => navigate(`/items/${id}/record`)}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path
-              d="M10 3v14M4 9l6-6 6 6"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          入出荷を記録
-        </Button>
-        <Button variant="secondarySoft" onClick={() => navigate(`/items/${id}/edit`)}>
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-            <path d="M4 16l1-4L13 4l3 3-8 8-4 1z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-          </svg>
-          編集する
-        </Button>
-        <Button variant="dangerOutline" onClick={() => setDeleteOpen(true)}>
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-            <rect x="5" y="7" width="10" height="9" rx="1.5" stroke="var(--red)" strokeWidth="1.6" />
-            <line x1="3" y1="5" x2="17" y2="5" stroke="var(--red)" strokeWidth="1.6" strokeLinecap="round" />
-            <line x1="8" y1="2.5" x2="12" y2="2.5" stroke="var(--red)" strokeWidth="1.6" strokeLinecap="round" />
-          </svg>
-          削除する
-        </Button>
-      </div>
-
-      <h2 className="mb-3 text-[19px] font-bold">入出荷履歴</h2>
-      <StockLogList logs={logs} />
 
       {showNav && (
         <Pagination
