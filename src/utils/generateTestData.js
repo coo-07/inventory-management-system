@@ -48,3 +48,27 @@ export function generateTestItems(startNumber = 0) {
 
   return items;
 }
+
+/**
+ * 動作確認用の入出荷履歴を生成する（開発用ボタンから使用、ページネーション確認用）。
+ * 入荷・出荷はランダム、数量は1〜10のランダム、日時は1件ごとに1時間ずつ過去にずらす。
+ */
+export function generateTestStockLogs(itemId, currentStock, count = 20) {
+  const logs = [];
+  let stock = currentStock;
+  for (let i = 0; i < count; i++) {
+    const type = Math.random() > 0.5 ? "in" : "out";
+    const quantity = Math.floor(Math.random() * 10) + 1;
+    stock = type === "in" ? stock + quantity : Math.max(0, stock - quantity);
+    logs.push({
+      id: crypto.randomUUID(),
+      itemId,
+      type,
+      quantity,
+      memo: type === "in" ? "テスト入荷" : "テスト出荷",
+      afterStock: stock,
+      createdAt: new Date(Date.now() - i * 3600 * 1000).toISOString(),
+    });
+  }
+  return { logs, finalStock: stock };
+}

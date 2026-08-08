@@ -65,6 +65,24 @@ export function useItems() {
     });
   }, []);
 
+  /**
+   * 開発用: 指定商品にテストの入出荷履歴をまとめて追加し、在庫数を最終値に更新する。
+   */
+  const seedTestLogs = useCallback((itemId, newLogs, finalStock) => {
+    setLogs((prev) => {
+      const next = [...prev, ...newLogs];
+      saveLogs(next);
+      return next;
+    });
+    setItems((prev) => {
+      const next = prev.map((item) =>
+        item.id === itemId ? { ...item, stock: finalStock, updatedAt: new Date().toISOString() } : item
+      );
+      saveItems(next);
+      return next;
+    });
+  }, []);
+
   const getLogsByItemId = useCallback(
     (id) =>
       logs
@@ -117,5 +135,5 @@ export function useItems() {
     [items]
   );
 
-  return { items, logs, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock, loadTestData };
+  return { items, logs, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock, loadTestData, seedTestLogs };
 }

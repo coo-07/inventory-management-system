@@ -5,6 +5,7 @@ import { useToast } from "../context/ToastContext";
 import CategoryIcon, { getCategoryMeta } from "../components/CategoryIcon";
 import { getStockStatus } from "../utils/stockStatus";
 import { formatDate } from "../utils/formatDate";
+import { generateTestStockLogs } from "../utils/generateTestData";
 import StockLogList from "../components/StockLogList";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Pagination from "../components/Pagination";
@@ -14,7 +15,7 @@ function ItemDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const showToast = useToast();
-  const { items, getItemById, getLogsByItemId, deleteItem } = useItems();
+  const { items, getItemById, getLogsByItemId, deleteItem, seedTestLogs } = useItems();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -36,6 +37,12 @@ function ItemDetail() {
   const meta = getCategoryMeta(item.category);
   const idx = items.findIndex((i) => i.id === id);
   const showNav = idx > 0 || (idx >= 0 && idx < items.length - 1);
+
+  const handleSeedTestData = () => {
+    const { logs: newLogs, finalStock } = generateTestStockLogs(id, item.stock, 20);
+    seedTestLogs(id, newLogs, finalStock);
+    showToast("テスト履歴を追加しました");
+  };
 
   const handleConfirmDelete = () => {
     if (deleteLoading) return;
@@ -124,6 +131,11 @@ function ItemDetail() {
             </svg>
             削除する
           </Button>
+          {import.meta.env.DEV && (
+            <Button variant="secondary" onClick={handleSeedTestData}>
+              🎲 テスト履歴を追加（20件）
+            </Button>
+          )}
         </div>
 
         <div className="lg:order-3 lg:w-full">
