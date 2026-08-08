@@ -80,30 +80,39 @@ function ItemDetail() {
           </div>
           <div className="min-w-[260px] flex-1 lg:order-1 lg:w-full lg:min-w-0">
             <h1 ref={titleRef} className="m-0 mb-1.5 text-[28px] font-black">{item.name}</h1>
-            <div className="mb-1 flex items-center gap-1.5">
-              <CategoryIcon category={item.category} size={17} />
-              <p
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <span
                 title={item.category}
-                className="m-0 min-w-0 overflow-hidden text-[17px] font-bold text-ellipsis whitespace-nowrap"
+                className="inline-flex max-w-full items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold"
+                style={{ background: "var(--border)", color: "var(--ink)" }}
               >
-                {item.category}
-              </p>
+                <CategoryIcon category={item.category} size={15} />
+                <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{item.category}</span>
+              </span>
+              <span
+                className="inline-flex items-center rounded-full px-3 py-1 text-sm font-bold"
+                style={{ background: "var(--border)", color: "var(--ink)" }}
+              >
+                単位：{item.unit}
+              </span>
             </div>
-            <p className="m-0 mb-4 text-[15px]" style={{ color: "var(--ink-soft)" }}>
-              単位：{item.unit}
-            </p>
 
-            <div className="rounded-[var(--r-lg)] p-5" style={{ background: status.bg }}>
-              <p className="m-0 mb-1 text-sm" style={{ color: "var(--ink-soft)" }}>
+            <div
+              className="flex flex-col gap-2 rounded-[var(--r-lg)] p-5 sm:flex-row sm:items-center sm:justify-between"
+              style={{ background: status.bg }}
+            >
+              <p className="m-0 text-sm font-bold" style={{ color: "var(--ink-soft)" }}>
                 現在の在庫
               </p>
-              <p className="m-0 text-[40px] font-black" style={{ color: status.isOut ? "var(--red)" : status.isLow ? "var(--orange-dark)" : "var(--green-dark)" }}>
-                {item.stock}
-                <span className="text-[18px] font-bold"> {item.unit}</span>
-              </p>
-              <p className="m-0 mt-1.5 text-sm" style={{ color: "var(--ink-soft)" }}>
-                発注目安：{item.threshold}{item.unit}
-              </p>
+              <div className="text-right">
+                <p className="m-0 text-[40px] font-black" style={{ color: status.isOut ? "var(--red)" : status.isLow ? "var(--orange-dark)" : "var(--green-dark)" }}>
+                  {item.stock}
+                  <span className="text-[18px] font-bold"> {item.unit}</span>
+                </p>
+                <p className="m-0 mt-1 text-sm" style={{ color: "var(--ink-soft)" }}>
+                  発注目安：{item.threshold}{item.unit}
+                </p>
+              </div>
             </div>
 
             <p className="m-0 mt-3 text-sm" style={{ color: "var(--ink-soft)" }}>

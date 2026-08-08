@@ -1996,6 +1996,49 @@ const DEFAULT_META = { bg: "oklch(0.94 0.01 260)", icon: "📦" }; // その他
 
 **実装済み（2026/08/08）：** lintエラーなし（既存2件の警告のみ、CategoryIcon.jsx・ToastContext.jsxのfast-refresh警告で本変更とは無関係）。
 
+## 43. 商品詳細ページ：カテゴリ・単位バッジの横並び化／現在の在庫ボックスの左右レイアウト化
+
+**経緯：** カテゴリ（絵文字＋カテゴリ名）と単位が縦に積まれていて情報密度が低く、また「現在の在庫」ボックスも見出し・数字・発注目安が縦一列に並んでいて視線移動が多かったため、横並びのバッジ／左右レイアウトに変更。
+
+```jsx
+// Before
+<div className="mb-1 flex items-center gap-1.5">
+  <CategoryIcon category={item.category} size={17} />
+  <p className="text-[17px] font-bold ...">{item.category}</p>
+</div>
+<p className="mb-4 text-[15px]" style={{ color: "var(--ink-soft)" }}>単位：{item.unit}</p>
+
+<div className="rounded-[var(--r-lg)] p-5" style={{ background: status.bg }}>
+  <p className="text-sm">現在の在庫</p>
+  <p className="text-[40px] font-black">{item.stock} <span>{item.unit}</span></p>
+  <p className="text-sm">発注目安：{item.threshold}{item.unit}</p>
+</div>
+
+// After（43番で確定）
+<div className="mb-4 flex flex-wrap items-center gap-2">
+  <span className="rounded-full px-3 py-1 text-sm font-bold" style={{ background: "var(--border)", color: "var(--ink)" }}>
+    <CategoryIcon category={item.category} size={15} />{item.category}
+  </span>
+  <span className="rounded-full px-3 py-1 text-sm font-bold" style={{ background: "var(--border)", color: "var(--ink)" }}>
+    単位：{item.unit}
+  </span>
+</div>
+
+<div className="flex flex-col gap-2 rounded-[var(--r-lg)] p-5 sm:flex-row sm:items-center sm:justify-between" style={{ background: status.bg }}>
+  <p className="text-sm font-bold">現在の在庫</p>
+  <div className="text-right">
+    <p className="text-[40px] font-black">{item.stock} <span>{item.unit}</span></p>
+    <p className="text-sm mt-1">発注目安：{item.threshold}{item.unit}</p>
+  </div>
+</div>
+```
+
+- カテゴリ・単位バッジは`rounded-full`のミニボックスにし、背景は専用の「薄いニュートラル色」変数が無いため既存の`--border`（oklch(0.9 0.01 260)、`--*-light`系と近い明度のグレー）を流用。`flex-wrap`で狭幅でも折り返し可能
+- 「現在の在庫」ボックスは`sm`以上で`flex-row justify-between`（ラベル左・数字＋発注目安を右にtext-rightでまとめる）、`sm`未満は`flex-col`にフォールバックしてラベルを上、数字ブロックを下に積む
+- 在庫ステータス別の背景色（`status.bg`）・数字色（在庫切れ赤／在庫少オレンジ／十分グリーン）はそのまま維持
+
+**実装・動作確認済み（2026/08/09）：** Playwrightでデスクトップ（1280px）・モバイル（390px）、在庫十分／在庫少の2パターンを確認。バッジの横並び・折り返し、在庫ボックスの左右レイアウト（モバイルでは縦積み）とも問題なし。lintエラーなし。
+
 ---
 
 ## 未決定・次回検討事項
