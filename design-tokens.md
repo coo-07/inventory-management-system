@@ -2039,6 +2039,30 @@ const DEFAULT_META = { bg: "oklch(0.94 0.01 260)", icon: "📦" }; // その他
 
 **実装・動作確認済み（2026/08/09）：** Playwrightでデスクトップ（1280px）・モバイル（390px）、在庫十分／在庫少の2パターンを確認。バッジの横並び・折り返し、在庫ボックスの左右レイアウト（モバイルでは縦積み）とも問題なし。lintエラーなし。
 
+## 44. トップページ商品カードのhover明示（22番の分類：画面遷移のみ）
+
+**経緯：** 商品カード（詳細画面への遷移のみ、実データ書き込みなし）にhover時の視覚変化がなかったため、22番の分類上「hover明示のみ」対象として追加。他ボタン（Button.jsxのsecondary: `hover:bg-[var(--border)]! hover:border-[var(--ink-soft)]!`）と同じ考え方で統一。
+
+```jsx
+// Before
+className="group box-border flex w-full cursor-pointer flex-col items-stretch gap-2 rounded-[var(--r-xl)] border-2 p-3 text-left no-underline"
+style={{ background: cardBg, borderColor: cardBorder, color: "inherit" }}
+
+// After（44番で確定）
+const hoverClass = status.isOut
+  ? "hover:border-[#DC2626]! hover:bg-[#FECACA]!"
+  : "hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!";
+
+className={`group box-border flex w-full cursor-pointer flex-col items-stretch gap-2 rounded-[var(--r-xl)] border-2 p-3 text-left no-underline transition-colors ${hoverClass}`}
+style={{ background: cardBg, borderColor: cardBorder, color: "inherit" }}
+```
+
+- 通常カードはButtonのsecondary変種と同じ`var(--ink-soft)`（枠線）／`var(--border)`（背景）に統一
+- **在庫切れカード（`status.isOut`）は例外的に赤系のまま一段階濃く**する分岐が必要だった：通常カードと同じ`var(--ink-soft)`/`var(--border)`を一律hoverに使うと、在庫切れの赤い枠線・背景がホバー中だけグレーに変わって「在庫切れ」の警告色が消えてしまう見た目のバグをPlaywright検証で発見したため、`status.isOut`時は赤系トークン（`#EF4444`→`#DC2626`、`#FEE2E2`→`#FECACA`）を維持
+- border-2・rounded-[var(--r-xl)]など既存スタイルは変更なし
+
+**実装・動作確認済み（2026/08/09）：** Playwrightで通常在庫・在庫少・在庫切れの3状態それぞれhover前後のスクリーンショットを確認。在庫切れカードで警告色が消えないことを確認済み。lintエラーなし。
+
 ---
 
 ## 未決定・次回検討事項

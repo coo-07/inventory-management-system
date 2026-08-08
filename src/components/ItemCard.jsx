@@ -10,6 +10,9 @@ function ItemCard({ item, onClick }) {
   const cardBg = status.isOut ? "#FEE2E2" : "var(--surface)";
   const cardBorder = status.isOut ? "#EF4444" : "var(--border)";
   const showStatusBadge = status.isOut || status.isLow;
+  const hoverClass = status.isOut
+    ? "hover:border-[#DC2626]! hover:bg-[#FECACA]!"
+    : "hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!";
 
   return (
     <a
@@ -24,7 +27,7 @@ function ItemCard({ item, onClick }) {
           onClick();
         }
       }}
-      className="group box-border flex w-full cursor-pointer flex-col items-stretch gap-2 rounded-[var(--r-xl)] border-2 p-3 text-left no-underline"
+      className={`group box-border flex w-full cursor-pointer flex-col items-stretch gap-2 rounded-[var(--r-xl)] border-2 p-3 text-left no-underline transition-colors ${hoverClass}`}
       style={{ background: cardBg, borderColor: cardBorder, color: "inherit" }}
     >
       <div className="flex items-center gap-2.5">
