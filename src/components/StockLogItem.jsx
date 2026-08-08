@@ -4,7 +4,7 @@ function StockLogItem({ log }) {
   const isIn = log.type === "in";
   return (
     <div
-      className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-2 border-b py-3.5 pr-14 pl-1 text-[15px] sm:grid-cols-[160px_100px_1fr_80px] sm:gap-4 lg:pr-1"
+      className="grid grid-cols-[auto_auto_1fr_auto] items-start gap-2 border-b py-3.5 pr-14 pl-1 text-[15px] sm:grid-cols-[160px_100px_1fr_80px] sm:gap-4 lg:pr-1"
       style={{ borderColor: "var(--border)" }}
     >
       <span className="text-sm" style={{ color: "var(--ink-soft)" }}>
@@ -43,7 +43,7 @@ function StockLogItem({ log }) {
           出荷
         </span>
       )}
-      <span className="min-w-0 truncate text-[13px]" style={{ color: "var(--ink-soft)" }}>
+      <span className="min-w-0 break-words text-[13px]" style={{ color: "var(--ink-soft)" }}>
         {log.memo}
       </span>
       <span

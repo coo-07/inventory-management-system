@@ -1974,6 +1974,28 @@ const DEFAULT_META = { bg: "oklch(0.94 0.01 260)", icon: "📦" }; // その他
 
 **実装・動作確認済み（2026/08/08）：** Playwrightでデスクトップ（1280px）・タブレット（820px）・モバイル（390px）の3幅を確認。長文メモの省略表示、メモなし行でのレイアウト崩れなし、モバイル幅での横スクロール発生なし（対応前は発生していたためレスポンシブ化が必須だった）、↑ボタンと数量列の重なりなしをすべて確認済み。lintエラーなし。
 
+## 42-1. 入出荷履歴：メモ折り返し表示＋上揃えへの変更（42番の見直し）
+
+**経緯：** 42番では長文メモを`truncate`で1行省略表示にしていたが、メモ内容を省略せず全文確認したいという要望により、折り返し表示（複数行可）に変更。それに伴い、行全体が`items-center`のままだとメモが複数行になった際に日付・種別バッジ・数量が行の中央に来てしまい不自然なため、`items-start`（上揃え）に変更。
+
+```jsx
+// Before（42番）
+<div className="grid grid-cols-[auto_auto_1fr_auto] items-center ...">
+  <span className="min-w-0 truncate text-[13px]">{memo}</span>
+</div>
+
+// After（42-1番で確定）
+<div className="grid grid-cols-[auto_auto_1fr_auto] items-start ...">
+  <span className="min-w-0 break-words text-[13px]">{memo}</span>
+</div>
+```
+
+- メモ列は`truncate`→`break-words`に変更し、長文でも省略せず折り返して全文表示
+- グリッドコンテナは`items-center`→`items-start`に変更し、メモが複数行になっても日付・種別・数量が行の上端で揃うようにした
+- `min-w-0`は折り返し（`break-words`）でも列が縮まなくなるのを防ぐために引き続き必要
+
+**実装済み（2026/08/08）：** lintエラーなし（既存2件の警告のみ、CategoryIcon.jsx・ToastContext.jsxのfast-refresh警告で本変更とは無関係）。
+
 ---
 
 ## 未決定・次回検討事項
