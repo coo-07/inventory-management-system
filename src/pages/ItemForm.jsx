@@ -326,17 +326,6 @@ function ItemForm() {
               </div>
             </div>
 
-            <div>
-              <label className="mb-2 block text-[15px] font-bold">単位</label>
-              <input
-                type="text"
-                value={form.unit}
-                onChange={(e) => setForm((prev) => ({ ...prev, unit: e.target.value }))}
-                placeholder="個・本・冊 など"
-                className={`${fieldBase} max-w-[160px]`}
-                style={{ border: "2px solid var(--border)", background: "var(--surface)", color: "var(--ink)" }}
-              />
-            </div>
           </div>
 
           <div className="flex w-full flex-col gap-5.5 lg:w-[30%]">
@@ -344,15 +333,29 @@ function ItemForm() {
               <label className="mb-2 block text-[15px] font-bold">商品の写真（任意）</label>
               <PhotoUpload value={form.imageUrl} onChange={(imageUrl) => setForm((prev) => ({ ...prev, imageUrl }))} />
             </div>
+          </div>
+        </div>
 
-            <div className="mt-2 flex flex-wrap justify-end gap-3 lg:justify-start">
-              <Button variant="secondary" disabled={saveLoading} onClick={handleCancel}>
-                キャンセル
-              </Button>
-              <Button variant="primary" loading={saveLoading} onClick={handleSubmit}>
-                {saveLoading ? "保存しています..." : "保存する"}
-              </Button>
-            </div>
+        <div className="mt-5.5 flex flex-col gap-5.5 lg:mt-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <label className="mb-2 block text-[15px] font-bold">単位</label>
+            <input
+              type="text"
+              value={form.unit}
+              onChange={(e) => setForm((prev) => ({ ...prev, unit: e.target.value }))}
+              placeholder="個・本・冊 など"
+              className={`${fieldBase} max-w-[160px]`}
+              style={{ border: "2px solid var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+            />
+          </div>
+
+          <div className="flex flex-wrap justify-end gap-3 lg:justify-start">
+            <Button variant="secondary" disabled={saveLoading} onClick={handleCancel}>
+              キャンセル
+            </Button>
+            <Button variant="primary" loading={saveLoading} onClick={handleSubmit}>
+              {saveLoading ? "保存しています..." : "保存する"}
+            </Button>
           </div>
         </div>
       </div>

@@ -1,8 +1,7 @@
-import { Link, useMatch, useNavigate, useParams } from "react-router-dom";
+import { Link, useMatch, useNavigate } from "react-router-dom";
 import { useShop } from "../hooks/useShop";
 
 function useBackLink() {
-  const { id } = useParams();
   const isDetail = useMatch("/items/:id");
   const isNew = useMatch("/items/new");
   const isEdit = useMatch("/items/:id/edit");
@@ -11,8 +10,8 @@ function useBackLink() {
 
   if (isDetail) return { label: "一覧へ戻る", to: "/" };
   if (isNew) return { label: "戻る", to: "/" };
-  if (isEdit) return { label: "戻る", to: `/items/${id}` };
-  if (isRecord) return { label: "商品詳細へ戻る", to: `/items/${id}` };
+  if (isEdit) return { label: "戻る", to: `/items/${isEdit.params.id}` };
+  if (isRecord) return { label: "商品詳細へ戻る", to: `/items/${isRecord.params.id}` };
   if (isShop) return { label: "一覧へ戻る", to: "/" };
   return null;
 }
