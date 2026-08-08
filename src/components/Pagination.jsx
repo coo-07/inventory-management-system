@@ -59,7 +59,7 @@ function Pagination({ current, total, onGo, prevLabel = "‹ 前へ", nextLabel 
               key={`p${p}`}
               type="button"
               onClick={() => onGo(p)}
-              className={`${numBase} cursor-pointer`}
+              className={`${numBase} cursor-pointer ${p === current ? "" : "hover:border-[var(--blue)]! hover:bg-[var(--blue-light)]! hover:text-[var(--blue-dark)]!"}`}
               style={
                 p === current
                   ? { background: "var(--blue)", color: "white", borderColor: "var(--blue)" }

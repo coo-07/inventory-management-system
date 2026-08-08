@@ -2063,6 +2063,40 @@ style={{ background: cardBg, borderColor: cardBorder, color: "inherit" }}
 
 **実装・動作確認済み（2026/08/09）：** Playwrightで通常在庫・在庫少・在庫切れの3状態それぞれhover前後のスクリーンショットを確認。在庫切れカードで警告色が消えないことを確認済み。lintエラーなし。
 
+## 44-1. 商品カードhoverの配色調整＋「一覧へ戻る」・ページネーション数字ボタンへの展開
+
+**経緯：** 44番の通常カードhover（`hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!`）が濃すぎるという指摘。「枠線変化のみ」案と「`--border`よりさらに薄い背景」案を実際にPlaywrightで見比べ、後者（`var(--bg)`）を採用。枠線変化のみだと変化が分かりにくく、`var(--bg)`案は白い`--surface`背景に対してごく淡いリフト感が出て自然だったため。
+
+```jsx
+// Before（44番）
+const hoverClass = status.isOut
+  ? "hover:border-[#DC2626]! hover:bg-[#FECACA]!"
+  : "hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!";
+
+// After（44-1番で確定：通常カードの背景をより薄く）
+const hoverClass = status.isOut
+  ? "hover:border-[#DC2626]! hover:bg-[#FECACA]!"
+  : "hover:border-[var(--ink-soft)]! hover:bg-[var(--bg)]!";
+```
+
+在庫切れカードの赤系分岐（44番）はそのまま維持。
+
+同じ考え方をHeader.jsxの「一覧へ戻る」（商品詳細・新規登録画面などで共通利用）にも展開：
+
+```jsx
+// Before
+className="inline-flex items-center gap-2 text-[17px] font-bold"
+
+// After
+className="-mx-2 -my-1 inline-flex items-center gap-2 rounded-lg px-2 py-1 text-[17px] font-bold transition-colors hover:bg-[var(--bg)]!"
+```
+
+枠線を持たないテキストリンクのため、44-1番と同じ`var(--bg)`背景のみで統一。`px-2 py-1`＋`-mx-2 -my-1`で見た目の位置を変えずクリック領域だけ広げている。
+
+また、ページネーション（Pagination.jsx）の数字ボタンには「前へ」「次へ」と同じhoverが付いていなかったため、非アクティブなページ番号ボタンにも同じ`hover:border-[var(--blue)]! hover:bg-[var(--blue-light)]! hover:text-[var(--blue-dark)]!`を適用し一貫性を持たせた（現在ページ＝アクティブ表示中のボタンには適用しない）。
+
+**実装・動作確認済み（2026/08/09）：** Playwrightで商品カード（通常／在庫切れ）・「一覧へ戻る」リンク・ページネーション数字ボタンのhover前後を確認。lintエラーなし。
+
 ---
 
 ## 未決定・次回検討事項
