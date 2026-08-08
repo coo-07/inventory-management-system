@@ -51,7 +51,7 @@ function ItemDetail() {
 
   return (
     <div
-      className="mx-auto max-w-[720px] px-6 py-5 lg:max-w-[960px]"
+      className="mx-auto max-w-[720px] px-6 py-5 md:max-w-[760px] lg:max-w-[960px]"
       style={{ paddingBottom: showNav ? "140px" : "40px" }}
     >
       <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] lg:items-start lg:gap-5">

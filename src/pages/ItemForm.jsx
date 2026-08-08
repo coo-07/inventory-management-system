@@ -151,7 +151,7 @@ function ItemForm() {
     "box-border w-full rounded-[var(--r-md)] px-4 py-3.5 text-[17px]";
 
   return (
-    <div className="mx-auto max-w-[640px] px-6 py-5 lg:max-w-[960px]">
+    <div className="mx-auto max-w-[640px] px-6 py-5 md:max-w-[760px] lg:max-w-[960px]">
       <h1 className="mb-6 text-[26px] font-bold">{isEdit ? "商品を編集" : "商品を登録"}</h1>
 
       {showErrorSummary && errorSummaryItems.length > 0 && (
@@ -339,13 +339,13 @@ function ItemForm() {
             </div>
           </div>
 
-          <div className="order-4 lg:order-1 lg:col-start-2 lg:row-span-2">
+          <div className="order-4 lg:order-1 lg:col-start-2 lg:row-span-2 lg:self-center">
             <label className="mb-2 block text-[15px] font-bold">商品の写真（任意）</label>
             <PhotoUpload value={form.imageUrl} onChange={(imageUrl) => setForm((prev) => ({ ...prev, imageUrl }))} />
           </div>
 
           <div className="order-5 mt-4 lg:order-4 lg:col-span-2">
-            <div className="flex gap-3 lg:justify-end">
+            <div className="flex gap-4 lg:justify-end">
               <Button
                 variant="secondary"
                 disabled={saveLoading}
