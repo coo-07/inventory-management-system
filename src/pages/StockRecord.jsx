@@ -22,6 +22,7 @@ function StockRecord() {
   const [qty, setQty] = useState(1);
   const [memo, setMemo] = useState("");
   const [error, setError] = useState("");
+  const [recordLoading, setRecordLoading] = useState(false);
 
   if (!item) {
     return (
@@ -44,14 +45,19 @@ function StockRecord() {
   };
 
   const handleSubmit = () => {
-    const result = recordStock(id, type, Number(qty) || 0, memo);
-    if (!result.ok) {
-      setError(result.message);
-      return;
-    }
-    setError("");
-    showToast("✅ 在庫を更新しました");
-    navigate(`/items/${id}`);
+    if (recordLoading) return;
+    setRecordLoading(true);
+    setTimeout(() => {
+      const result = recordStock(id, type, Number(qty) || 0, memo);
+      setRecordLoading(false);
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      setError("");
+      showToast("✅ 在庫を更新しました");
+      navigate(`/items/${id}`);
+    }, 1000);
   };
 
   const typeBase =
@@ -169,11 +175,11 @@ function StockRecord() {
           </div>
         )}
 
-        <Button variant="primary" className="justify-center text-[19px]" onClick={handleSubmit}>
+        <Button variant="primary" className="justify-center text-[19px]" loading={recordLoading} onClick={handleSubmit}>
           <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
             <path d="M4 10l4 4 8-8" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          記録する
+          {recordLoading ? "記録しています..." : "記録する"}
         </Button>
       </div>
     </div>

@@ -9,6 +9,7 @@ function Shop() {
   const navigate = useNavigate();
   const showToast = useToast();
   const [form, setForm] = useState(shop);
+  const [saveLoading, setSaveLoading] = useState(false);
 
   useEffect(() => setForm(shop), [shop]);
 
@@ -16,9 +17,14 @@ function Shop() {
   const fieldStyle = { borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" };
 
   const handleSubmit = () => {
-    updateShop({ ...form, name: form.name.trim() || shop.name });
-    showToast("✅ 保存しました");
-    navigate("/");
+    if (saveLoading) return;
+    setSaveLoading(true);
+    setTimeout(() => {
+      updateShop({ ...form, name: form.name.trim() || shop.name });
+      setSaveLoading(false);
+      showToast("✅ 保存しました");
+      navigate("/");
+    }, 1000);
   };
 
   return (
@@ -62,8 +68,8 @@ function Shop() {
           />
         </div>
         <div className="mt-2 flex justify-end">
-          <Button variant="primary" onClick={handleSubmit}>
-            保存する
+          <Button variant="primary" loading={saveLoading} onClick={handleSubmit}>
+            {saveLoading ? "保存しています..." : "保存する"}
           </Button>
         </div>
       </div>
