@@ -1947,6 +1947,35 @@ const DEFAULT_META = { bg: "oklch(0.94 0.01 260)", icon: "📦" }; // その他
 
 ---
 
+## 42. 入出荷履歴の行レイアウト：flex両端揃え→グリッド固定幅化
+
+**経緯：** 各行が`flex justify-between`で組まれていたため、画面幅が広いPCほど「日付・バッジ」と「メモ・数量」の間の空白が不自然に間延びして見える問題があった。
+
+```jsx
+// Before
+<div className="flex items-center justify-between ...">
+  <div className="flex items-center gap-3">{/* 日付・バッジ */}</div>
+  <div className="flex items-center gap-3">{/* メモ・数量 */}</div>
+</div>
+
+// After（sm以上、42番で確定）
+<div className="grid grid-cols-[160px_100px_1fr_80px] items-center gap-4 ...">
+  <span>{date}</span>
+  <Badge />
+  <span className="min-w-0 truncate">{memo}</span>
+  <span className="text-right">{quantity}</span>
+</div>
+```
+
+- 日付・バッジ・数量列は固定幅、メモ列のみ`1fr`で可変（長文は`truncate`で省略、`min-w-0`がないと列が縮まずtruncateが効かない点に注意）
+- メモが空文字の行でも、要素自体は必ずレンダリングして4列の位置を維持（条件付きレンダリングで要素ごと消すと、数量が3列目にずれてグリッドが崩れるため）
+- **sm未満（モバイル）は固定幅のままだと列合計＋ギャップが画面幅を超えて横スクロールが発生したため**、`grid-cols-[auto_auto_1fr_auto] gap-2`（内容に応じた可変幅）に変更し、`sm:`以上でのみ固定幅`[160px_100px_1fr_80px] gap-4`を適用するレスポンシブ対応にした
+- 右側の固定フローティングボタン（39番の↑ボタン）との重なり回避のため`pr-14`（モバイル〜タブレット）を維持しつつ、右カラムが元々ボタンから離れているlg以上では`lg:pr-1`（従来のpx-1相当）に戻す
+
+**実装・動作確認済み（2026/08/08）：** Playwrightでデスクトップ（1280px）・タブレット（820px）・モバイル（390px）の3幅を確認。長文メモの省略表示、メモなし行でのレイアウト崩れなし、モバイル幅での横スクロール発生なし（対応前は発生していたためレスポンシブ化が必須だった）、↑ボタンと数量列の重なりなしをすべて確認済み。lintエラーなし。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか
