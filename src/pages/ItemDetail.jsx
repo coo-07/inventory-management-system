@@ -136,6 +136,17 @@ function ItemDetail() {
               🎲 テスト履歴を追加（20件）
             </Button>
           )}
+
+          <hr className="my-1 w-full" style={{ border: "none", borderTop: "1px solid var(--border)" }} />
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="box-border flex w-full cursor-pointer items-center justify-center gap-1 rounded-[var(--r-lg)] border-2 border-transparent py-2 text-sm font-bold transition-colors hover:border-[var(--blue)]! hover:text-[var(--blue-dark)]!"
+            style={{ color: "var(--ink-soft)" }}
+          >
+            <span aria-hidden="true">↑</span>
+            ページの先頭へ
+          </button>
         </div>
 
         <div className="lg:order-3 lg:w-full">

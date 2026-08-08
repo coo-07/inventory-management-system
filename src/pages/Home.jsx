@@ -7,26 +7,15 @@ import { getStockStatus } from "../utils/stockStatus";
 import ItemList from "../components/ItemList";
 import Button from "../components/Button";
 
-const FILTERS = [
-  { value: "all", label: "すべて" },
-  { value: "low", label: "在庫少" },
-  { value: "out", label: "在庫切れ" },
-  { value: "available", label: "在庫あり" },
-];
-
 function Home() {
   const { items, loadTestData } = useItems();
   const navigate = useNavigate();
   const showToast = useToast();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const filter = searchParams.get("filter") || "all";
   const [addLoading, setAddLoading] = useState(false);
-
-  const setFilter = (value) => {
-    setSearchParams(value === "all" ? {} : { filter: value });
-  };
 
   const categories = useMemo(
     () => [...new Set(items.map((item) => item.category).filter(Boolean))],
@@ -98,43 +87,21 @@ function Home() {
 
         <div className="flex flex-col gap-1.5 border-l pl-5" style={{ borderColor: "var(--border)" }}>
           <label className="text-[13px] font-bold" style={{ color: "var(--ink-soft)" }}>
-            絞り込み
+            商品の種類
           </label>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="box-border min-h-12 cursor-pointer rounded-[var(--r-lg)] border-2 px-4.5 text-base"
-              style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
-            >
-              <option value="">商品の種類</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-            <div
-              className="flex w-fit flex-wrap gap-1.5 rounded-[var(--r-lg)] border-2 p-1.5"
-              style={{ background: "var(--surface)", borderColor: "var(--border)" }}
-            >
-              {FILTERS.map((f) => (
-                <button
-                  key={f.value}
-                  type="button"
-                  onClick={() => setFilter(f.value)}
-                  className="box-border inline-flex min-h-12 cursor-pointer items-center justify-center rounded-xl border-none px-5.5 text-sm font-bold transition-colors"
-                  style={
-                    filter === f.value
-                      ? { background: "var(--blue)", color: "white" }
-                      : { background: "transparent", color: "var(--ink-soft)" }
-                  }
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="box-border min-h-12 cursor-pointer rounded-[var(--r-lg)] border-2 px-4.5 text-base"
+            style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+          >
+            <option value="">すべて</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="ml-auto flex items-center gap-2">

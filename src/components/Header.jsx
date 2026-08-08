@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useMatch, useNavigate } from "react-router-dom";
+import { Link, useLocation, useMatch, useNavigate, useSearchParams } from "react-router-dom";
 import { useShop } from "../hooks/useShop";
 import { loadItems, loadLogs } from "../services/localStorage";
 import { getStockStatus } from "../utils/stockStatus";
@@ -28,6 +28,7 @@ function Header() {
   const location = useLocation();
   const backLink = useBackLink();
   const isHome = useMatch("/");
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [items, setItems] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -39,10 +40,12 @@ function Header() {
 
   const outCount = items.filter((i) => getStockStatus(i.stock, i.threshold).isOut).length;
   const lowCount = items.filter((i) => getStockStatus(i.stock, i.threshold).isLow).length;
+  const availableCount = items.length - outCount - lowCount;
   const todayStr = new Date().toISOString().slice(0, 10);
   const todayCount = logs.filter((l) => l.createdAt.slice(0, 10) === todayStr).length;
 
-  const goToFilter = (value) => navigate(`/?filter=${value}`);
+  const activeFilter = searchParams.get("filter") || "all";
+  const setFilter = (value) => setSearchParams(value === "all" ? {} : { filter: value });
 
   return (
     <header
@@ -84,22 +87,55 @@ function Header() {
             </span>
             <button
               type="button"
-              onClick={() => goToFilter("out")}
+              onClick={() => setFilter("all")}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors hover:border-[var(--blue)]!"
+              style={
+                activeFilter === "all"
+                  ? { background: "var(--blue)", color: "white", borderColor: "var(--blue)" }
+                  : { background: "transparent", color: "var(--ink-soft)", borderColor: "transparent" }
+              }
+            >
+              すべて {items.length}件
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter("out")}
               className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors hover:border-[var(--red)]!"
-              style={{ background: "var(--red-light)", color: "var(--red)", borderColor: "transparent" }}
+              style={
+                activeFilter === "out"
+                  ? { background: "var(--red)", color: "white", borderColor: "var(--red)" }
+                  : { background: "var(--red-light)", color: "var(--red)", borderColor: "transparent" }
+              }
             >
               <span aria-hidden="true">✕</span>
               在庫切れ {outCount}件
             </button>
             <button
               type="button"
-              onClick={() => goToFilter("low")}
+              onClick={() => setFilter("low")}
               className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors hover:border-[var(--orange-dark)]!"
-              style={{ background: "var(--orange-light)", color: "var(--orange-dark)", borderColor: "transparent" }}
+              style={
+                activeFilter === "low"
+                  ? { background: "var(--orange)", color: "white", borderColor: "var(--orange)" }
+                  : { background: "var(--orange-light)", color: "var(--orange-dark)", borderColor: "transparent" }
+              }
             >
               <span aria-hidden="true">⚠</span>
               在庫少 {lowCount}件
             </button>
+            <button
+              type="button"
+              onClick={() => setFilter("available")}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors hover:border-[var(--ink-soft)]!"
+              style={
+                activeFilter === "available"
+                  ? { background: "var(--ink-soft)", color: "white", borderColor: "var(--ink-soft)" }
+                  : { background: "var(--bg)", color: "var(--ink-soft)", borderColor: "transparent" }
+              }
+            >
+              在庫あり {availableCount}件
+            </button>
+            <span className="mx-1 h-4 w-px" style={{ background: "var(--border)" }} aria-hidden="true" />
             <span
               className="inline-flex items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap"
               style={{ background: "var(--bg)", color: "var(--ink)", borderColor: "transparent" }}
