@@ -12,7 +12,9 @@ function ItemCard({ item, onClick }) {
   const showStatusBadge = status.isOut || status.isLow;
   const hoverClass = status.isOut
     ? "hover:border-[#DC2626]! hover:bg-[#FECACA]!"
-    : "hover:border-[var(--ink-soft)]! hover:bg-[var(--bg)]!";
+    : status.isLow
+      ? "hover:border-[var(--orange-dark)]! hover:bg-[var(--orange-light)]!"
+      : "hover:border-[var(--ink-soft)]! hover:bg-[var(--bg)]!";
 
   return (
     <a

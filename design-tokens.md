@@ -2099,6 +2099,40 @@ className="-mx-2 -my-1 inline-flex items-center gap-2 rounded-lg px-2 py-1 text-
 
 ---
 
+## 44-2. 「一覧へ戻る」hoverを濃く戻す＋残りわずかカードのhoverをオレンジ系に
+
+**経緯：** 44-1番で「一覧へ戻る」リンクのhover背景をカードと同じ`var(--bg)`に揃えたところ、テキストリンク単体では変化が分かりにくく薄すぎるとの指摘。カードは`var(--bg)`のまま、戻るボタンだけ一段濃い`var(--border)`に変更。また、「残りわずか」カードにも通常カードと同じニュートラルなhoverが適用されていたが、在庫切れカードと同様に警告色が保たれるよう、オレンジ系のhoverに変更。
+
+```jsx
+// Header.jsx「一覧へ戻る」
+// Before（44-1番）
+className="-mx-2 -my-1 inline-flex items-center gap-2 rounded-lg px-2 py-1 text-[17px] font-bold transition-colors hover:bg-[var(--bg)]!"
+
+// After（44-2番で確定：カードより一段濃く）
+className="-mx-2 -my-1 inline-flex items-center gap-2 rounded-lg px-2 py-1 text-[17px] font-bold transition-colors hover:bg-[var(--border)]!"
+```
+
+```jsx
+// ItemCard.jsx
+// Before（44-1番）
+const hoverClass = status.isOut
+  ? "hover:border-[#DC2626]! hover:bg-[#FECACA]!"
+  : "hover:border-[var(--ink-soft)]! hover:bg-[var(--bg)]!";
+
+// After（44-2番：残りわずかをオレンジ系に分岐）
+const hoverClass = status.isOut
+  ? "hover:border-[#DC2626]! hover:bg-[#FECACA]!"
+  : status.isLow
+    ? "hover:border-[var(--orange-dark)]! hover:bg-[var(--orange-light)]!"
+    : "hover:border-[var(--ink-soft)]! hover:bg-[var(--bg)]!";
+```
+
+残りわずかカードのhoverには、既に在庫状況バッジ・在庫数の文字色として使われている`var(--orange-dark)`（枠線）・`var(--orange-light)`（背景）を再利用し、新規のハードコード色は追加していない。在庫切れカード（isOut）の赤系分岐ロジックはそのまま維持。
+
+**実装・動作確認済み（2026/08/09）：** Playwrightで「一覧へ戻る」リンクの濃さ変化、および残りわずか／在庫切れ／通常カードそれぞれのhover前後を確認。lintエラーなし。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか

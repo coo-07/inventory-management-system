@@ -151,7 +151,7 @@ function Header() {
         <div className="mx-auto max-w-[2400px] px-8 pb-3.5">
           <Link
             to={backLink.to}
-            className="-mx-2 -my-1 inline-flex items-center gap-2 rounded-lg px-2 py-1 text-[17px] font-bold transition-colors hover:bg-[var(--bg)]!"
+            className="-mx-2 -my-1 inline-flex items-center gap-2 rounded-lg px-2 py-1 text-[17px] font-bold transition-colors hover:bg-[var(--border)]!"
             style={{ color: "var(--ink)" }}
           >
             <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
