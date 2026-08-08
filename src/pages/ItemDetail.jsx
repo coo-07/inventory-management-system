@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
 import { useToast } from "../context/ToastContext";
@@ -18,8 +18,16 @@ function ItemDetail() {
   const { items, getItemById, getLogsByItemId, deleteItem, seedTestLogs } = useItems();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const titleRef = useRef(null);
 
   const item = getItemById(id);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => setShowBackToTop(!entry.isIntersecting), { threshold: 0 });
+    if (titleRef.current) observer.observe(titleRef.current);
+    return () => observer.disconnect();
+  }, [item?.id]);
 
   if (!item) {
     return (
@@ -71,7 +79,7 @@ function ItemDetail() {
             <CategoryIcon category={item.category} size={56} />
           </div>
           <div className="min-w-[260px] flex-1 lg:order-1 lg:w-full lg:min-w-0">
-            <p className="m-0 mb-1.5 text-[28px] font-black">{item.name}</p>
+            <h1 ref={titleRef} className="m-0 mb-1.5 text-[28px] font-black">{item.name}</h1>
             <div className="mb-1 flex items-center gap-1.5">
               <CategoryIcon category={item.category} size={17} />
               <p
@@ -136,17 +144,6 @@ function ItemDetail() {
               🎲 テスト履歴を追加（20件）
             </Button>
           )}
-
-          <hr className="my-1 w-full" style={{ border: "none", borderTop: "1px solid var(--border)" }} />
-          <button
-            type="button"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="box-border flex w-full cursor-pointer items-center justify-center gap-1 rounded-[var(--r-lg)] border-2 border-transparent py-2 text-sm font-bold transition-colors hover:border-[var(--blue)]! hover:text-[var(--blue-dark)]!"
-            style={{ color: "var(--ink-soft)" }}
-          >
-            <span aria-hidden="true">↑</span>
-            ページの先頭へ
-          </button>
         </div>
 
         <div className="lg:order-3 lg:w-full">
@@ -161,6 +158,18 @@ function ItemDetail() {
           total={items.length}
           onGo={(n) => navigate(`/items/${items[n - 1].id}`)}
         />
+      )}
+
+      {showBackToTop && (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          aria-label="ページの先頭へ戻る"
+          className="fixed right-6 z-30 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border-2 text-xl font-bold shadow-md transition-colors hover:border-[var(--blue)]! hover:text-[var(--blue-dark)]!"
+          style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--ink-soft)", bottom: showNav ? "94px" : "24px" }}
+        >
+          <span aria-hidden="true">↑</span>
+        </button>
       )}
 
       <ConfirmDialog
