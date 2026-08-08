@@ -240,7 +240,7 @@ function ItemForm() {
               <div
                 ref={stockBoxRef}
                 tabIndex={-1}
-                className="box-border min-w-[220px] flex-1 rounded-[var(--r-md)] p-2.5"
+                className="box-border min-w-[220px] flex-auto rounded-[var(--r-md)] p-2.5"
                 style={{ border: fieldErrors.stock ? "2px solid var(--red)" : "2px solid transparent", background: fieldErrors.stock ? "var(--red-light)" : "transparent" }}
               >
                 <label className="mb-2 block text-[15px] font-bold">在庫数</label>
@@ -284,7 +284,7 @@ function ItemForm() {
               <div
                 ref={thresholdBoxRef}
                 tabIndex={-1}
-                className="box-border min-w-[220px] flex-1 rounded-[var(--r-md)] p-2.5"
+                className="box-border min-w-[220px] flex-auto rounded-[var(--r-md)] p-2.5"
                 style={{ border: fieldErrors.threshold ? "2px solid var(--red)" : "2px solid transparent", background: fieldErrors.threshold ? "var(--red-light)" : "transparent" }}
               >
                 <label className="mb-2 block text-[15px] font-bold">発注点（下回ったら知らせます）</label>
@@ -350,10 +350,10 @@ function ItemForm() {
           </div>
 
           <div className="flex flex-wrap justify-end gap-3 lg:justify-start">
-            <Button variant="secondary" disabled={saveLoading} onClick={handleCancel}>
+            <Button variant="secondary" disabled={saveLoading} onClick={handleCancel} className="min-w-[120px]">
               キャンセル
             </Button>
-            <Button variant="primary" loading={saveLoading} onClick={handleSubmit}>
+            <Button variant="primary" loading={saveLoading} onClick={handleSubmit} className="min-w-[120px]">
               {saveLoading ? "保存しています..." : "保存する"}
             </Button>
           </div>
