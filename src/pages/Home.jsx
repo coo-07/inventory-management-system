@@ -1,25 +1,32 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
 import { useToast } from "../context/ToastContext";
 import { generateTestItems } from "../utils/generateTestData";
+import { getStockStatus } from "../utils/stockStatus";
 import ItemList from "../components/ItemList";
 import Button from "../components/Button";
 
 const FILTERS = [
   { value: "all", label: "すべて" },
   { value: "low", label: "在庫少" },
+  { value: "out", label: "在庫切れ" },
   { value: "available", label: "在庫あり" },
 ];
 
 function Home() {
-  const { items, logs, loadTestData } = useItems();
+  const { items, loadTestData } = useItems();
   const navigate = useNavigate();
   const showToast = useToast();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
-  const [filter, setFilter] = useState("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filter = searchParams.get("filter") || "all";
   const [addLoading, setAddLoading] = useState(false);
+
+  const setFilter = (value) => {
+    setSearchParams(value === "all" ? {} : { filter: value });
+  };
 
   const categories = useMemo(
     () => [...new Set(items.map((item) => item.category).filter(Boolean))],
@@ -28,25 +35,17 @@ function Home() {
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
+      const status = getStockStatus(item.stock, item.threshold);
       const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
       const matchesCategory = !category || item.category === category;
       const matchesFilter =
-        filter === "all" ||
-        (filter === "low" && item.stock < item.threshold) ||
-        (filter === "available" && item.stock >= item.threshold);
+        filter === "all" ? true :
+        filter === "low" ? status.isLow :
+        filter === "out" ? status.isOut :
+        filter === "available" ? (!status.isOut && !status.isLow) : true;
       return matchesSearch && matchesCategory && matchesFilter;
     });
   }, [items, search, category, filter]);
-
-  const outCount = items.filter((i) => i.stock === 0).length;
-  const lowCount = items.filter((i) => i.stock > 0 && i.stock < i.threshold).length;
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const todayCount = logs.filter((l) => l.createdAt.slice(0, 10) === todayStr).length;
-
-  const actionItems = [];
-  if (outCount > 0) actionItems.push({ icon: "✕", text: `在庫切れ ${outCount}件`, color: "var(--red)", bg: "var(--red-light)" });
-  if (lowCount > 0) actionItems.push({ icon: "⚠", text: `在庫少 ${lowCount}件`, color: "var(--red)", bg: "var(--red-light)" });
-  actionItems.push({ icon: "📦", text: `入出荷 ${todayCount}件`, color: "var(--ink)", bg: "var(--bg)" });
 
   const handleAddNew = () => {
     if (addLoading) return;
@@ -70,28 +69,6 @@ function Home() {
 
   return (
     <div className="mx-auto max-w-[2400px] px-6 py-5 pb-36 md:px-12">
-      {items.length > 0 && (
-        <div
-          aria-label="今日のお知らせ"
-          className="mb-6 flex flex-wrap items-center gap-2.5 rounded-[var(--r-lg)] border px-4 py-2.5"
-          style={{ background: "var(--bg)", borderColor: "var(--border)" }}
-        >
-          <p className="m-0 text-[13px] font-bold whitespace-nowrap" style={{ color: "var(--ink-soft)" }}>
-            現在の状況
-          </p>
-          {actionItems.map((act, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-bold whitespace-nowrap"
-              style={{ background: act.bg, color: act.color }}
-            >
-              <span>{act.icon}</span>
-              {act.text}
-            </span>
-          ))}
-        </div>
-      )}
-
       <div className="mb-7 flex flex-wrap items-end gap-4">
         <div className="flex min-w-[260px] max-w-96 flex-1 flex-col gap-1.5">
           <label className="text-[13px] font-bold" style={{ color: "var(--ink-soft)" }}>
@@ -138,7 +115,7 @@ function Home() {
               ))}
             </select>
             <div
-              className="flex w-fit gap-1.5 rounded-[var(--r-lg)] border-2 p-1.5"
+              className="flex w-fit flex-wrap gap-1.5 rounded-[var(--r-lg)] border-2 p-1.5"
               style={{ background: "var(--surface)", borderColor: "var(--border)" }}
             >
               {FILTERS.map((f) => (

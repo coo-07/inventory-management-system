@@ -1,5 +1,8 @@
-import { Link, useMatch, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useMatch, useNavigate } from "react-router-dom";
 import { useShop } from "../hooks/useShop";
+import { loadItems, loadLogs } from "../services/localStorage";
+import { getStockStatus } from "../utils/stockStatus";
 
 function useBackLink() {
   const isDetail = useMatch("/items/:id");
@@ -22,7 +25,24 @@ function useBackLink() {
 function Header() {
   const { shop } = useShop();
   const navigate = useNavigate();
+  const location = useLocation();
   const backLink = useBackLink();
+  const isHome = useMatch("/");
+
+  const [items, setItems] = useState([]);
+  const [logs, setLogs] = useState([]);
+
+  useEffect(() => {
+    setItems(loadItems());
+    setLogs(loadLogs());
+  }, [location.pathname]);
+
+  const outCount = items.filter((i) => getStockStatus(i.stock, i.threshold).isOut).length;
+  const lowCount = items.filter((i) => getStockStatus(i.stock, i.threshold).isLow).length;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayCount = logs.filter((l) => l.createdAt.slice(0, 10) === todayStr).length;
+
+  const goToFilter = (value) => navigate(`/?filter=${value}`);
 
   return (
     <header
@@ -55,6 +75,43 @@ function Header() {
           </button>
         </div>
       </div>
+
+      {isHome && items.length > 0 && (
+        <section
+          aria-label="現在の状況"
+          className="mx-auto flex max-w-[2400px] flex-wrap items-center gap-2.5 px-8 pb-3.5"
+        >
+          <span className="text-[13px] font-bold whitespace-nowrap" style={{ color: "var(--ink-soft)" }}>
+            現在の状況
+          </span>
+          <button
+            type="button"
+            onClick={() => goToFilter("out")}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors hover:border-[var(--red)]!"
+            style={{ background: "var(--red-light)", color: "var(--red)", borderColor: "transparent" }}
+          >
+            <span aria-hidden="true">✕</span>
+            在庫切れ {outCount}件
+          </button>
+          <button
+            type="button"
+            onClick={() => goToFilter("low")}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors hover:border-[var(--orange-dark)]!"
+            style={{ background: "var(--orange-light)", color: "var(--orange-dark)", borderColor: "transparent" }}
+          >
+            <span aria-hidden="true">⚠</span>
+            在庫少 {lowCount}件
+          </button>
+          <span
+            className="inline-flex items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap"
+            style={{ background: "var(--bg)", color: "var(--ink)", borderColor: "transparent" }}
+          >
+            <span aria-hidden="true">📦</span>
+            入出荷 {todayCount}件
+          </span>
+        </section>
+      )}
+
       {backLink && (
         <div className="mx-auto max-w-[2400px] px-8 pb-3.5">
           <Link

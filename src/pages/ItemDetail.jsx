@@ -58,8 +58,8 @@ function ItemDetail() {
         {/* lg:contents unwraps this row so image/info become independent grid columns at lg, while mobile keeps the original side-by-side hero row untouched */}
         <div className="mb-7 flex flex-wrap gap-6 lg:contents">
           <div
-            className="flex h-[200px] w-[200px] shrink-0 items-center justify-center rounded-[var(--r-xl)] lg:order-2 lg:w-full"
-            style={{ background: meta.bg }}
+            className="flex h-[200px] w-[200px] shrink-0 items-center justify-center rounded-[var(--r-xl)] lg:sticky lg:order-2 lg:w-full"
+            style={{ background: meta.bg, top: "131px" }}
           >
             <CategoryIcon category={item.category} size={56} />
           </div>
@@ -97,7 +97,7 @@ function ItemDetail() {
           </div>
         </div>
 
-        <div className="mb-9 flex flex-wrap gap-3 lg:order-4 lg:w-full lg:flex-col">
+        <div className="mb-9 flex flex-wrap gap-3 lg:sticky lg:order-4 lg:w-full lg:flex-col" style={{ top: "351px" }}>
           <Button variant="secondarySoft" onClick={() => navigate(`/items/${id}/record`)}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path
