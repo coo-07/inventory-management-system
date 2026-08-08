@@ -185,32 +185,32 @@ function ItemForm() {
         className="rounded-[var(--r-xl)] border-2 p-7"
         style={{ background: "var(--surface)", borderColor: "var(--border)" }}
       >
-        <div className="flex flex-col gap-5.5 lg:flex-row lg:gap-5">
-          <div className="flex w-full flex-col gap-5.5 lg:w-[70%]">
-            <div>
-              <label className="mb-2 block text-[15px] font-bold">商品名（必須）</label>
-              <input
-                ref={nameInputRef}
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                onBlur={() => setFieldErrors((prev) => ({ ...prev, name: validateName(form.name) }))}
-                placeholder="例：ボールペン"
-                className={fieldBase}
-                style={{
-                  border: fieldErrors.name ? "2px solid var(--red)" : "2px solid var(--border)",
-                  background: fieldErrors.name ? "var(--red-light)" : "var(--surface)",
-                  color: "var(--ink)",
-                }}
-              />
-              {fieldErrors.name && (
-                <p className="mt-1.5 text-[13px] font-bold" style={{ color: "var(--red)" }}>
-                  {fieldErrors.name}
-                </p>
-              )}
-            </div>
+        <div className="grid grid-cols-1 gap-5.5 lg:grid-cols-[7fr_3fr] lg:items-start lg:gap-5">
+          <div className="order-1 lg:order-1 lg:col-start-1">
+            <label className="mb-2 block text-[15px] font-bold">商品名（必須）</label>
+            <input
+              ref={nameInputRef}
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+              onBlur={() => setFieldErrors((prev) => ({ ...prev, name: validateName(form.name) }))}
+              placeholder="例：ボールペン"
+              className={fieldBase}
+              style={{
+                border: fieldErrors.name ? "2px solid var(--red)" : "2px solid var(--border)",
+                background: fieldErrors.name ? "var(--red-light)" : "var(--surface)",
+                color: "var(--ink)",
+              }}
+            />
+            {fieldErrors.name && (
+              <p className="mt-1.5 text-[13px] font-bold" style={{ color: "var(--red)" }}>
+                {fieldErrors.name}
+              </p>
+            )}
+          </div>
 
-            <div>
+          <div className="order-2 flex flex-wrap gap-4 lg:order-2 lg:col-start-1">
+            <div className="min-w-[220px] flex-auto">
               <label className="mb-2 block text-[15px] font-bold">カテゴリ</label>
               <select
                 value={form.categorySelect}
@@ -230,132 +230,139 @@ function ItemForm() {
                   value={form.categoryOther}
                   onChange={(e) => setForm((prev) => ({ ...prev, categoryOther: e.target.value }))}
                   placeholder="カテゴリ名を入力"
-                  className={`${fieldBase} mt-2.5`}
+                  className={`${fieldBase} mt-2.5 max-w-[280px]`}
                   style={{ border: "2px solid var(--border)", background: "var(--surface)", color: "var(--ink)" }}
                 />
               )}
             </div>
 
-            <div className="flex flex-wrap gap-6">
-              <div
-                ref={stockBoxRef}
-                tabIndex={-1}
-                className="box-border min-w-[220px] flex-auto rounded-[var(--r-md)] p-2.5"
-                style={{ border: fieldErrors.stock ? "2px solid var(--red)" : "2px solid transparent", background: fieldErrors.stock ? "var(--red-light)" : "transparent" }}
-              >
-                <label className="mb-2 block text-[15px] font-bold">在庫数</label>
-                <div className="flex items-center gap-2.5">
-                  <button
-                    type="button"
-                    onClick={decStock}
-                    className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold"
-                    style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
-                  >
-                    −
-                  </button>
-                  <input
-                    type="text"
-                    value={form.stock}
-                    onChange={handleStockText}
-                    onBlur={commitStock}
-                    onKeyDown={blurOnEnter}
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    autoComplete="off"
-                    className="h-[59px] w-[160px] rounded-[var(--r-md)] border-2 p-2.5 text-center text-2xl font-bold"
-                    style={{ borderColor: fieldErrors.stock ? "var(--red)" : "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
-                  />
-                  <button
-                    type="button"
-                    onClick={incStock}
-                    className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold"
-                    style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
-                  >
-                    ＋
-                  </button>
-                </div>
-                {fieldErrors.stock && (
-                  <p className="mt-1.5 text-[13px] font-bold" style={{ color: "var(--red)" }}>
-                    {fieldErrors.stock}
-                  </p>
-                )}
-              </div>
-
-              <div
-                ref={thresholdBoxRef}
-                tabIndex={-1}
-                className="box-border min-w-[220px] flex-auto rounded-[var(--r-md)] p-2.5"
-                style={{ border: fieldErrors.threshold ? "2px solid var(--red)" : "2px solid transparent", background: fieldErrors.threshold ? "var(--red-light)" : "transparent" }}
-              >
-                <label className="mb-2 block text-[15px] font-bold">発注点（下回ったら知らせます）</label>
-                <div className="flex items-center gap-2.5">
-                  <button
-                    type="button"
-                    onClick={decThreshold}
-                    className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold"
-                    style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
-                  >
-                    −
-                  </button>
-                  <input
-                    type="text"
-                    value={form.threshold}
-                    onChange={handleThresholdText}
-                    onBlur={commitThreshold}
-                    onKeyDown={blurOnEnter}
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    autoComplete="off"
-                    className="h-[59px] w-[160px] rounded-[var(--r-md)] border-2 p-2.5 text-center text-2xl font-bold"
-                    style={{ borderColor: fieldErrors.threshold ? "var(--red)" : "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
-                  />
-                  <button
-                    type="button"
-                    onClick={incThreshold}
-                    className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold"
-                    style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
-                  >
-                    ＋
-                  </button>
-                </div>
-                {fieldErrors.threshold && (
-                  <p className="mt-1.5 text-[13px] font-bold" style={{ color: "var(--red)" }}>
-                    {fieldErrors.threshold}
-                  </p>
-                )}
-              </div>
-            </div>
-
-          </div>
-
-          <div className="flex w-full flex-col gap-5.5 lg:w-[30%]">
-            <div>
-              <label className="mb-2 block text-[15px] font-bold">商品の写真（任意）</label>
-              <PhotoUpload value={form.imageUrl} onChange={(imageUrl) => setForm((prev) => ({ ...prev, imageUrl }))} />
+            <div className="min-w-[160px] flex-auto">
+              <label className="mb-2 block text-[15px] font-bold">単位</label>
+              <input
+                type="text"
+                value={form.unit}
+                onChange={(e) => setForm((prev) => ({ ...prev, unit: e.target.value }))}
+                placeholder="個・本・冊 など"
+                className={`${fieldBase} max-w-[160px]`}
+                style={{ border: "2px solid var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+              />
             </div>
           </div>
-        </div>
 
-        <div className="mt-5.5 flex flex-col gap-5.5 lg:mt-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <label className="mb-2 block text-[15px] font-bold">単位</label>
-            <input
-              type="text"
-              value={form.unit}
-              onChange={(e) => setForm((prev) => ({ ...prev, unit: e.target.value }))}
-              placeholder="個・本・冊 など"
-              className={`${fieldBase} max-w-[160px]`}
-              style={{ border: "2px solid var(--border)", background: "var(--surface)", color: "var(--ink)" }}
-            />
+          <div className="order-3 flex flex-wrap gap-4 lg:order-3 lg:col-span-2">
+            <div
+              ref={stockBoxRef}
+              tabIndex={-1}
+              className="box-border min-w-[220px] flex-auto rounded-[var(--r-md)] p-2.5"
+              style={{ border: fieldErrors.stock ? "2px solid var(--red)" : "2px solid transparent", background: fieldErrors.stock ? "var(--red-light)" : "transparent" }}
+            >
+              <label className="mb-2 block text-[15px] font-bold">在庫数</label>
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={decStock}
+                  className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold"
+                  style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+                >
+                  −
+                </button>
+                <input
+                  type="text"
+                  value={form.stock}
+                  onChange={handleStockText}
+                  onBlur={commitStock}
+                  onKeyDown={blurOnEnter}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="off"
+                  className="h-[59px] w-[160px] rounded-[var(--r-md)] border-2 p-2.5 text-center text-2xl font-bold"
+                  style={{ borderColor: fieldErrors.stock ? "var(--red)" : "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+                />
+                <button
+                  type="button"
+                  onClick={incStock}
+                  className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold"
+                  style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+                >
+                  ＋
+                </button>
+              </div>
+              {fieldErrors.stock && (
+                <p className="mt-1.5 text-[13px] font-bold" style={{ color: "var(--red)" }}>
+                  {fieldErrors.stock}
+                </p>
+              )}
+            </div>
+
+            <div
+              ref={thresholdBoxRef}
+              tabIndex={-1}
+              className="box-border min-w-[220px] flex-auto rounded-[var(--r-md)] p-2.5"
+              style={{ border: fieldErrors.threshold ? "2px solid var(--red)" : "2px solid transparent", background: fieldErrors.threshold ? "var(--red-light)" : "transparent" }}
+            >
+              <label className="mb-2 block text-[15px] font-bold">発注点（下回ったら知らせます）</label>
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={decThreshold}
+                  className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold"
+                  style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+                >
+                  −
+                </button>
+                <input
+                  type="text"
+                  value={form.threshold}
+                  onChange={handleThresholdText}
+                  onBlur={commitThreshold}
+                  onKeyDown={blurOnEnter}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="off"
+                  className="h-[59px] w-[160px] rounded-[var(--r-md)] border-2 p-2.5 text-center text-2xl font-bold"
+                  style={{ borderColor: fieldErrors.threshold ? "var(--red)" : "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+                />
+                <button
+                  type="button"
+                  onClick={incThreshold}
+                  className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold"
+                  style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+                >
+                  ＋
+                </button>
+              </div>
+              {fieldErrors.threshold && (
+                <p className="mt-1.5 text-[13px] font-bold" style={{ color: "var(--red)" }}>
+                  {fieldErrors.threshold}
+                </p>
+              )}
+            </div>
           </div>
 
-          <div className="flex flex-wrap justify-end gap-3 lg:justify-start">
-            <Button variant="secondary" disabled={saveLoading} onClick={handleCancel} className="min-w-[120px]">
-              キャンセル
-            </Button>
-            <Button variant="primary" loading={saveLoading} onClick={handleSubmit} className="min-w-[120px]">
-              {saveLoading ? "保存しています..." : "保存する"}
-            </Button>
+          <div className="order-4 lg:order-1 lg:col-start-2 lg:row-span-2">
+            <label className="mb-2 block text-[15px] font-bold">商品の写真（任意）</label>
+            <PhotoUpload value={form.imageUrl} onChange={(imageUrl) => setForm((prev) => ({ ...prev, imageUrl }))} />
+          </div>
+
+          <div className="order-5 mt-4 lg:order-4 lg:col-span-2">
+            <div className="flex gap-3 lg:justify-end">
+              <Button
+                variant="secondary"
+                disabled={saveLoading}
+                onClick={handleCancel}
+                className="min-w-0 flex-1 lg:flex-none lg:min-w-[180px]"
+              >
+                キャンセル
+              </Button>
+              <Button
+                variant="primary"
+                loading={saveLoading}
+                onClick={handleSubmit}
+                className="min-w-0 flex-1 lg:flex-none lg:min-w-[180px]"
+              >
+                {saveLoading ? "保存しています..." : "保存する"}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
