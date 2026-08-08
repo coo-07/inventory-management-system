@@ -79,7 +79,7 @@ function Home() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="商品名で検索"
-              className="box-border min-h-12 w-full rounded-[var(--r-lg)] border-2 py-3 pr-4 pl-[46px] text-[17px]"
+              className="box-border min-h-12 w-full rounded-[var(--r-lg)] border-2 py-3 pr-4 pl-[46px] text-[17px] transition-colors focus:border-[var(--blue)]!"
               style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
             />
           </div>
@@ -92,7 +92,7 @@ function Home() {
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="box-border min-h-12 cursor-pointer rounded-[var(--r-lg)] border-2 px-4.5 text-base"
+            className="box-border min-h-12 cursor-pointer rounded-[var(--r-lg)] border-2 px-4.5 text-base transition-colors hover:border-[var(--ink-soft)]!"
             style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
           >
             <option value="">すべて</option>

@@ -2133,6 +2133,62 @@ const hoverClass = status.isOut
 
 ---
 
+## 45. ヘッダー状況フィルター・カテゴリセレクト・検索欄への hover/focus 展開（44番・44-2番の考え方の適用）
+
+**経緯：** 44番・44-2番でカード・戻るボタン・ページネーションに適用したhoverの考え方（ニュートラルは`var(--ink-soft)`枠＋薄い背景、警告色はその色味を保ったまま一段階濃く）を、ヘッダーの状況フィルターボタン・商品の種類セレクトボックス・商品検索入力欄にも展開。
+
+```jsx
+// Header.jsx 状況フィルターボタン
+// 「すべて」：44番のニュートラルカードと同じ考え方に統一（枠色をblue→ink-softへ）
+// Before
+className="... hover:border-[var(--blue)]!"
+// After
+className="... hover:border-[var(--ink-soft)]! hover:bg-[var(--bg)]!"
+
+// 「在庫切れ」：44-2番のisOutカードと同じ色（一段階濃い赤＋薄い赤背景）を再利用
+// Before
+className="... hover:border-[var(--red)]!"
+// After
+className="... hover:border-[#DC2626]! hover:bg-[#FECACA]!"
+
+// 「在庫少」：既存の枠hoverはそのまま、背景のみ追加（在庫少バッジのtooltip枠と同じ#FED7AAを再利用）
+// Before
+className="... hover:border-[var(--orange-dark)]!"
+// After
+className="... hover:border-[var(--orange-dark)]! hover:bg-[#FED7AA]!"
+
+// 「在庫あり」：既にニュートラル配色（ink-soft）のため、非アクティブ時の背景var(--bg)から
+// 一段階濃いvar(--border)へ変化するよう背景hoverのみ追加
+// Before
+className="... hover:border-[var(--ink-soft)]!"
+// After
+className="... hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!"
+```
+
+「在庫切れ」「在庫少」は非アクティブ時点で既に`var(--red-light)`/`var(--orange-light)`を背景に使っているため、hover背景をさらに濃い`#FECACA`/`#FED7AA`（既存のバッジtooltip枠色を再利用）にすることで、通常カードの薄い背景hoverと同様に視認できる変化にした。
+
+```jsx
+// Home.jsx「商品の種類」セレクトボックス：ニュートラルなhoverを新規追加
+// Before
+className="box-border min-h-12 cursor-pointer rounded-[var(--r-lg)] border-2 px-4.5 text-base"
+// After
+className="box-border min-h-12 cursor-pointer rounded-[var(--r-lg)] border-2 px-4.5 text-base transition-colors hover:border-[var(--ink-soft)]!"
+```
+
+```jsx
+// Home.jsx 商品検索入力欄：focus時の枠色変化を追加
+// Before
+className="box-border min-h-12 w-full rounded-[var(--r-lg)] border-2 py-3 pr-4 pl-[46px] text-[17px]"
+// After
+className="box-border min-h-12 w-full rounded-[var(--r-lg)] border-2 py-3 pr-4 pl-[46px] text-[17px] transition-colors focus:border-[var(--blue)]!"
+```
+
+検索欄は`index.css`にもともと`input:focus { border-color: var(--blue); }`というグローバル指定があるが、各入力欄のインラインstyleで`borderColor`を固定指定しているため、擬似クラスでは上書きできず実際には機能していなかった。Tailwindの`focus:`＋`!`でインラインstyleを上書きし、既存のグローバル方針（フォーカス＝blue）通りに機能させた。cursorは指定を変更しておらず、標準のI字カーソルのまま。
+
+**実装・動作確認済み（2026/08/09）：** Playwrightで状況フィルター4種のhover前後、セレクトボックスのhover前後、検索欄のfocus前後、および検索欄のcursorスタイル（`text`のまま変化なし）を確認。lintエラーなし。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか
