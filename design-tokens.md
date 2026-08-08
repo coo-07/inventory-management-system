@@ -2207,6 +2207,31 @@ className={`... transition-colors ${activeFilter === "all" ? "" : "hover:border-
 
 ---
 
+## 45-2. 選択中ボタンのhoverに枠線のみの変化を追加（45-1番の見直し）
+
+**経緯：** 45-1番で選択中ボタンのhoverを完全に無効化したところ、カーソルが乗っているかどうか分からず不親切という指摘。背景色・文字色（白文字）は変えずコントラストを保ったまま、枠線の色だけを現在の色より一段階濃くすることで、hoverしていることが分かるようにした。非選択ボタンの背景色hover（コントラスト対応済み）はそのまま維持。
+
+```jsx
+// Before（45-1番）：選択中はhoverクラスなし
+${activeFilter === "all" ? "" : "hover:border-[var(--ink-soft)]! hover:bg-[var(--bg)]!"}
+
+// After（45-2番）：選択中は枠線のみ一段階濃く
+${activeFilter === "all" ? "hover:border-[var(--blue-dark)]!" : "hover:border-[var(--ink-soft)]! hover:bg-[var(--bg)]!"}
+```
+
+各ボタンの選択中hoverに使った枠線色は、いずれも既存のCSS変数（またはカードhoverで既に使っている色）をそのまま再利用し、新規のハードコード色は追加していない。
+
+| ボタン | 選択中の地色 | 選択中hoverの枠線色 |
+|---|---|---|
+| すべて | `var(--blue)` | `var(--blue-dark)` |
+| 在庫切れ | `var(--red)` | `#DC2626`（44-2番のカードhoverと同色） |
+| 在庫少 | `var(--orange)` | `var(--orange-dark)` |
+| 在庫あり | `var(--ink-soft)` | `var(--ink)` |
+
+**実装・動作確認済み（2026/08/09）：** Playwrightで4種それぞれをactiveにした状態でhover前後のbackground/color/borderを計測し、background・colorは不変、borderのみ濃い色に変化することを確認。lintエラーなし。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか
