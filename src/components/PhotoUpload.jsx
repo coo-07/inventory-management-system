@@ -33,7 +33,7 @@ function PhotoUpload({ value, onChange }) {
         setDragOver(false);
         readFile(e.dataTransfer.files?.[0]);
       }}
-      className="relative flex h-[180px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed"
+      className="relative flex h-[150px] w-full max-w-[220px] cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed"
       style={{
         borderColor: dragOver ? "var(--blue)" : "var(--border)",
         background: dragOver ? "var(--blue-light)" : "var(--bg)",

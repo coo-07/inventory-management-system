@@ -300,7 +300,7 @@ function ItemForm() {
               className="box-border min-w-[220px] flex-auto rounded-[var(--r-md)] p-2.5"
               style={{ border: fieldErrors.threshold ? "2px solid var(--red)" : "2px solid transparent", background: fieldErrors.threshold ? "var(--red-light)" : "transparent" }}
             >
-              <label className="mb-2 block text-[15px] font-bold">発注点（下回ったら知らせます）</label>
+              <label className="mb-2 block text-[15px] font-bold">発注点（ここ以下になったら知らせます）</label>
               <div className="flex items-center gap-2.5">
                 <button
                   type="button"
@@ -360,7 +360,7 @@ function ItemForm() {
                 onClick={handleSubmit}
                 className="min-w-0 flex-1 lg:flex-none lg:min-w-[180px]"
               >
-                {saveLoading ? "保存しています..." : "保存する"}
+                {saveLoading ? (isEdit ? "保存しています..." : "登録しています...") : isEdit ? "保存する" : "商品を登録する"}
               </Button>
             </div>
           </div>
