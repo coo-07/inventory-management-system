@@ -103,7 +103,7 @@ function Header() {
             <button
               type="button"
               onClick={() => setFilter("all")}
-              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors ${activeFilter === "all" ? "hover:border-[var(--blue-dark)]!" : "hover:border-[var(--ink-soft)]! hover:bg-[var(--bg)]!"}`}
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors ${activeFilter === "all" ? "hover:bg-[var(--blue-dark)]! hover:border-[var(--blue-dark)]!" : "hover:border-[var(--ink-soft)]! hover:bg-[var(--bg)]!"}`}
               style={
                 activeFilter === "all"
                   ? { background: "var(--blue)", color: "white", borderColor: "var(--blue)" }
@@ -115,7 +115,7 @@ function Header() {
             <button
               type="button"
               onClick={() => setFilter("out")}
-              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors ${activeFilter === "out" ? "hover:border-[#DC2626]!" : "hover:border-[#DC2626]! hover:bg-[#FECACA]!"}`}
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors ${activeFilter === "out" ? "hover:bg-[#DC2626]! hover:border-[#DC2626]!" : "hover:border-[#DC2626]! hover:bg-[#FECACA]!"}`}
               style={
                 activeFilter === "out"
                   ? { background: "var(--red)", color: "white", borderColor: "var(--red)" }
@@ -128,7 +128,7 @@ function Header() {
             <button
               type="button"
               onClick={() => setFilter("low")}
-              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors ${activeFilter === "low" ? "hover:border-[var(--orange-dark)]!" : "hover:border-[var(--orange-dark)]! hover:bg-[#FED7AA]!"}`}
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors ${activeFilter === "low" ? "hover:bg-[var(--orange-dark)]! hover:border-[var(--orange-dark)]!" : "hover:border-[var(--orange-dark)]! hover:bg-[#FED7AA]!"}`}
               style={
                 activeFilter === "low"
                   ? { background: "var(--orange)", color: "white", borderColor: "var(--orange)" }
@@ -141,7 +141,7 @@ function Header() {
             <button
               type="button"
               onClick={() => setFilter("available")}
-              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors ${activeFilter === "available" ? "hover:border-[var(--ink)]!" : "hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!"}`}
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors ${activeFilter === "available" ? "hover:bg-[var(--ink)]! hover:border-[var(--ink)]!" : "hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!"}`}
               style={
                 activeFilter === "available"
                   ? { background: "var(--ink-soft)", color: "white", borderColor: "var(--ink-soft)" }

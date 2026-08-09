@@ -2232,6 +2232,31 @@ ${activeFilter === "all" ? "hover:border-[var(--blue-dark)]!" : "hover:border-[v
 
 ---
 
+## 45-3. 選択中ボタンのhoverを「背景も濃くする」方式に変更（45-2番の見直し）
+
+**経緯：** 45-2番で選択中ボタンのhoverを「枠線のみ変化」に留めたが、背景色が変化せず状態変化がやや分かりにくいという指摘。文字色（白文字）とのコントラストが保たれる濃さであれば背景を変えても問題ないため、背景・枠線を同じ色（既存の45-2番で使っているdarkトークン）に一段階濃くする方式に変更した。45-1番で発生した「白文字が背景色に同化して読めなくなる」問題は、今回使う色がいずれも十分に暗いため再発しない。
+
+```jsx
+// Before（45-2番）：選択中は枠線のみ一段階濃く
+${activeFilter === "all" ? "hover:border-[var(--blue-dark)]!" : "hover:border-[var(--ink-soft)]! hover:bg-[var(--bg)]!"}
+
+// After（45-3番）：選択中は背景・枠線ともに一段階濃く
+${activeFilter === "all" ? "hover:bg-[var(--blue-dark)]! hover:border-[var(--blue-dark)]!" : "hover:border-[var(--ink-soft)]! hover:bg-[var(--bg)]!"}
+```
+
+各ボタンの選択中hoverに使った背景・枠線色は、45-2番で使っていたdarkトークンをそのまま背景にも流用しており、新規のハードコード色は追加していない。
+
+| ボタン | 選択中の地色 | 選択中hoverの背景・枠線色（統一） |
+|---|---|---|
+| すべて | `var(--blue)` | `var(--blue-dark)` |
+| 在庫切れ | `var(--red)` | `#DC2626`（45-2番と同色） |
+| 在庫少 | `var(--orange)` | `var(--orange-dark)` |
+| 在庫あり | `var(--ink-soft)` | `var(--ink)` |
+
+**実装・動作確認済み（2026/08/09）：** Playwrightで4種それぞれをactiveにした状態でhover前後のbackground/border/colorを計測し、background・borderが同じ色に濃くなること、colorは白のまま変化せずコントラストが保たれることを確認。lintエラーなし。
+
+---
+
 ## 46. 登録・編集フォーム／入出荷記録画面への focus/hover 展開（45番の考え方の適用）
 
 **経緯：** 45番で商品検索欄・カテゴリセレクトに実装した「focus時に青枠」「hover時にink-soft枠」を、商品登録・編集フォーム（`ItemForm.jsx`）と入出荷記録画面（`StockRecord.jsx`）、写真アップロード枠（`PhotoUpload.jsx`）の全入力要素に展開した。
