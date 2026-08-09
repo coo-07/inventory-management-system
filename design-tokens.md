@@ -2344,6 +2344,47 @@ className="box-border min-h-12 w-full rounded-[var(--r-lg)] border-2 py-3 pr-4 p
 
 ---
 
+## 49. 商品カード「›」の専用ボックス廃止→在庫数行末への統合（12-3の明示を保ちつつ高さ圧縮）
+
+**経緯：** トップページ商品カード（`ItemCard.jsx`）のカード最下部にあった横幅いっぱいの「›」専用ボックス（`min-h-[48px]`、背景・枠線・角丸あり）が、カード内で場所を取りすぎているという指摘。12-3番で決めた「›」表示自体（カードがクリック可能であることの明示）は維持しつつ、専用ボックスを廃止して在庫数表示の行末に小さく統合し、カード全体の高さを圧縮した。
+
+対象ファイル：`src/components/ItemCard.jsx`
+
+```jsx
+// Before
+<p className="m-0 flex items-baseline gap-1.5">
+  <span className="text-[11px] font-medium" style={{ color: "var(--ink-soft)" }}>在庫</span>
+  <span className="text-[32px] font-black" style={{ color: ... }}>{item.stock}</span>
+  <span className="text-sm font-semibold" style={{ color: ... }}>{item.unit}</span>
+</p>
+
+<span
+  aria-hidden="true"
+  className="box-border flex min-h-[48px] items-center justify-center rounded-[var(--r-md)] border-2 text-xl font-bold"
+  style={{ background: "var(--surface)", color: "var(--ink)", borderColor: "var(--border)" }}
+>
+  <svg>...chevronアイコン...</svg>
+</span>
+
+// After
+<p className="m-0 flex items-center justify-between gap-1.5">
+  <span className="flex items-baseline gap-1.5">
+    <span className="text-[11px] font-medium" style={{ color: "var(--ink-soft)" }}>在庫</span>
+    <span className="text-[32px] font-black" style={{ color: ... }}>{item.stock}</span>
+    <span className="text-sm font-semibold" style={{ color: ... }}>{item.unit}</span>
+  </span>
+  <span aria-hidden="true" className="shrink-0" style={{ color: "var(--ink-soft)" }}>
+    <svg>...同じchevronアイコン...</svg>
+  </span>
+</p>
+```
+
+専用ボックス（背景・枠線・角丸・`min-h-[48px]`）は完全に削除し、在庫数表示の`<p>`を`justify-between`にして行末にchevronを配置。色は既存の枠線色（`var(--border)`）より一段濃い`var(--ink)`から、目立ちすぎない`var(--ink-soft)`に変更。`aria-hidden="true"`は維持し、実際のクリック領域は18-21番の方針どおりカード全体の`<a>`のまま変更していない。商品名の右隣にある在庫少／在庫切れの警告アイコン（⚠️/✕）とは別の行（在庫数行）に配置されるため、警告アイコンとの視覚的な混同はない。
+
+**実装・動作確認済み（2026/08/09）：** lintエラーなし（既存の無関係な警告2件のみ）。Playwrightでデスクトップ（170px幅グリッド）・iPad Mini（768px）・モバイル（390px）の3サイズでカード高さを計測し、いずれも227.5px→171.5px（56px圧縮）を確認。3桁在庫（例：`999本`）でも在庫数・単位・chevronが同じ行に収まり、折り返し・はみ出しは発生しないことを確認。カードクリック時に商品詳細ページへ正しく遷移する（クリック領域に変更がない）ことも確認。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか

@@ -71,27 +71,24 @@ function ItemCard({ item, onClick }) {
         )}
       </div>
 
-      <p className="m-0 flex items-baseline gap-1.5">
-        <span className="text-[11px] font-medium" style={{ color: "var(--ink-soft)" }}>
-          在庫
+      <p className="m-0 flex items-center justify-between gap-1.5">
+        <span className="flex items-baseline gap-1.5">
+          <span className="text-[11px] font-medium" style={{ color: "var(--ink-soft)" }}>
+            在庫
+          </span>
+          <span className="text-[32px] font-black" style={{ color: status.isOut ? "var(--red)" : status.isLow ? "var(--orange-dark)" : "var(--ink)" }}>
+            {item.stock}
+          </span>
+          <span className="text-sm font-semibold" style={{ color: status.isOut ? "var(--red)" : status.isLow ? "var(--orange-dark)" : "var(--ink)" }}>
+            {item.unit}
+          </span>
         </span>
-        <span className="text-[32px] font-black" style={{ color: status.isOut ? "var(--red)" : status.isLow ? "var(--orange-dark)" : "var(--ink)" }}>
-          {item.stock}
-        </span>
-        <span className="text-sm font-semibold" style={{ color: status.isOut ? "var(--red)" : status.isLow ? "var(--orange-dark)" : "var(--ink)" }}>
-          {item.unit}
+        <span aria-hidden="true" className="shrink-0" style={{ color: "var(--ink-soft)" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </span>
       </p>
-
-      <span
-        aria-hidden="true"
-        className="box-border flex min-h-[48px] items-center justify-center rounded-[var(--r-md)] border-2 text-xl font-bold"
-        style={{ background: "var(--surface)", color: "var(--ink)", borderColor: "var(--border)" }}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </span>
     </a>
   );
 }
