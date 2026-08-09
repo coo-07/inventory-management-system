@@ -2622,6 +2622,50 @@ useEffect(() => {
 
 ---
 
+## 53. ヘッダータイトルリンクへのhover明示（44-2番の考え方の適用）
+
+**経緯：** ヘッダー左上の「家アイコン＋やさしい在庫管理」は`/`へのリンクだが、これまでhover時の視覚フィードバックがなく、クリック可能であることが分かりにくかった。44-2番で確定した「一覧へ戻る」リンクと同じパターン（`-mx-2 -my-1`＋`px-2 py-1`で見た目の位置を変えずにクリック領域だけ拡張し、背景色`var(--border)`をhoverで表示）を、タイトルリンクにも展開した。
+
+これまでアイコン（`<div>`、リンクではない）と「やさしい在庫管理」の文字（`<Link to="/">`）が別要素だったため、まずアイコン・文字をひとつの`<Link to="/">`にまとめてから、hoverクラスを付与した。
+
+```jsx
+// Header.jsx タイトル部分
+// Before：アイコン（div）と文字（Link）が別要素、hoverなし
+<div className="flex items-center gap-3.5">
+  <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[var(--r-md)]" style={{ background: "..." }}>
+    <svg>...</svg>
+  </div>
+  <div className="flex items-baseline gap-3">
+    <Link to="/" className="text-[22px] leading-tight font-bold">
+      やさしい在庫管理
+    </Link>
+    <button onClick={() => navigate("/shop")}>...</button>
+  </div>
+</div>
+
+// After（53番で確定：アイコン＋文字をひとつのLinkにまとめてhover追加）
+<div className="flex items-center gap-3.5">
+  <Link
+    to="/"
+    className="flex items-center gap-3 -mx-2 -my-1 rounded-lg px-2 py-1 transition-colors hover:bg-[var(--border)]!"
+  >
+    <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[var(--r-md)]" style={{ background: "..." }}>
+      <svg>...</svg>
+    </div>
+    <span className="text-[22px] leading-tight font-bold">やさしい在庫管理</span>
+  </Link>
+  <button onClick={() => navigate("/shop")}>...</button>
+</div>
+```
+
+- アイコン・文字がひとつの`<a>`（Link）にまとまったため、文字側は`<Link>`から`<span>`に変更（アンカーの入れ子を避けるため）。店舗名バッジ（🏪 田中商店 ›）は独立したボタンのまま、`/`リンクとは別要素で維持。
+- `-mx-2 -my-1`と`px-2 py-1`はセットで、アイコン・文字の見た目の位置・サイズは変えずにクリックできる範囲だけ広げる44-2番と同じ手法。アイコン自体（グラデーション背景の四角、46px）のサイズ・見た目は変更なし。
+- 新規のハードコード色は追加せず、既存トークン`var(--border)`をそのまま再利用。
+
+**実装・動作確認済み（2026/08/09）：** Playwrightでタイトルリンクのhover前後の`background-color`を計測し、`rgba(0, 0, 0, 0)`（透明）→`oklch(0.9 0.01 260)`（`var(--border)`）に変化することを確認。アイコン（46×46px、位置不変）・タイトル文字・店舗名バッジのレイアウトが崩れていないこともスクリーンショットで確認。lintエラーなし（既存の無関係な警告2件のみ）。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか
