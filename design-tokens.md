@@ -2232,6 +2232,60 @@ ${activeFilter === "all" ? "hover:border-[var(--blue-dark)]!" : "hover:border-[v
 
 ---
 
+## 46. 登録・編集フォーム／入出荷記録画面への focus/hover 展開（45番の考え方の適用）
+
+**経緯：** 45番で商品検索欄・カテゴリセレクトに実装した「focus時に青枠」「hover時にink-soft枠」を、商品登録・編集フォーム（`ItemForm.jsx`）と入出荷記録画面（`StockRecord.jsx`）、写真アップロード枠（`PhotoUpload.jsx`）の全入力要素に展開した。
+
+対象ファイル：`src/pages/ItemForm.jsx`、`src/pages/StockRecord.jsx`、`src/components/PhotoUpload.jsx`
+
+### 1. テキスト・数値入力欄 → focus時に青枠
+
+対象：商品名／カテゴリ「その他」入力／単位／在庫数／発注点（`ItemForm.jsx`）、数量／メモ（`StockRecord.jsx`）
+
+```jsx
+// Before（例：商品名）
+className={fieldBase}
+
+// After
+className={`${fieldBase} transition-colors ${fieldErrors.name ? "" : "focus:border-[var(--blue)]!"}`}
+```
+
+商品名・在庫数・発注点は既存のバリデーションエラー（赤枠）と、45番検索欄と同じ理由（インラインstyleのborderColorはグローバルCSSの`input:focus`指定だけでは上書きできない）でTailwindの`focus:`＋`!`が必要。ただし赤枠と青枠が競合するとエラー表示の意味が薄れるため、45-1／45-2番の「アクティブ時はhoverクラスを出し分ける」パターンを踏襲し、`fieldErrors.xxx ? "" : "focus:border-[var(--blue)]!"`という形でエラー中は青枠クラス自体を出さないようにした。単位・カテゴリ「その他」・数量・メモはエラー表示がないため無条件で付与。
+
+### 2. セレクトボックス・写真アップロード枠 → hover時にink-soft枠
+
+```jsx
+// Before（カテゴリselect）
+className="box-border w-full max-w-[280px] cursor-pointer rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[17px]"
+
+// After
+className="box-border w-full max-w-[280px] cursor-pointer rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[17px] transition-colors hover:border-[var(--ink-soft)]!"
+```
+
+写真アップロード枠（`PhotoUpload.jsx`）はドラッグ中に枠色をインラインstyleで青に変えているため、フィルターボタンの選択中hoverと同じ考え方で、`dragOver`中はhoverクラスを出し分けて競合を避けた：
+
+```jsx
+className={`... transition-colors ${dragOver ? "" : "hover:border-[var(--ink-soft)]!"}`}
+```
+
+### 3. ＋/−ボタン → Button.jsxのsecondary hoverと統一
+
+`ItemForm.jsx`・`StockRecord.jsx`の＋/−ボタンは`Button`コンポーネントを使わない独自classNameで組まれていたため、`Button.jsx`のsecondary variantと同じhoverクラスを個別に追加した。
+
+```jsx
+// Before
+className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold"
+
+// After
+className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold transition-colors hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!"
+```
+
+在庫数・発注点の＋/−（`ItemForm.jsx`）、数量の＋/−（`StockRecord.jsx`）の計6箇所に適用。
+
+**実装・動作確認済み（2026/08/09）：** lintエラーなし（既存の無関係な警告2件のみ）。Playwrightでデスクトップ（1600×1000）・モバイル（390×844）双方、登録フォーム・入出荷記録画面の全対象要素についてfocus/hover前後の`border-color`を計測し、期待通りの変化（青枠／ink-soft枠）を確認。商品名フィールドでバリデーションエラーを発生させた状態でfocusしても、赤枠（`var(--red)`）が青枠に上書きされないことも確認。テキスト入力欄の`cursor`は`text`のまま変化なし。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか

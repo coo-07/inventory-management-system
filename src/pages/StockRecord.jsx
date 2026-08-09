@@ -121,7 +121,7 @@ function StockRecord() {
             <button
               type="button"
               onClick={() => setQty((prev) => Math.max(1, (Number(prev) || 0) - 1))}
-              className="h-[60px] w-[60px] shrink-0 cursor-pointer rounded-full border-2 text-[26px] font-bold"
+              className="h-[60px] w-[60px] shrink-0 cursor-pointer rounded-full border-2 text-[26px] font-bold transition-colors hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!"
               style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
             >
               −
@@ -135,13 +135,13 @@ function StockRecord() {
               inputMode="numeric"
               pattern="[0-9]*"
               autoComplete="off"
-              className="box-border w-[220px] rounded-[var(--r-md)] border-2 p-1.5 text-center text-[44px] font-black"
+              className="box-border w-[220px] rounded-[var(--r-md)] border-2 p-1.5 text-center text-[44px] font-black transition-colors focus:border-[var(--blue)]!"
               style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
             />
             <button
               type="button"
               onClick={() => setQty((prev) => (Number(prev) || 0) + 1)}
-              className="h-[60px] w-[60px] shrink-0 cursor-pointer rounded-full border-2 text-[26px] font-bold"
+              className="h-[60px] w-[60px] shrink-0 cursor-pointer rounded-full border-2 text-[26px] font-bold transition-colors hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!"
               style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
             >
               ＋
@@ -156,7 +156,7 @@ function StockRecord() {
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
             placeholder="例：発注分の入荷"
-            className="box-border w-full rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[17px]"
+            className="box-border w-full rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[17px] transition-colors focus:border-[var(--blue)]!"
             style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
           />
         </div>

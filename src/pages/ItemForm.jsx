@@ -195,7 +195,7 @@ function ItemForm() {
               onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
               onBlur={() => setFieldErrors((prev) => ({ ...prev, name: validateName(form.name) }))}
               placeholder="例：ボールペン"
-              className={fieldBase}
+              className={`${fieldBase} transition-colors ${fieldErrors.name ? "" : "focus:border-[var(--blue)]!"}`}
               style={{
                 border: fieldErrors.name ? "2px solid var(--red)" : "2px solid var(--border)",
                 background: fieldErrors.name ? "var(--red-light)" : "var(--surface)",
@@ -215,7 +215,7 @@ function ItemForm() {
               <select
                 value={form.categorySelect}
                 onChange={(e) => setForm((prev) => ({ ...prev, categorySelect: e.target.value }))}
-                className="box-border w-full max-w-[280px] cursor-pointer rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[17px]"
+                className="box-border w-full max-w-[280px] cursor-pointer rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[17px] transition-colors hover:border-[var(--ink-soft)]!"
                 style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
               >
                 {CATEGORY_OPTIONS.map((opt) => (
@@ -230,7 +230,7 @@ function ItemForm() {
                   value={form.categoryOther}
                   onChange={(e) => setForm((prev) => ({ ...prev, categoryOther: e.target.value }))}
                   placeholder="カテゴリ名を入力"
-                  className={`${fieldBase} mt-2.5 max-w-[280px]`}
+                  className={`${fieldBase} mt-2.5 max-w-[280px] transition-colors focus:border-[var(--blue)]!`}
                   style={{ border: "2px solid var(--border)", background: "var(--surface)", color: "var(--ink)" }}
                 />
               )}
@@ -243,7 +243,7 @@ function ItemForm() {
                 value={form.unit}
                 onChange={(e) => setForm((prev) => ({ ...prev, unit: e.target.value }))}
                 placeholder="個・本・冊 など"
-                className={`${fieldBase} max-w-[160px]`}
+                className={`${fieldBase} max-w-[160px] transition-colors focus:border-[var(--blue)]!`}
                 style={{ border: "2px solid var(--border)", background: "var(--surface)", color: "var(--ink)" }}
               />
             </div>
@@ -261,7 +261,7 @@ function ItemForm() {
                 <button
                   type="button"
                   onClick={decStock}
-                  className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold"
+                  className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold transition-colors hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!"
                   style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
                 >
                   −
@@ -275,13 +275,13 @@ function ItemForm() {
                   inputMode="numeric"
                   pattern="[0-9]*"
                   autoComplete="off"
-                  className="h-[59px] w-[160px] rounded-[var(--r-md)] border-2 p-2.5 text-center text-2xl font-bold"
+                  className={`h-[59px] w-[160px] rounded-[var(--r-md)] border-2 p-2.5 text-center text-2xl font-bold transition-colors ${fieldErrors.stock ? "" : "focus:border-[var(--blue)]!"}`}
                   style={{ borderColor: fieldErrors.stock ? "var(--red)" : "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
                 />
                 <button
                   type="button"
                   onClick={incStock}
-                  className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold"
+                  className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold transition-colors hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!"
                   style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
                 >
                   ＋
@@ -305,7 +305,7 @@ function ItemForm() {
                 <button
                   type="button"
                   onClick={decThreshold}
-                  className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold"
+                  className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold transition-colors hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!"
                   style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
                 >
                   −
@@ -319,13 +319,13 @@ function ItemForm() {
                   inputMode="numeric"
                   pattern="[0-9]*"
                   autoComplete="off"
-                  className="h-[59px] w-[160px] rounded-[var(--r-md)] border-2 p-2.5 text-center text-2xl font-bold"
+                  className={`h-[59px] w-[160px] rounded-[var(--r-md)] border-2 p-2.5 text-center text-2xl font-bold transition-colors ${fieldErrors.threshold ? "" : "focus:border-[var(--blue)]!"}`}
                   style={{ borderColor: fieldErrors.threshold ? "var(--red)" : "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
                 />
                 <button
                   type="button"
                   onClick={incThreshold}
-                  className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold"
+                  className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] border-2 text-2xl font-bold transition-colors hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!"
                   style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
                 >
                   ＋
