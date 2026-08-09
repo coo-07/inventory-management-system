@@ -2481,6 +2481,43 @@ const measure = () => {
 
 ---
 
+## 51. 店舗情報の保存機能：ヘッダーバッジへの即時反映漏れを修正
+
+**経緯：** 店舗情報編集画面（`src/pages/Shop.jsx`）・`useShop`フック・`services/localStorage.js`は、保存先キー`inventory_shop`（商品データの`inventory_items`・`inventory_logs`と同じ命名規則。単一オブジェクトのため配列ではなくオブジェクトとして保存）への読み書きも含めてすでに実装済みだった。デフォルト値（キー未設定時）も`{ name: "田中商店", address: "", phone: "" }`で、保存タイミングも「保存する」ボタン押下時のみ（オートセーブなし）と、想定していた方針にすでに合致していた。
+
+そのため今回は実装ではなく動作確認を行ったところ、1点不具合を確認した。
+
+**発見した不具合：** 店舗情報編集画面で店舗名を変更・保存した直後、トップページへ遷移してもヘッダーの「🏪 店舗名 ›」バッジが古い名前のままだった（ページを再読み込みしないと反映されない）。
+
+原因は`Header.jsx`が`useShop()`フックを使っており、そのフック内部の`useEffect(() => setShop(loadShop()), [])`が空配列依存でマウント時の1回しか実行されないため。同じ`Header.jsx`内の商品件数（`items`/`logs`）は`loadItems()`/`loadLogs()`を`location.pathname`変化のたびに直接呼び直す実装にすでになっており、店舗名だけこのパターンから外れていた。
+
+**対応：** `Header.jsx`側で`useShop`フックの利用をやめ、商品件数と同じ「画面遷移のたびに`loadShop()`を呼び直す」パターンに統一した（`Shop.jsx`側の`useShop`フック自体は変更なし）。
+
+```jsx
+// Before（Header.jsx）
+const { shop } = useShop();
+useEffect(() => {
+  setItems(loadItems());
+  setLogs(loadLogs());
+}, [location.pathname]);
+
+// After（Header.jsx）
+const [shop, setShop] = useState(loadShop());
+useEffect(() => {
+  setItems(loadItems());
+  setLogs(loadLogs());
+  setShop(loadShop());
+}, [location.pathname]);
+```
+
+**確認事項：**
+- 既存のバリデーション・hover/focus実装（46〜47番）：`Shop.jsx`は変更していないため影響なし
+- Playwrightで一連の流れを確認：①キー未設定時に「田中商店」がデフォルト表示 → ②編集画面のフォーム初期値も「田中商店」→ ③店舗名・住所・電話番号を変更して保存 → ④`localStorage`の`inventory_shop`に正しい値が書き込まれている → ⑤遷移直後にヘッダーバッジが新しい店舗名に即時反映（修正前はここが失敗していた）→ ⑥ページ再読み込み後もヘッダー表示が保持 → ⑦編集画面に戻ってもフォームに保存済みの値が保持
+
+**実装・動作確認済み（2026/08/09）：** 保存機能自体は実装済みだったため、`Header.jsx`のヘッダー即時反映漏れのみ修正。Playwrightでキー未設定→保存→画面遷移→リロード→再編集の一連の流れを確認し、いずれも想定どおりの値になることを確認。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか

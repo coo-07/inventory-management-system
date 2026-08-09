@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useMatch, useNavigate, useSearchParams } from "react-router-dom";
-import { useShop } from "../hooks/useShop";
-import { loadItems, loadLogs } from "../services/localStorage";
+import { loadItems, loadLogs, loadShop } from "../services/localStorage";
 import { getStockStatus } from "../utils/stockStatus";
 
 function useBackLink() {
@@ -23,7 +22,6 @@ function useBackLink() {
  * 全画面共通のヘッダー。ロゴ・店舗名リンク・画面に応じた戻るリンクを表示する。
  */
 function Header() {
-  const { shop } = useShop();
   const navigate = useNavigate();
   const location = useLocation();
   const backLink = useBackLink();
@@ -32,10 +30,12 @@ function Header() {
 
   const [items, setItems] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [shop, setShop] = useState(loadShop());
 
   useEffect(() => {
     setItems(loadItems());
     setLogs(loadLogs());
+    setShop(loadShop());
   }, [location.pathname]);
 
   const outCount = items.filter((i) => getStockStatus(i.stock, i.threshold).isOut).length;
