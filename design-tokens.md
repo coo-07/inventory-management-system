@@ -2286,6 +2286,44 @@ className="h-[52px] w-[52px] shrink-0 cursor-pointer rounded-[var(--r-md)] borde
 
 ---
 
+## 47. 入力欄・入荷出荷ボタンの hover/focus 2段階化（46番の見直し）
+
+**経緯：** 46番で追加した「focus時に青枠」だけだと、hoverしているかfocusしているかの区別がつきにくいという指摘。入力欄はhover（枠色のみ変化）→focus（枠色＋リング状box-shadow）の2段階、入荷・出荷ボタンはhover（枠色のみ変化）→選択（既存の色分け）の2段階として、状態の違いをより明確にした。
+
+対象ファイル：`src/pages/ItemForm.jsx`、`src/pages/StockRecord.jsx`
+
+### 1. テキスト・数値入力欄・メモ → hover(1重)→focus(2重)
+
+対象：商品名、単位、在庫数、発注点、カテゴリ「その他」入力欄（`ItemForm.jsx`）／数量、メモ（`StockRecord.jsx`）
+
+```jsx
+// Before（46番）
+className={`${fieldBase} transition-colors ${fieldErrors.name ? "" : "focus:border-[var(--blue)]!"}`}
+
+// After（47番）
+className={`${fieldBase} transition-colors hover:border-[var(--ink-soft)]! ${fieldErrors.name ? "" : "focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!"}`}
+```
+
+`var(--blue-light)`は既存トークン（`index.css`）にあるため新規追加なしでリング色に流用。hoverクラスは常時付与し、46番のエラー時分岐（エラー中はfocus用クラスを出さない）とは独立させた。この結果、バリデーションエラー中に入力欄をhoverすると枠が一時的にink-softへ変わる（focusクラス自体は出ないため、focusしても赤枠のまま）が、これは今回のhoverクラス独立方針どおりの挙動。
+
+### 2. 入荷・出荷ボタン → hover(枠変化)→選択(色変化)
+
+```jsx
+// Before（46番以前）：hoverなし、選択状態のみinline styleで色分け
+className={typeBase}
+style={type === "in" ? {...green...} : {...neutral...}}
+
+// After（47番）
+className={`${typeBase} transition-colors ${type === "in" ? "hover:border-[var(--green-dark)]!" : "hover:border-[var(--ink-soft)]!"}`}
+style={type === "in" ? {...green...} : {...neutral...}}
+```
+
+未選択時はhoverで枠のみ`var(--ink-soft)`に変化（背景は変えない）。選択中は45-2番と同じ「枠のみ一段階濃く」の考え方で、入荷ボタンは`var(--green-dark)`（既存の選択中文字色と同じ値を再利用）、出荷ボタンは`var(--blue-dark)`（同様に既存の選択中文字色を再利用）を使用し、背景・文字色は変えていない。
+
+**実装・動作確認済み（2026/08/09）：** lintエラーなし（既存の無関係な警告2件のみ）。Playwrightでデスクトップ（1600×1000）・モバイル（390×844）双方、各入力欄でrest→hover→focusの順に`border-color`・`box-shadow`を計測し、hoverでink-soft枠、focusで青枠＋`0 0 0 3px var(--blue-light)`のリングが付くことを確認。入荷・出荷ボタンは選択中・未選択どちらの状態でもhover前後で背景色が不変であることを確認。テキスト入力欄の`cursor`は`text`のまま変化なし。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか

@@ -81,7 +81,7 @@ function StockRecord() {
               setType("in");
               setError("");
             }}
-            className={typeBase}
+            className={`${typeBase} transition-colors ${type === "in" ? "hover:border-[var(--green-dark)]!" : "hover:border-[var(--ink-soft)]!"}`}
             style={
               type === "in"
                 ? { background: "var(--green-light)", borderColor: "var(--green)", color: "var(--green-dark)" }
@@ -99,7 +99,7 @@ function StockRecord() {
               setType("out");
               setError("");
             }}
-            className={typeBase}
+            className={`${typeBase} transition-colors ${type === "out" ? "hover:border-[var(--blue-dark)]!" : "hover:border-[var(--ink-soft)]!"}`}
             style={
               type === "out"
                 ? { background: "var(--blue-light)", borderColor: "var(--blue)", color: "var(--blue-dark)" }
@@ -135,7 +135,7 @@ function StockRecord() {
               inputMode="numeric"
               pattern="[0-9]*"
               autoComplete="off"
-              className="box-border w-[220px] rounded-[var(--r-md)] border-2 p-1.5 text-center text-[44px] font-black transition-colors focus:border-[var(--blue)]!"
+              className="box-border w-[220px] rounded-[var(--r-md)] border-2 p-1.5 text-center text-[44px] font-black transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!"
               style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
             />
             <button
@@ -156,7 +156,7 @@ function StockRecord() {
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
             placeholder="例：発注分の入荷"
-            className="box-border w-full rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[17px] transition-colors focus:border-[var(--blue)]!"
+            className="box-border w-full rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[17px] transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!"
             style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
           />
         </div>
