@@ -2518,6 +2518,58 @@ useEffect(() => {
 
 ---
 
+## 52. favicon・ヘッダーロゴのデザイン確定（一本書き家アイコン）
+
+**経緯：** Viteデフォルトのfaviconと`Header.jsx`の旧ロゴ（線画の「箱＋屋根線」アイコン、煙突なし）が、実際のアプリロゴ・ブランドイメージと不一致だったため、Canvaで生成したアイコン案をベースに、家アイコンをオリジナルのSVGパスとして確定した。
+
+### 経緯のポイント
+
+- Canva生成のアイコン画像（ラスター）は「形はそのまま活かしたいが、ラスターのままではSVG化できない」という制約があったため、画像の白い線画部分だけをマスク抽出し、`potrace`でベクタートレースする手法で、見た目を変えずに正確なSVGパスへ変換した。
+- favicon（実際のブラウザタブ表示・16px）とヘッダーロゴ（アプリ内表示・46px前後）は、視認性の要件が異なるため、**あえて別デザインとして管理する**方針とした。
+  - favicon：16pxでの視認性を最優先し、線を太らせて再トレースし、塗りつぶしではなく「白背景＋濃い青の太い一本書き」に変更（線画のまま最大限のコントラストを確保）
+  - ヘッダーロゴ：46px前後というある程度の大きさで表示されるため、より繊細な「グラデーション背景＋白い細い一本書き」を採用
+
+### favicon（`public/favicon.svg`）
+
+- 背景：白（`#ffffff`）、角丸`rx=20`相当
+- アイコン：濃い青（`--blue-dark`相当）の太い一本書き家シルエット（煙突付き）、塗りつぶし
+- 枠に対して約80%のサイズで中央配置
+- 線を太くした理由：16pxのブラウザタブサイズでは、細い線画は潰れて視認できなくなるため。元画像をいったん膨張処理（線を太く）してから再度ベクタートレースすることで、デザインの「一本書き」感を保ったまま視認性を確保した
+
+### ヘッダーロゴ（`Header.jsx`）
+
+```jsx
+// Before（旧ロゴ：線画の「箱＋屋根線」、煙突なし）
+<div
+  className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[var(--r-md)]"
+  style={{ background: "var(--blue)" }}
+>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <rect x="4" y="9" width="16" height="11" rx="2" stroke="white" strokeWidth="2" />
+    <path d="M4 9L12 4L20 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+</div>
+
+// After（52番で確定：一本書き・煙突付きの家シルエット、グラデーション背景）
+<div
+  className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[var(--r-md)]"
+  style={{ background: "linear-gradient(180deg, color-mix(in srgb, var(--blue-light) 50%, var(--blue) 50%), var(--blue-dark))" }}
+>
+  <svg width="39" height="35" viewBox="0 0 236.5 211" fill="none">
+    <path
+      fill="white"
+      d="M1235 2188 ... (一本書き家アイコンのパスデータ) ... 218 -170z"
+      transform="translate(-10.5,220) scale(0.1,-0.1)"
+    />
+  </svg>
+</div>
+```
+
+- グラデーション：`var(--blue-light)`と`var(--blue)`を50%ずつ混ぜた`color-mix()`を上端、`var(--blue-dark)`を下端に使用（詳しい調整経緯は本セクション以前の会話ログ参照。「薄すぎ→濃すぎ→中間」の順で3回試行し、最終的にこの組み合わせに確定）
+- favicon・ヘッダーロゴともに実装・視覚確認・lint確認済み、コミット・push済み（2026/08/09）
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか
