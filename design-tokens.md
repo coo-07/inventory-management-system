@@ -2385,6 +2385,57 @@ className="box-border min-h-12 w-full rounded-[var(--r-lg)] border-2 py-3 pr-4 p
 
 ---
 
+## 50. 商品グリッドの行数を「画面高さ」から自動計算（31-5番の考え方を縦方向にも拡張）
+
+**経緯：** 31-5番でResizeObserverを使い、CSSグリッドの実際の`gridTemplateColumns`から列数を実測している仕組みを、縦方向（1ページに表示する行数）にも拡張した。これまで1ページの行数は`3`固定だったため、画面が大きい端末では下に余白が余り、小さい端末では逆にスクロールが必要になっていた。
+
+対象ファイル：`src/components/ItemList.jsx`
+
+### 計算ロジック
+
+```jsx
+// カード1枚の高さ（49番で171.5pxに圧縮済み）とグリッドのgap-4（16px）
+const CARD_HEIGHT = 171.5;
+const GRID_GAP = 16;
+const ROW_HEIGHT = CARD_HEIGHT + GRID_GAP;
+// 固定ページネーションバーの実測高さ（py-3 24px + min-h-[44px] + border-t-2 2px = 70px）＋ gap-4ぶんの余白
+const BOTTOM_RESERVE = 70 + GRID_GAP;
+
+const measure = () => {
+  // 列数（31-5番と同じロジック）
+  const tracks = getComputedStyle(gridEl).gridTemplateColumns.split(" ").filter(Boolean);
+  setColumns(Math.max(1, tracks.length));
+
+  // 行数（今回追加）
+  const availableHeight = window.innerHeight - gridEl.getBoundingClientRect().top - BOTTOM_RESERVE;
+  const rawRows = Math.floor(availableHeight / ROW_HEIGHT);
+  setRows(Math.max(3, Math.min(4, rawRows)));
+};
+```
+
+`pageSize = columns * rows`として1ページの表示件数を決定し、`totalPages = Math.ceil(items.length / pageSize)`でページ数を再計算する。
+
+当初は下余白の基準にHome.jsxの`pb-36`（144px）をそのまま流用していたが、実際に固定表示される`Pagination`バーの高さを実測したところ70pxだったため、`70px + gap-4(16px)`＝86pxに変更した（`pb-36`はスクロール時の余白を広めに取るための値で、行数計算の基準としては過大だったため）。
+
+### リサイズ・ページ調整
+
+既存の列数測定用`ResizeObserver`に相乗りしつつ、グリッド自身の横幅が変わらず縦方向（ウィンドウの高さ）だけが変化するケースも拾えるよう、`window`の`resize`イベントリスナーも追加した。
+
+現在ページの調整は、既存の`const currentPage = Math.min(page, totalPages)`（レンダー毎に導出される値）がそのまま機能するため、追加コードは不要だった。リサイズで`totalPages`が現在の`page`より小さくなった場合は自動的に最終ページへクランプされ、`totalPages`が再び増えれば元々選択していたページ番号に戻る。
+
+### 4サイズでの実測結果
+
+| 端末（想定） | ビューポート | 実測列数×行数 | 目安との比較 |
+|---|---|---|---|
+| MacBook Air | 1440×900 | 7列×3行 | 目安「7列×3〜4行」の範囲内 |
+| iPad Pro 11（横向き） | 1194×834 | 5列×3行 | 目安「5列×4行」よりやや少（画面が低いぶん行数が1減） |
+| iPad Air（縦向き） | 820×1180 | 3列×4行 | 目安どおり一致 |
+| iPad mini（縦向き） | 768×1024 | 3列×3行 | 目安どおり一致 |
+
+**実装・動作確認済み（2026/08/09）：** lintエラーなし（既存の無関係な警告2件のみ）。Playwrightで上記4サイズの実測列数・行数・ページネーション件数を確認。ウィンドウをリアルタイムでリサイズ（例：1440×900 → 820×1180）した際に列数・行数・総ページ数が追従することを確認。2ページ目に移動した状態で幅を狭めて総ページ数が5ページに増える→さらに5ページ目へ移動→ウィンドウを1440×900に戻して総ページ数が2ページに減少、という操作でも、現在ページが自動的に最終ページ（2ページ目）へ調整されることを確認。端数（最終行が列数に満たない場合）でもカードの縮小・詰め込みは発生しないことを確認。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか
