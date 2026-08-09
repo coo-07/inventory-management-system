@@ -56,7 +56,7 @@ function Header() {
         <div className="flex items-center gap-3.5">
           <Link
             to="/"
-            className="flex items-center gap-3 -mx-2 -my-1 rounded-lg px-2 py-1 transition-colors hover:bg-[var(--border)]!"
+            className="flex items-center gap-3 -mx-2 -my-1 rounded-lg px-2 py-1 transition-colors hover:bg-[var(--bg)]!"
           >
             <div
               className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[var(--r-md)]"

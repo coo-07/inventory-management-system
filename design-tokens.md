@@ -2664,6 +2664,30 @@ useEffect(() => {
 
 **実装・動作確認済み（2026/08/09）：** Playwrightでタイトルリンクのhover前後の`background-color`を計測し、`rgba(0, 0, 0, 0)`（透明）→`oklch(0.9 0.01 260)`（`var(--border)`）に変化することを確認。アイコン（46×46px、位置不変）・タイトル文字・店舗名バッジのレイアウトが崩れていないこともスクリーンショットで確認。lintエラーなし（既存の無関係な警告2件のみ）。
 
+### 53-1. hover背景色を`var(--border)`から`var(--bg)`へ調整
+
+**経緯：** 53番で設定した`hover:bg-[var(--border)]!`について、楽天・Yahoo!など主要サイトのロゴhoverと見比べた結果、背景変化が強すぎるという指摘があった。44-1番の商品カード通常hoverと同じ薄さのトークン`var(--bg)`に差し替えて調整した。
+
+```jsx
+// Header.jsx タイトルリンク（53番→53-1番）
+// Before（53番）
+<Link
+  to="/"
+  className="flex items-center gap-3 -mx-2 -my-1 rounded-lg px-2 py-1 transition-colors hover:bg-[var(--border)]!"
+>
+
+// After（53-1番で確定）
+<Link
+  to="/"
+  className="flex items-center gap-3 -mx-2 -my-1 rounded-lg px-2 py-1 transition-colors hover:bg-[var(--bg)]!"
+>
+```
+
+- `-mx-2 -my-1`・`px-2 py-1`（クリック領域拡張）・レイアウトは53番から変更なし。hover背景色のトークンのみ差し替え。
+- 新規のハードコード色は追加せず、既存トークン`var(--bg)`をそのまま再利用。
+
+**実装・動作確認済み（2026/08/09）：** Playwrightでタイトルリンクのhover前後の`background-color`を計測し、`rgba(0, 0, 0, 0)`（透明）→`oklch(0.985 0.005 85)`（`var(--bg)`）に変化することを確認。アイコン（46×46px、位置不変）のレイアウトも崩れていないことを確認。lintエラーなし（既存の無関係な警告2件のみ）。
+
 ---
 
 ## 未決定・次回検討事項
