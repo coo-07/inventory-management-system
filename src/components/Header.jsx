@@ -56,7 +56,7 @@ function Header() {
         <div className="flex items-center gap-3.5">
           <div
             className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[var(--r-md)]"
-            style={{ background: "linear-gradient(180deg, var(--blue), var(--blue-dark))" }}
+            style={{ background: "linear-gradient(180deg, color-mix(in srgb, var(--blue-light) 50%, var(--blue) 50%), var(--blue-dark))" }}
           >
             <svg width="39" height="35" viewBox="0 0 236.5 211" fill="none">
               <path
