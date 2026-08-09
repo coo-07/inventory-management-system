@@ -2324,6 +2324,26 @@ style={type === "in" ? {...green...} : {...neutral...}}
 
 ---
 
+## 48. トップページ「商品を探す」欄への hover/focus 2段階化展開（47番の考え方の適用）
+
+**経緯：** 47番で登録・編集フォーム／入出荷記録画面の入力欄に実装した「hover(1重)→focus(2重リング)」を、トップページの商品検索欄（「商品を探す」）にも展開し、サイト全体でテキスト入力欄のhover/focus挙動を統一した。
+
+対象ファイル：`src/pages/Home.jsx`
+
+```jsx
+// Before（45番時点：focusのみ）
+className="box-border min-h-12 w-full rounded-[var(--r-lg)] border-2 py-3 pr-4 pl-[46px] text-[17px] transition-colors focus:border-[var(--blue)]!"
+
+// After（48番：47番と同じhover→focusの2段階に統一）
+className="box-border min-h-12 w-full rounded-[var(--r-lg)] border-2 py-3 pr-4 pl-[46px] text-[17px] transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!"
+```
+
+47番と同じトークン・数値（`var(--ink-soft)`、`var(--blue)`、`0 0 0 3px var(--blue-light)`）をそのまま再利用し、新規追加はなし。この検索欄にはバリデーションエラー表示がないため、47番のようなエラー時分岐は不要でhover/focusクラスとも無条件付与。
+
+**実装・動作確認済み（2026/08/09）：** lintエラーなし（既存の無関係な警告2件のみ）。Playwrightでデスクトップ（1600×1000）・モバイル（390×844）双方、rest→hover→focusの順に`border-color`・`box-shadow`を計測し、hoverでink-soft枠、focusで青枠＋`0 0 0 3px var(--blue-light)`のリングが付くことを確認。`cursor`は`text`のまま変化なし。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか

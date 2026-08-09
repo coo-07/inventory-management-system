@@ -79,7 +79,7 @@ function Home() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="商品名で検索"
-              className="box-border min-h-12 w-full rounded-[var(--r-lg)] border-2 py-3 pr-4 pl-[46px] text-[17px] transition-colors focus:border-[var(--blue)]!"
+              className="box-border min-h-12 w-full rounded-[var(--r-lg)] border-2 py-3 pr-4 pl-[46px] text-[17px] transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!"
               style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
             />
           </div>
