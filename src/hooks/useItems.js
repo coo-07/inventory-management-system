@@ -1,21 +1,62 @@
 import { useState, useEffect, useCallback } from "react";
-import { loadItems, saveItems, loadLogs, saveLogs, seedIfEmpty } from "../services/localStorage";
-import { sampleItems, sampleLogs } from "../data/sampleData";
+import { saveItems, loadLogs, saveLogs } from "../services/localStorage";
+import { supabase } from "../services/supabaseClient";
+
+/**
+ * SupabaseのitemsテーブルはスネークケースなのでcamelCaseに変換する。
+ */
+function toCamelItem(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    stock: row.stock,
+    threshold: row.threshold,
+    unit: row.unit,
+    imageUrl: row.image_url,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 
 /**
  * 商品データと入出荷履歴のCRUD処理をまとめて管理するフック。
  * ページコンポーネントはこのフックを呼び出すだけでよく、
  * LocalStorageへの読み書きを直接書かない。
- * 将来API化する際は、この中身だけをfetch呼び出しに差し替えればよい。
+ * 商品一覧の読み込みはSupabase（items テーブル）から行う。
+ * 登録・編集・削除・入出荷記録は引き続きLocalStorageを使用する（未移行）。
  */
 export function useItems() {
   const [items, setItems] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    seedIfEmpty(sampleItems, sampleLogs);
-    setItems(loadItems());
+    let cancelled = false;
+
+    async function fetchItems() {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("items")
+        .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at");
+
+      if (cancelled) return;
+
+      if (error) {
+        console.error("商品一覧の取得に失敗しました", error);
+        setItems([]);
+      } else {
+        setItems((data ?? []).map(toCamelItem));
+      }
+      setLoading(false);
+    }
+
+    fetchItems();
     setLogs(loadLogs());
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const getItemById = useCallback((id) => items.find((item) => item.id === id), [items]);
@@ -135,5 +176,5 @@ export function useItems() {
     [items]
   );
 
-  return { items, logs, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock, loadTestData, seedTestLogs };
+  return { items, logs, loading, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock, loadTestData, seedTestLogs };
 }
