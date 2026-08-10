@@ -29,7 +29,7 @@ function ItemForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const showToast = useToast();
-  const { getItemById, addItem, updateItem } = useItems();
+  const { loading, getItemById, addItem, updateItem } = useItems();
   const isEdit = Boolean(id);
   const existing = isEdit ? getItemById(id) : null;
 
@@ -57,6 +57,14 @@ function ItemForm() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit, existing?.id]);
+
+  if (isEdit && loading) {
+    return (
+      <div className="mx-auto max-w-[640px] px-6 py-5">
+        <p style={{ color: "var(--ink-soft)" }}>読み込み中...</p>
+      </div>
+    );
+  }
 
   if (isEdit && !existing) {
     return (

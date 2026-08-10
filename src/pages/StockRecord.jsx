@@ -15,7 +15,7 @@ function StockRecord() {
   const { id } = useParams();
   const navigate = useNavigate();
   const showToast = useToast();
-  const { getItemById, recordStock } = useItems();
+  const { loading, getItemById, recordStock } = useItems();
   const item = getItemById(id);
 
   const [type, setType] = useState("in");
@@ -23,6 +23,14 @@ function StockRecord() {
   const [memo, setMemo] = useState("");
   const [error, setError] = useState("");
   const [recordLoading, setRecordLoading] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-[520px] px-6 py-5">
+        <p style={{ color: "var(--ink-soft)" }}>読み込み中...</p>
+      </div>
+    );
+  }
 
   if (!item) {
     return (

@@ -12,7 +12,7 @@ const BOTTOM_RESERVE = 70 + GRID_GAP;
 /**
  * 商品一覧のグリッド表示。列数・行数に応じてページサイズを決め、ページ送りする。
  */
-function ItemList({ items, onSelect, hasAnyItems }) {
+function ItemList({ items, onSelect, hasAnyItems, loading }) {
   const [gridEl, setGridEl] = useState(null);
   const [columns, setColumns] = useState(4);
   const [rows, setRows] = useState(3);
@@ -49,6 +49,15 @@ function ItemList({ items, onSelect, hasAnyItems }) {
   }, [items]);
 
   if (items.length === 0) {
+    if (loading) {
+      return (
+        <div className="px-5 py-24 text-center">
+          <p className="text-[20px] font-bold" style={{ color: "var(--ink)" }}>
+            読み込み中...
+          </p>
+        </div>
+      );
+    }
     return (
       <div className="px-5 py-24 text-center">
         <p className="text-[20px] font-bold" style={{ color: "var(--ink)" }}>

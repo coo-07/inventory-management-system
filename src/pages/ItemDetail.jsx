@@ -15,7 +15,7 @@ function ItemDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const showToast = useToast();
-  const { items, getItemById, getLogsByItemId, deleteItem, seedTestLogs } = useItems();
+  const { items, loading, getItemById, getLogsByItemId, deleteItem, seedTestLogs } = useItems();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -28,6 +28,14 @@ function ItemDetail() {
     if (titleRef.current) observer.observe(titleRef.current);
     return () => observer.disconnect();
   }, [item?.id]);
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-[720px] px-6 py-5">
+        <p style={{ color: "var(--ink-soft)" }}>読み込み中...</p>
+      </div>
+    );
+  }
 
   if (!item) {
     return (

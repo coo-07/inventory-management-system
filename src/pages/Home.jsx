@@ -8,7 +8,7 @@ import ItemList from "../components/ItemList";
 import Button from "../components/Button";
 
 function Home() {
-  const { items, loadTestData } = useItems();
+  const { items, loading, loadTestData } = useItems();
   const navigate = useNavigate();
   const showToast = useToast();
   const [search, setSearch] = useState("");
@@ -126,7 +126,12 @@ function Home() {
         </div>
       </div>
 
-      <ItemList items={filteredItems} onSelect={(id) => navigate(`/items/${id}`)} hasAnyItems={items.length > 0} />
+      <ItemList
+        items={filteredItems}
+        onSelect={(id) => navigate(`/items/${id}`)}
+        hasAnyItems={items.length > 0}
+        loading={loading}
+      />
     </div>
   );
 }
