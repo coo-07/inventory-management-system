@@ -2727,6 +2727,18 @@ useEffect(() => {
 
 ---
 
+## 57. 商品削除（deleteItem）をSupabase化
+
+**経緯：** `supabase-migration`ブランチでのバックエンド移行の一環（56番の続き）。`useItems.js`の`deleteItem`をLocalStorageからの削除から`items`テーブルへの`delete().eq("id", id)`に変更。
+
+- 非同期関数化し、戻り値を`addItem`/`updateItem`と同じ`{ ok: true }` / `{ ok: false, message }`パターンに統一。
+- 成功時のみローカルの`items`/`logs`stateから対象を除去する（先にSupabase側の削除が確定してからUIを更新する順序）。
+- `ItemDetail.jsx`の`handleConfirmDelete`は`deleteItem`を`await`し、失敗時はダイアログを閉じた上でエラートーストを表示して画面遷移しない。
+
+**実装・動作確認済み（2026/08/10）：** Playwrightで登録済み商品（id:2）を削除操作。Supabase側`items`テーブルから該当行が消え、残り1件（id:1）のみになったことをクエリで確認。画面側もカードが消え、ヘッダー件数が「すべて1件」に戻ることを確認。lintエラーなし（既存の無関係な警告2件のみ）。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか

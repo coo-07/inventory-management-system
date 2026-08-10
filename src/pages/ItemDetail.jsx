@@ -55,9 +55,14 @@ function ItemDetail() {
   const handleConfirmDelete = () => {
     if (deleteLoading) return;
     setDeleteLoading(true);
-    setTimeout(() => {
-      deleteItem(id);
+    setTimeout(async () => {
+      const result = await deleteItem(id);
       setDeleteLoading(false);
+      if (!result.ok) {
+        setDeleteOpen(false);
+        showToast("❌ " + result.message);
+        return;
+      }
       setDeleteOpen(false);
       showToast("✅ 削除しました");
       navigate("/");

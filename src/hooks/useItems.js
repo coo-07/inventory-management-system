@@ -133,17 +133,17 @@ export function useItems() {
     return { ok: true, item: updatedItem };
   }, []);
 
-  const deleteItem = useCallback((id) => {
-    setItems((prev) => {
-      const next = prev.filter((item) => item.id !== id);
-      saveItems(next);
-      return next;
-    });
-    setLogs((prev) => {
-      const next = prev.filter((log) => log.itemId !== id);
-      saveLogs(next);
-      return next;
-    });
+  const deleteItem = useCallback(async (id) => {
+    const { error } = await supabase.from("items").delete().eq("id", id);
+
+    if (error) {
+      console.error("商品の削除に失敗しました", error);
+      return { ok: false, message: "商品の削除に失敗しました" };
+    }
+
+    setItems((prev) => prev.filter((item) => item.id !== id));
+    setLogs((prev) => prev.filter((log) => log.itemId !== id));
+    return { ok: true };
   }, []);
 
   /**
