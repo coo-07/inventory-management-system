@@ -135,8 +135,12 @@ function ItemForm() {
         imageUrl: form.imageUrl,
       };
       if (isEdit) {
-        updateItem(id, saved);
+        const result = await updateItem(id, saved);
         setSaveLoading(false);
+        if (!result.ok) {
+          showToast("❌ " + result.message);
+          return;
+        }
         showToast("✅ 保存しました");
         navigate(`/items/${id}`);
       } else {

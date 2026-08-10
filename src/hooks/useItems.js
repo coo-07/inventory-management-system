@@ -107,14 +107,30 @@ export function useItems() {
     return { ok: true, item: newItem };
   }, []);
 
-  const updateItem = useCallback((id, data) => {
-    setItems((prev) => {
-      const next = prev.map((item) =>
-        item.id === id ? { ...item, ...data, updatedAt: new Date().toISOString() } : item
-      );
-      saveItems(next);
-      return next;
-    });
+  const updateItem = useCallback(async (id, data) => {
+    const { data: updated, error } = await supabase
+      .from("items")
+      .update({
+        name: data.name,
+        category: data.category,
+        stock: data.stock,
+        threshold: data.threshold,
+        unit: data.unit,
+        image_url: data.imageUrl || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at")
+      .single();
+
+    if (error) {
+      console.error("商品の更新に失敗しました", error);
+      return { ok: false, message: "商品の更新に失敗しました" };
+    }
+
+    const updatedItem = toCamelItem(updated);
+    setItems((prev) => prev.map((item) => (item.id === id ? updatedItem : item)));
+    return { ok: true, item: updatedItem };
   }, []);
 
   const deleteItem = useCallback((id) => {

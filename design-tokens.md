@@ -2715,6 +2715,18 @@ useEffect(() => {
 
 ---
 
+## 56. 商品編集（updateItem）をSupabase化
+
+**経緯：** `supabase-migration`ブランチでのバックエンド移行の一環（55番の続き）。`useItems.js`の`updateItem`をLocalStorageへの書き込みから`items`テーブルへの`update`（`.eq("id", id)`）に変更。
+
+- `updated_at`はアプリ側で明示的に現在時刻をセットして送信（DB側の自動更新トリガーに依存しない）。
+- `addItem`と同様に非同期関数化し、戻り値を`{ ok: true, item }` / `{ ok: false, message }`に統一。
+- `ItemForm.jsx`の編集分岐も`addItem`と同じパターンで`await`＋失敗時トースト表示に変更。
+
+**実装・動作確認済み（2026/08/10）：** Playwrightで登録済み商品（id:2）を編集し、商品名「Playwright編集後商品」・在庫を2に変更。Supabase側`items`テーブルの該当行の`name`・`stock`・`updated_at`が更新されたことをクエリで確認。詳細画面にも即座に反映。lintエラーなし（既存の無関係な警告2件のみ）。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか
