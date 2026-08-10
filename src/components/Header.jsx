@@ -3,6 +3,7 @@ import { Link, useLocation, useMatch, useNavigate, useSearchParams } from "react
 import { getStockStatus } from "../utils/stockStatus";
 import { useItems } from "../hooks/useItems";
 import { useShop } from "../hooks/useShop";
+import { useAuth } from "../hooks/useAuth";
 
 function useBackLink() {
   const isDetail = useMatch("/items/:id");
@@ -11,11 +12,11 @@ function useBackLink() {
   const isRecord = useMatch("/items/:id/record");
   const isShop = useMatch("/shop");
 
-  if (isDetail) return { label: "一覧へ戻る", to: "/" };
-  if (isNew) return { label: "戻る", to: "/" };
+  if (isDetail) return { label: "一覧へ戻る", to: "/items" };
+  if (isNew) return { label: "戻る", to: "/items" };
   if (isEdit) return { label: "戻る", to: `/items/${isEdit.params.id}` };
   if (isRecord) return { label: "商品詳細へ戻る", to: `/items/${isRecord.params.id}` };
-  if (isShop) return { label: "一覧へ戻る", to: "/" };
+  if (isShop) return { label: "一覧へ戻る", to: "/items" };
   return null;
 }
 
@@ -26,16 +27,22 @@ function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const backLink = useBackLink();
-  const isHome = useMatch("/");
+  const isHome = useMatch("/items");
   const [searchParams, setSearchParams] = useSearchParams();
 
   const { items, logs, refetch: refetchItems } = useItems();
   const { shop, refetch: refetchShop } = useShop();
+  const { role, logout } = useAuth();
 
   useEffect(() => {
     refetchItems();
     refetchShop();
   }, [location.pathname, refetchItems, refetchShop]);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
 
   const outCount = items.filter((i) => getStockStatus(i.stock, i.threshold).isOut).length;
   const lowCount = items.filter((i) => getStockStatus(i.stock, i.threshold).isLow).length;
@@ -95,71 +102,83 @@ function Header() {
           </button>
         </div>
 
-        {isHome && items.length > 0 && (
-          <section aria-label="現在の状況" className="flex flex-wrap items-center gap-2.5">
-            <span className="text-[13px] font-bold whitespace-nowrap" style={{ color: "var(--ink-soft)" }}>
-              現在の状況
-            </span>
+        <div className="flex flex-wrap items-center gap-3.5">
+          {isHome && items.length > 0 && (
+            <section aria-label="現在の状況" className="flex flex-wrap items-center gap-2.5">
+              <span className="text-[13px] font-bold whitespace-nowrap" style={{ color: "var(--ink-soft)" }}>
+                現在の状況
+              </span>
+              <button
+                type="button"
+                onClick={() => setFilter("all")}
+                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors ${activeFilter === "all" ? "hover:bg-[var(--blue-dark)]! hover:border-[var(--blue-dark)]!" : "hover:border-[var(--ink-soft)]! hover:bg-[var(--bg)]!"}`}
+                style={
+                  activeFilter === "all"
+                    ? { background: "var(--blue)", color: "white", borderColor: "var(--blue)" }
+                    : { background: "transparent", color: "var(--ink-soft)", borderColor: "transparent" }
+                }
+              >
+                すべて {items.length}件
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilter("out")}
+                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors ${activeFilter === "out" ? "hover:bg-[#DC2626]! hover:border-[#DC2626]!" : "hover:border-[#DC2626]! hover:bg-[#FECACA]!"}`}
+                style={
+                  activeFilter === "out"
+                    ? { background: "var(--red)", color: "white", borderColor: "var(--red)" }
+                    : { background: "var(--red-light)", color: "var(--red)", borderColor: "transparent" }
+                }
+              >
+                <span aria-hidden="true">✕</span>
+                在庫切れ {outCount}件
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilter("low")}
+                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors ${activeFilter === "low" ? "hover:bg-[var(--orange-dark)]! hover:border-[var(--orange-dark)]!" : "hover:border-[var(--orange-dark)]! hover:bg-[#FED7AA]!"}`}
+                style={
+                  activeFilter === "low"
+                    ? { background: "var(--orange)", color: "white", borderColor: "var(--orange)" }
+                    : { background: "var(--orange-light)", color: "var(--orange-dark)", borderColor: "transparent" }
+                }
+              >
+                <span aria-hidden="true">⚠</span>
+                在庫少 {lowCount}件
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilter("available")}
+                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors ${activeFilter === "available" ? "hover:bg-[var(--ink)]! hover:border-[var(--ink)]!" : "hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!"}`}
+                style={
+                  activeFilter === "available"
+                    ? { background: "var(--ink-soft)", color: "white", borderColor: "var(--ink-soft)" }
+                    : { background: "var(--bg)", color: "var(--ink-soft)", borderColor: "transparent" }
+                }
+              >
+                在庫あり {availableCount}件
+              </button>
+              <span className="mx-1 h-4 w-px" style={{ background: "var(--border)" }} aria-hidden="true" />
+              <span
+                className="inline-flex items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap"
+                style={{ background: "var(--bg)", color: "var(--ink)", borderColor: "transparent" }}
+              >
+                <span aria-hidden="true">📦</span>
+                入出荷 {todayCount}件
+              </span>
+            </section>
+          )}
+          {role && (
             <button
               type="button"
-              onClick={() => setFilter("all")}
-              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors ${activeFilter === "all" ? "hover:bg-[var(--blue-dark)]! hover:border-[var(--blue-dark)]!" : "hover:border-[var(--ink-soft)]! hover:bg-[var(--bg)]!"}`}
-              style={
-                activeFilter === "all"
-                  ? { background: "var(--blue)", color: "white", borderColor: "var(--blue)" }
-                  : { background: "transparent", color: "var(--ink-soft)", borderColor: "transparent" }
-              }
+              onClick={handleLogout}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors hover:border-[var(--red)]! hover:bg-[var(--red-light)]! hover:text-[var(--red)]!"
+              style={{ background: "var(--surface)", color: "var(--ink-soft)", borderColor: "var(--border)" }}
             >
-              すべて {items.length}件
+              ログアウト
             </button>
-            <button
-              type="button"
-              onClick={() => setFilter("out")}
-              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors ${activeFilter === "out" ? "hover:bg-[#DC2626]! hover:border-[#DC2626]!" : "hover:border-[#DC2626]! hover:bg-[#FECACA]!"}`}
-              style={
-                activeFilter === "out"
-                  ? { background: "var(--red)", color: "white", borderColor: "var(--red)" }
-                  : { background: "var(--red-light)", color: "var(--red)", borderColor: "transparent" }
-              }
-            >
-              <span aria-hidden="true">✕</span>
-              在庫切れ {outCount}件
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilter("low")}
-              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors ${activeFilter === "low" ? "hover:bg-[var(--orange-dark)]! hover:border-[var(--orange-dark)]!" : "hover:border-[var(--orange-dark)]! hover:bg-[#FED7AA]!"}`}
-              style={
-                activeFilter === "low"
-                  ? { background: "var(--orange)", color: "white", borderColor: "var(--orange)" }
-                  : { background: "var(--orange-light)", color: "var(--orange-dark)", borderColor: "transparent" }
-              }
-            >
-              <span aria-hidden="true">⚠</span>
-              在庫少 {lowCount}件
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilter("available")}
-              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors ${activeFilter === "available" ? "hover:bg-[var(--ink)]! hover:border-[var(--ink)]!" : "hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!"}`}
-              style={
-                activeFilter === "available"
-                  ? { background: "var(--ink-soft)", color: "white", borderColor: "var(--ink-soft)" }
-                  : { background: "var(--bg)", color: "var(--ink-soft)", borderColor: "transparent" }
-              }
-            >
-              在庫あり {availableCount}件
-            </button>
-            <span className="mx-1 h-4 w-px" style={{ background: "var(--border)" }} aria-hidden="true" />
-            <span
-              className="inline-flex items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap"
-              style={{ background: "var(--bg)", color: "var(--ink)", borderColor: "transparent" }}
-            >
-              <span aria-hidden="true">📦</span>
-              入出荷 {todayCount}件
-            </span>
-          </section>
-        )}
+          )}
+        </div>
       </div>
 
       {backLink && (

@@ -39,7 +39,7 @@ function Shop() {
         return;
       }
       showToast("✅ 保存しました");
-      navigate("/");
+      navigate("/items");
     }, 1000);
   };
 

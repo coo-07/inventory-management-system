@@ -41,7 +41,7 @@ function ItemDetail() {
     return (
       <div className="mx-auto max-w-[720px] px-6 py-5">
         <p style={{ color: "var(--ink-soft)" }}>商品が見つかりません</p>
-        <Link to="/" className="mt-2 inline-block text-sm underline" style={{ color: "var(--ink)" }}>
+        <Link to="/items" className="mt-2 inline-block text-sm underline" style={{ color: "var(--ink)" }}>
           一覧へ戻る
         </Link>
       </div>
@@ -73,7 +73,7 @@ function ItemDetail() {
       }
       setDeleteOpen(false);
       showToast("✅ 削除しました");
-      navigate("/");
+      navigate("/items");
     }, 1000);
   };
 

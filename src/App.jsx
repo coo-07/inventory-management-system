@@ -1,6 +1,11 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ToastProvider } from "./context/ToastContext";
 import Header from "./components/Header";
+import RequireAuth from "./components/RequireAuth";
+import RoleSelect from "./pages/RoleSelect";
+import AdminLogin from "./pages/AdminLogin";
+import StaffLogin from "./pages/StaffLogin";
+import Tanaoroshi from "./pages/Tanaoroshi";
 import Home from "./pages/Home";
 import ItemForm from "./pages/ItemForm";
 import ItemDetail from "./pages/ItemDetail";
@@ -15,12 +20,58 @@ function App() {
         <div className="min-h-screen" style={{ background: "var(--bg)", color: "var(--ink)" }}>
           <Header />
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/items/new" element={<ItemForm />} />
-            <Route path="/items/:id" element={<ItemDetail />} />
-            <Route path="/items/:id/edit" element={<ItemForm />} />
-            <Route path="/items/:id/record" element={<StockRecord />} />
-            <Route path="/shop" element={<Shop />} />
+            <Route path="/" element={<RoleSelect />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/staff-login" element={<StaffLogin />} />
+            <Route path="/tanaoroshi" element={<Tanaoroshi />} />
+            <Route
+              path="/items"
+              element={
+                <RequireAuth>
+                  <Home />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/items/new"
+              element={
+                <RequireAuth>
+                  <ItemForm />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/items/:id"
+              element={
+                <RequireAuth>
+                  <ItemDetail />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/items/:id/edit"
+              element={
+                <RequireAuth>
+                  <ItemForm />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/items/:id/record"
+              element={
+                <RequireAuth>
+                  <StockRecord />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/shop"
+              element={
+                <RequireAuth>
+                  <Shop />
+                </RequireAuth>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>

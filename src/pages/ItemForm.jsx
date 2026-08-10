@@ -114,7 +114,7 @@ function ItemForm() {
   if (fieldErrors.threshold)
     errorSummaryItems.push({ key: "threshold", label: `発注点：${fieldErrors.threshold}`, ref: thresholdBoxRef });
 
-  const handleCancel = () => navigate(isEdit ? `/items/${id}` : "/");
+  const handleCancel = () => navigate(isEdit ? `/items/${id}` : "/items");
 
   const handleSubmit = () => {
     if (saveLoading) return;
@@ -159,7 +159,7 @@ function ItemForm() {
           return;
         }
         showToast("✅ 保存しました");
-        navigate("/");
+        navigate("/items");
       }
     }, 1000);
   };
