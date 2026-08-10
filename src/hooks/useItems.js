@@ -188,7 +188,7 @@ export function useItems() {
    * 出荷時に現在庫を超える場合はエラーを返す。
    */
   const recordStock = useCallback(
-    (id, type, quantity, memo) => {
+    async (id, type, quantity, memo) => {
       const item = items.find((i) => i.id === id);
       if (!item) return { ok: false, message: "商品が見つかりません" };
 
@@ -199,28 +199,32 @@ export function useItems() {
       const nextStock = type === "in" ? item.stock + quantity : item.stock - quantity;
       const now = new Date().toISOString();
 
-      setItems((prev) => {
-        const next = prev.map((i) =>
-          i.id === id ? { ...i, stock: nextStock, updatedAt: now } : i
-        );
-        saveItems(next);
-        return next;
-      });
+      const { data: updatedItem, error: itemError } = await supabase
+        .from("items")
+        .update({ stock: nextStock, updated_at: now })
+        .eq("id", id)
+        .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at")
+        .single();
 
-      setLogs((prev) => {
-        const newLog = {
-          id: crypto.randomUUID(),
-          itemId: id,
-          type,
-          quantity,
-          memo,
-          afterStock: nextStock,
-          createdAt: now,
-        };
-        const next = [...prev, newLog];
-        saveLogs(next);
-        return next;
-      });
+      if (itemError) {
+        console.error("在庫の更新に失敗しました", itemError);
+        return { ok: false, message: "在庫の更新に失敗しました" };
+      }
+
+      setItems((prev) => prev.map((i) => (i.id === id ? toCamelItem(updatedItem) : i)));
+
+      const { data: insertedLog, error: logError } = await supabase
+        .from("stock_logs")
+        .insert({ item_id: id, type, quantity, memo, after_stock: nextStock })
+        .select("id,item_id,type,quantity,memo,after_stock,created_at")
+        .single();
+
+      if (logError) {
+        console.error("入出荷履歴の記録に失敗しました", logError);
+        return { ok: false, message: "在庫は更新されましたが、履歴の記録に失敗しました" };
+      }
+
+      setLogs((prev) => [...prev, toCamelLog(insertedLog)]);
 
       return { ok: true };
     },

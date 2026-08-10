@@ -2739,6 +2739,20 @@ useEffect(() => {
 
 ---
 
+## 58. 入出荷記録（recordStock）をSupabase化
+
+**経緯：** `supabase-migration`ブランチでのバックエンド移行の一環（57番の続き）。これで登録・編集・削除・入出荷記録の全CRUDがSupabase化された。`useItems.js`の`recordStock`は、①`items`テーブルの`stock`更新と②`stock_logs`テーブルへの履歴`insert`の2処理をセットで行う。
+
+- 処理順序：先に`items.stock`を更新→成功したらローカルstateに反映→続けて`stock_logs`に`insert`（`item_id`・`type`・`quantity`・`memo`・`after_stock`。`created_at`はDBのデフォルトに委ねる）→成功したらローカルの`logs`stateに追加。
+- 在庫更新は成功したが履歴insertが失敗した場合、在庫のstateは更新済みのまま`{ ok: false, message: "在庫は更新されましたが、履歴の記録に失敗しました" }`を返す。2つの書き込みをDBトランザクションで束ねているわけではない点は既知の制約として残る（将来的にはSupabaseのRPC/ストアドファンクション化が望ましい）。
+- 呼び出し側`StockRecord.jsx`の`handleSubmit`は`recordStock`を`await`するよう変更。
+
+**実装・動作確認済み（2026/08/10）：** Playwrightで商品（id:1）に入荷5個（メモ「Playwright入出荷テスト」）を記録。Supabase側`items.stock`が10→15に更新され、`stock_logs`に`{item_id:1, type:"in", quantity:5, after_stock:15}`の行が追加されたことをクエリで確認。詳細画面の在庫数・入出荷履歴にも即座に反映。lintエラーなし（既存の無関係な警告2件のみ）。
+
+これでitems/stock_logsの読み込み・登録・編集・削除・入出荷記録のすべてがSupabase化された（店舗情報`shop`は対象外のままLocalStorage）。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか

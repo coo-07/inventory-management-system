@@ -47,8 +47,8 @@ function StockRecord() {
   const handleSubmit = () => {
     if (recordLoading) return;
     setRecordLoading(true);
-    setTimeout(() => {
-      const result = recordStock(id, type, Number(qty) || 0, memo);
+    setTimeout(async () => {
+      const result = await recordStock(id, type, Number(qty) || 0, memo);
       setRecordLoading(false);
       if (!result.ok) {
         setError(result.message);
