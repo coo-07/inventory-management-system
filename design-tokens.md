@@ -2703,6 +2703,18 @@ useEffect(() => {
 
 ---
 
+## 55. 商品登録（addItem）をSupabase化
+
+**経緯：** `supabase-migration`ブランチでのバックエンド移行の一環（54番の続き）。`useItems.js`の`addItem`をLocalStorageへの書き込みから`items`テーブルへの`insert`に変更。
+
+- `id`はSupabase側が自動採番（integer）するため、クライアント側での`crypto.randomUUID()`生成をやめ、`insert().select().single()`で返ってきた行を`toCamelItem()`でcamelCase変換してからstateに追加する。
+- `addItem`は非同期関数に変更（Promiseを返す）。戻り値は`recordStock`と同じ形式に揃え、成功時`{ ok: true, item }`・失敗時`{ ok: false, message }`。
+- 呼び出し側の`ItemForm.jsx`は`addItem(saved)`を`await`するように変更し、失敗時はトーストでエラーメッセージを表示して画面遷移しない（成功時のみ`navigate("/")`）。編集（`updateItem`）側は今回未移行のため呼び出し方は変更なし。
+
+**実装・動作確認済み（2026/08/10）：** Playwrightで商品登録フォームから「Playwrightテスト商品」（文房具・在庫7）を登録。Supabase側`items`テーブルに`id:2`で新規行が追加されたことをクエリで確認。画面側もカードが即座に2件表示に増え、ヘッダー件数（すべて2件・在庫あり2件）も一致。lintエラーなし（既存の無関係な警告2件のみ）。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか

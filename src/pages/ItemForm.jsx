@@ -123,7 +123,7 @@ function ItemForm() {
       return;
     }
     setSaveLoading(true);
-    setTimeout(() => {
+    setTimeout(async () => {
       const finalCategory =
         form.categorySelect === "その他" ? form.categoryOther.trim() || "その他" : form.categorySelect;
       const saved = {
@@ -134,13 +134,18 @@ function ItemForm() {
         unit: form.unit,
         imageUrl: form.imageUrl,
       };
-      setSaveLoading(false);
       if (isEdit) {
         updateItem(id, saved);
+        setSaveLoading(false);
         showToast("✅ 保存しました");
         navigate(`/items/${id}`);
       } else {
-        addItem(saved);
+        const result = await addItem(saved);
+        setSaveLoading(false);
+        if (!result.ok) {
+          showToast("❌ " + result.message);
+          return;
+        }
         showToast("✅ 保存しました");
         navigate("/");
       }

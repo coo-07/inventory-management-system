@@ -83,15 +83,28 @@ export function useItems() {
 
   const getItemById = useCallback((id) => items.find((item) => item.id === id), [items]);
 
-  const addItem = useCallback((data) => {
-    const now = new Date().toISOString();
-    const newItem = { ...data, id: crypto.randomUUID(), createdAt: now, updatedAt: now };
-    setItems((prev) => {
-      const next = [...prev, newItem];
-      saveItems(next);
-      return next;
-    });
-    return newItem;
+  const addItem = useCallback(async (data) => {
+    const { data: inserted, error } = await supabase
+      .from("items")
+      .insert({
+        name: data.name,
+        category: data.category,
+        stock: data.stock,
+        threshold: data.threshold,
+        unit: data.unit,
+        image_url: data.imageUrl || null,
+      })
+      .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at")
+      .single();
+
+    if (error) {
+      console.error("商品の登録に失敗しました", error);
+      return { ok: false, message: "商品の登録に失敗しました" };
+    }
+
+    const newItem = toCamelItem(inserted);
+    setItems((prev) => [...prev, newItem]);
+    return { ok: true, item: newItem };
   }, []);
 
   const updateItem = useCallback((id, data) => {
