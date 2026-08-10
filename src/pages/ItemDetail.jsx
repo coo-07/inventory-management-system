@@ -197,7 +197,13 @@ function ItemDetail() {
       <ConfirmDialog
         open={deleteOpen}
         title="本当に削除しますか？"
-        message={`「${item.name}」を削除します。この操作は取り消せません。`}
+        message={
+          <>
+            「{item.name}」を削除します。
+            <br />
+            この操作は取り消せません。
+          </>
+        }
         onCancel={() => setDeleteOpen(false)}
         onConfirm={handleConfirmDelete}
         loading={deleteLoading}
