@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link, useLocation, useMatch, useNavigate, useSearchParams } from "react-router-dom";
-import { loadShop } from "../services/localStorage";
 import { getStockStatus } from "../utils/stockStatus";
 import { useItems } from "../hooks/useItems";
+import { useShop } from "../hooks/useShop";
 
 function useBackLink() {
   const isDetail = useMatch("/items/:id");
@@ -29,13 +29,13 @@ function Header() {
   const isHome = useMatch("/");
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const { items, logs, refetch } = useItems();
-  const [shop, setShop] = useState(loadShop());
+  const { items, logs, refetch: refetchItems } = useItems();
+  const { shop, refetch: refetchShop } = useShop();
 
   useEffect(() => {
-    refetch();
-    setShop(loadShop());
-  }, [location.pathname, refetch]);
+    refetchItems();
+    refetchShop();
+  }, [location.pathname, refetchItems, refetchShop]);
 
   const outCount = items.filter((i) => getStockStatus(i.stock, i.threshold).isOut).length;
   const lowCount = items.filter((i) => getStockStatus(i.stock, i.threshold).isLow).length;
@@ -90,7 +90,7 @@ function Header() {
             style={{ color: "var(--ink-soft)" }}
           >
             <span>🏪</span>
-            {shop.name}
+            {shop && (shop.name || "店舗名を設定してください")}
             <span aria-hidden="true">›</span>
           </button>
         </div>

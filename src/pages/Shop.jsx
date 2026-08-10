@@ -4,24 +4,40 @@ import { useShop } from "../hooks/useShop";
 import { useToast } from "../context/ToastContext";
 import Button from "../components/Button";
 
+const emptyForm = { name: "", address: "", phone: "" };
+
 function Shop() {
-  const { shop, updateShop } = useShop();
+  const { shop, loading, updateShop } = useShop();
   const navigate = useNavigate();
   const showToast = useToast();
-  const [form, setForm] = useState(shop);
+  const [form, setForm] = useState(shop || emptyForm);
   const [saveLoading, setSaveLoading] = useState(false);
 
-  useEffect(() => setForm(shop), [shop]);
+  useEffect(() => {
+    if (shop) setForm(shop);
+  }, [shop]);
 
   const fieldClass = "box-border w-full rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[17px]";
   const fieldStyle = { borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" };
 
+  if (loading || !shop) {
+    return (
+      <div className="mx-auto max-w-[520px] px-6 py-5">
+        <p style={{ color: "var(--ink-soft)" }}>読み込み中...</p>
+      </div>
+    );
+  }
+
   const handleSubmit = () => {
     if (saveLoading) return;
     setSaveLoading(true);
-    setTimeout(() => {
-      updateShop({ ...form, name: form.name.trim() || shop.name });
+    setTimeout(async () => {
+      const result = await updateShop({ ...form, name: form.name.trim() || shop.name });
       setSaveLoading(false);
+      if (!result.ok) {
+        showToast("❌ " + result.message);
+        return;
+      }
       showToast("✅ 保存しました");
       navigate("/");
     }, 1000);

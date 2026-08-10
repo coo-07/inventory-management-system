@@ -2777,11 +2777,29 @@ useEffect(() => {
 
 ---
 
+## 61. 店舗情報（shop_info）をSupabase化
+
+**経緯：** `supabase-migration`ブランチでの移行の総仕上げとして、これまでLocalStorageで管理していた店舗情報（店舗名・住所・電話番号）をSupabaseの`shop_info`テーブルに置き換えた。`items`/`stock_logs`とは異なり、`shop_info`は常に1件だけ存在する想定のデータであり、テーブルが空の状態（初回起動時）でも必ず1件が存在するように自動作成する必要がある点が今回の要点。
+
+- `useShop.js`を全面的に書き換え。マウント時に`shop_info`を`select().limit(1)`し、0件ならその場で`name/address/phone`を空文字にしたレコードを`insert`して使う（`updated_at`↔`updatedAt`のみsnake↔camel変換、他のカラムは一致）。
+- 複数の`useShop()`インスタンス（`Header.jsx`と`Shop.jsx`は`/shop`ページで同時にマウントされる）が同時に「0件→insert」を行うと重複作成されるおそれがあるため、insert処理はモジュールスコープの単一Promise（`creatingShopPromise`）に集約し、後続の呼び出しは同じPromiseを待つようにして二重作成を防止した。
+- `Header.jsx`は`loadShop()`（LocalStorage直読み）をやめ、`useShop()`フックを使うよう変更。`items`と同様、ルート遷移時（`location.pathname`変化時）に`refetch`するパターンを踏襲。
+- 店舗名（`shop.name`）が空文字の場合、ヘッダーの店舗名表示部分に「店舗名を設定してください」という案内文を表示。`shop`が`null`（読み込み中）の間はこの案内文もこれまでの店舗名も表示せず、誤った文言が一瞬表示される（59番と同種の）フラッシュを防止。
+- `updateShop`をSupabaseの`update`（`.eq("id", shop.id)`で対象を指定）に変更し、非同期化。`Shop.jsx`の`handleSubmit`は`updateShop`を`await`し、失敗時はエラートースト、成功時は「✅ 保存しました」を表示してトップへ遷移。保存中は既存の「保存しています...」表示をそのまま流用。
+- `Shop.jsx`は`loading`中（またはshop未取得時）は「読み込み中...」を表示し、フォームの初期表示にも59番と同様の考え方を適用。
+- 不要になった`localStorage.js`の`loadShop`/`saveShop`/`DEFAULT_SHOP`/`SHOP_KEY`は削除（`items`/`logs`用の関数は影響なし）。
+
+**実装・動作確認済み（2026/08/10）：** Playwrightで、(1)`shop_info`が0件の状態からアプリを起動→自動で1件（空データ）が作成され、ヘッダーに「店舗名を設定してください」と表示されることを確認、(2)店舗情報編集ページで店舗名・住所・電話番号を入力して保存→保存中に「保存しています...」が表示され、Supabase側のレコードが更新され、ヘッダー表示も入力した店舗名に即座に切り替わることを確認、(3)ページをリロードしても店舗名が正しく表示され続け、「店舗名を設定してください」に戻ってしまわないことを確認。lintエラーなし（既存の無関係な警告2件のみ）。
+
+これで items / stock_logs / shop_info のすべてがSupabase化され、LocalStorageはテストデータ投入用の補助（`loadTestData`/`seedTestLogs`）のみで使われる状態になった。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか
 - [x] `categoryStyle.js` の絵文字アイコンを、将来的にはSVGアイコンセットに置き換えるか → 41番で絵文字方式を正式維持と決定（一部SVGへの先行実装は誤りと判明し、絵文字に復元済み、2026/08/08）
-- [ ] 店舗情報画面のデータ保存先（LocalStorageの既存Itemデータとは別キーで保存する想定）
+- [x] 店舗情報画面のデータ保存先（LocalStorageの既存Itemデータとは別キーで保存する想定）→ 61番でSupabaseの`shop_info`テーブルに移行済み（2026/08/10）
 - [ ] 権限構造（9番）は実装スコープ外だが、Itemデータモデルに影響が出ないか、実装フェーズで再確認する
 - [x] トップページの最終チェック（チャッピーによるレビュー）完了。design-tokens 18-11〜19番に反映済み
 - [x] 18番の改修内容を商品詳細画面・商品登録フォームにも展開（22番・23番・24〜26番として実装・確認済み、2026/08/03）
