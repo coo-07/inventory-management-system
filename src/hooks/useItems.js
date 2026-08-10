@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
-import { saveItems, loadLogs, saveLogs } from "../services/localStorage";
+import { saveItems, saveLogs } from "../services/localStorage";
 import { supabase } from "../services/supabaseClient";
 
 /**
  * SupabaseのitemsテーブルはスネークケースなのでcamelCaseに変換する。
+ * idはuseParams()などアプリ側では文字列として扱われるため、
+ * Supabase側の数値idを文字列に揃える。
  */
 function toCamelItem(row) {
   return {
-    id: row.id,
+    id: String(row.id),
     name: row.name,
     category: row.category,
     stock: row.stock,
@@ -20,10 +22,25 @@ function toCamelItem(row) {
 }
 
 /**
+ * Supabaseのstock_logsテーブルをcamelCaseに変換する。
+ */
+function toCamelLog(row) {
+  return {
+    id: String(row.id),
+    itemId: String(row.item_id),
+    type: row.type,
+    quantity: row.quantity,
+    memo: row.memo,
+    afterStock: row.after_stock,
+    createdAt: row.created_at,
+  };
+}
+
+/**
  * 商品データと入出荷履歴のCRUD処理をまとめて管理するフック。
  * ページコンポーネントはこのフックを呼び出すだけでよく、
  * LocalStorageへの読み書きを直接書かない。
- * 商品一覧の読み込みはSupabase（items テーブル）から行う。
+ * 商品一覧・入出荷履歴の読み込みはSupabase（items / stock_logs テーブル）から行う。
  * 登録・編集・削除・入出荷記録は引き続きLocalStorageを使用する（未移行）。
  */
 export function useItems() {
@@ -31,33 +48,38 @@ export function useItems() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
 
-    async function fetchItems() {
-      setLoading(true);
-      const { data, error } = await supabase
+    const [itemsRes, logsRes] = await Promise.all([
+      supabase
         .from("items")
-        .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at");
+        .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at"),
+      supabase
+        .from("stock_logs")
+        .select("id,item_id,type,quantity,memo,after_stock,created_at"),
+    ]);
 
-      if (cancelled) return;
-
-      if (error) {
-        console.error("商品一覧の取得に失敗しました", error);
-        setItems([]);
-      } else {
-        setItems((data ?? []).map(toCamelItem));
-      }
-      setLoading(false);
+    if (itemsRes.error) {
+      console.error("商品一覧の取得に失敗しました", itemsRes.error);
+      setItems([]);
+    } else {
+      setItems((itemsRes.data ?? []).map(toCamelItem));
     }
 
-    fetchItems();
-    setLogs(loadLogs());
+    if (logsRes.error) {
+      console.error("入出荷履歴の取得に失敗しました", logsRes.error);
+      setLogs([]);
+    } else {
+      setLogs((logsRes.data ?? []).map(toCamelLog));
+    }
 
-    return () => {
-      cancelled = true;
-    };
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
 
   const getItemById = useCallback((id) => items.find((item) => item.id === id), [items]);
 
@@ -176,5 +198,5 @@ export function useItems() {
     [items]
   );
 
-  return { items, logs, loading, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock, loadTestData, seedTestLogs };
+  return { items, logs, loading, refetch: fetchAll, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock, loadTestData, seedTestLogs };
 }

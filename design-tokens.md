@@ -2690,6 +2690,19 @@ useEffect(() => {
 
 ---
 
+## 54. ヘッダー件数集計（すべて／在庫切れ／在庫少／在庫あり／入出荷）をSupabase化
+
+**経緯：** `supabase-migration`ブランチでのバックエンド移行の一環。`useItems.js`は既に商品一覧（items）をSupabaseから取得していたが、`Header.jsx`は独自に`loadItems()`/`loadLogs()`（LocalStorage）を呼んで件数集計していたため、データソースが分裂していた。`useItems.js`が返す値に一本化した。
+
+- `useItems.js`：`stock_logs`テーブルの読み込みを追加（`toCamelLog()`で`item_id→itemId`・`after_stock→afterStock`・`created_at→createdAt`に変換）。`items`・`stock_logs`の取得を`Promise.all`で並列化し、`fetchAll`として`refetch`の名前でフックの戻り値に公開。
+- `toCamelItem()`：Supabase側の`id`は数値（integer）だが、`useParams()`など画面側の比較は文字列前提のため、`id: String(row.id)`に変更（`stock_logs`の`id`・`item_id`も同様に文字列化）。この変換漏れがあると商品カードをクリックしても詳細画面が「見つかりません」になる不具合が起きるため注意。
+- `Header.jsx`：`loadItems`/`loadLogs`の直接呼び出しをやめ、`useItems()`フックの`items`/`logs`/`refetch`を使用。画面遷移（`location.pathname`変化）ごとに`refetch()`を呼び、他画面での更新をヘッダーの件数にも反映させる（LocalStorage時代の「pathname変化で再読込」という挙動を踏襲）。店舗情報（`shop`）は対象外のため引き続きLocalStorageの`loadShop()`のまま。
+- 登録・編集・削除・入出荷記録（CRUD）自体はまだLocalStorageのまま（このタスクの後続ステップで対応）。
+
+**実装・動作確認済み（2026/08/10）：** Supabase実データ（items 1件・stock_logs 0件）に対し、Playwrightでトップページを確認。「すべて 1件」「在庫切れ 0件」「在庫少 0件」「在庫あり 1件」「入出荷 0件」がすべて実データと一致することを確認。商品カードクリックで`/items/1`へ正しく遷移し詳細画面が表示されることも確認（id文字列化の効果確認）。lintエラーなし（既存の無関係な警告2件のみ）。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか

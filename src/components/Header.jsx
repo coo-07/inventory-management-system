@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useMatch, useNavigate, useSearchParams } from "react-router-dom";
-import { loadItems, loadLogs, loadShop } from "../services/localStorage";
+import { loadShop } from "../services/localStorage";
 import { getStockStatus } from "../utils/stockStatus";
+import { useItems } from "../hooks/useItems";
 
 function useBackLink() {
   const isDetail = useMatch("/items/:id");
@@ -28,15 +29,13 @@ function Header() {
   const isHome = useMatch("/");
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [items, setItems] = useState([]);
-  const [logs, setLogs] = useState([]);
+  const { items, logs, refetch } = useItems();
   const [shop, setShop] = useState(loadShop());
 
   useEffect(() => {
-    setItems(loadItems());
-    setLogs(loadLogs());
+    refetch();
     setShop(loadShop());
-  }, [location.pathname]);
+  }, [location.pathname, refetch]);
 
   const outCount = items.filter((i) => getStockStatus(i.stock, i.threshold).isOut).length;
   const lowCount = items.filter((i) => getStockStatus(i.stock, i.threshold).isLow).length;
