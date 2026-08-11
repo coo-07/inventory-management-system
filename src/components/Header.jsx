@@ -179,6 +179,11 @@ function Header() {
             </section>
           )}
           {role && (
+            <span className="text-[13px] font-bold whitespace-nowrap" style={{ color: "var(--ink-soft)" }}>
+              {role === "admin" ? "管理者としてログイン中" : "スタッフとしてログイン中"}
+            </span>
+          )}
+          {role && (
             <button
               type="button"
               onClick={handleLogout}
