@@ -4,12 +4,21 @@ import { useAuth } from "../hooks/useAuth";
 import { ADMIN_EMAIL } from "../config/authConfig";
 import Button from "../components/Button";
 
+const ZENKAKU_PATTERN = /[Ａ-Ｚａ-ｚ０-９]/;
+
 function AdminLogin() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
+
+  const isZenkaku = ZENKAKU_PATTERN.test(password);
+
+  const handleModifierCheck = (e) => {
+    setCapsLockOn(e.getModifierState("CapsLock"));
+  };
 
   const handleSubmit = async () => {
     if (loginLoading) return;
@@ -39,16 +48,24 @@ function AdminLogin() {
             onChange={(e) => setPassword(e.target.value)}
             autoFocus
             onKeyDown={(e) => {
+              handleModifierCheck(e);
               if (e.key === "Enter") {
                 e.preventDefault();
                 handleSubmit();
               }
             }}
+            onKeyUp={handleModifierCheck}
             placeholder="パスワードを入力"
             autoComplete="current-password"
             className="box-border w-full rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[17px] transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!"
             style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
           />
+          {(capsLockOn || isZenkaku) && (
+            <div className="mt-2 flex flex-col gap-0.5 text-[13px] font-bold" style={{ color: "var(--orange-dark)" }}>
+              {capsLockOn && <p className="m-0">⚠ Caps Lockがオンになっています</p>}
+              {isZenkaku && <p className="m-0">⚠ 全角入力になっている可能性があります</p>}
+            </div>
+          )}
         </div>
 
         {error && (
