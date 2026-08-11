@@ -2875,6 +2875,21 @@ useEffect(() => {
 
 ---
 
+## 68. テストデータ読み込み・テスト履歴追加をSupabaseへの実書き込みに変更
+
+**経緯：** `loadTestData`（テストデータ20件読み込み）・`seedTestLogs`（入出荷テスト履歴追加）が、`addItem`/`updateItem`/`deleteItem`/`recordStock`とは異なりLocalStorageとローカルstateのみを書き換えていたため、以下2つの不具合が起きていた。①`useItems()`を呼ぶ各コンポーネント（`Home.jsx`・`Header.jsx`）が独立したstateを持つため、テストデータがHome.jsxの画面にしか反映されずヘッダーの件数集計とズレる。②裏側で進行中の`fetchAll()`の結果が遅れて返ってくると`setItems()`で上書きされ、テストデータが消えて見える。addItem等と同じくSupabaseへの実書き込みに変更し、根本解決した。
+
+**実装内容：**
+- `useItems.js`の`loadTestData`：`testItems`配列を`items`テーブルへ`.insert([配列])`で一括登録（name/category/stock/threshold/unit/image_url にマッピング）し、`.select()`で返った行を`toCamelItem()`で変換して`setItems(prev => [...prev, ...newItems])`で反映。`addItem`と同じ非同期パターンで、失敗時は`{ ok: false, message: "テストデータの追加に失敗しました" }`、成功時は`{ ok: true, items: newItems }`を返す。
+- `useItems.js`の`seedTestLogs`：対象商品（`itemId`）の`stock`を`finalStock`に、`updated_at`を現在時刻に`items`テーブルへupdate。続けて`newLogs`配列を`stock_logs`テーブルへ`.insert([配列])`で一括登録（作成日時はテストデータ側で生成した`createdAt`をそのまま保存し、履歴の時系列パターンを維持）。`recordStock`と同じ形式で成功/失敗を返し、成功時はローカルの`items`/`logs`stateにも反映。
+- `Home.jsx`の`handleLoadTestData`：`loadTestData`呼び出しを`await`化。処理中はボタンを`disabled`にし、ラベルを「🧪 テストデータを読み込む」→「読み込んでいます...」に変更（19番の処理中表示パターンを踏襲）。失敗時はエラートースト、成功時のみ「テストデータを読み込みました」のトーストを表示。ボタンの`title`属性も「開発用: テストデータ20件をSupabaseに追加します」に修正。
+- `ItemDetail.jsx`の`handleSeedTestData`：`seedTestLogs`が非同期・結果オブジェクト返却に変わったことに伴い、同様に`await`化し`seedLoading`ステートを追加。ボタンは`Button`の`loading`プロパティと連動し、処理中は「追加しています...」を表示。
+- `saveItems`/`saveLogs`/`loadItems`/`loadLogs`/`seedIfEmpty`を提供していた`src/services/localStorage.js`は、`useItems.js`が最後の利用元だったため、書き換えに伴い呼び出しがなくなり完全に参照ゼロとなった。61番の`shop_info`移行時と同様の判断で、ファイルごと削除した。
+
+**実装・動作確認済み（2026/08/11）：** `/items`が62番の三層ロール実装により`RequireAuth`配下となり実パスワードなしではボタン操作の直接E2Eができないため、Playwrightからアプリの`supabaseClient.js`・`generateTestData.js`を直接importし、`loadTestData`/`seedTestLogs`と全く同じマッピング・呼び出し順序でSupabaseに対して検証を実施。①items挿入前1件→挿入後21件（20件追加）を確認、②挿入した商品の1件に対しstock更新（`updatedStock === expectedStock`）とstock_logs 5件の挿入を確認、③検証後に追加した全データを削除しSupabaseを元の1件の状態に復元。lintエラーなし（既存の無関係な警告2件のみ）。画面上のカード枚数とヘッダー「すべて◯件」の一致、およびボタン押下→リロード後もテストデータが残ることのUI経由での確認は、管理者/スタッフの実ログインが必要なためユーザー自身による確認を依頼。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか
