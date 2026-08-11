@@ -6,12 +6,14 @@ import { useShop } from "../hooks/useShop";
 import { useAuth } from "../hooks/useAuth";
 
 function useBackLink() {
+  const isTanaoroshiResults = useMatch("/items/tanaoroshi-results");
   const isDetail = useMatch("/items/:id");
   const isNew = useMatch("/items/new");
   const isEdit = useMatch("/items/:id/edit");
   const isRecord = useMatch("/items/:id/record");
   const isShop = useMatch("/shop");
 
+  if (isTanaoroshiResults) return { label: "一覧へ戻る", to: "/items" };
   if (isDetail) return { label: "一覧へ戻る", to: "/items" };
   if (isNew) return { label: "戻る", to: "/items" };
   if (isEdit) return { label: "戻る", to: `/items/${isEdit.params.id}` };
@@ -182,6 +184,16 @@ function Header() {
             <span className="text-[13px] font-bold whitespace-nowrap" style={{ color: "var(--ink-soft)" }}>
               {role === "admin" ? "管理者としてログイン中" : "スタッフとしてログイン中"}
             </span>
+          )}
+          {role && (
+            <button
+              type="button"
+              onClick={() => navigate("/items/tanaoroshi-results")}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors hover:border-[var(--blue)]! hover:bg-[var(--blue-light)]! hover:text-[var(--blue-dark)]!"
+              style={{ background: "var(--surface)", color: "var(--ink-soft)", borderColor: "var(--border)" }}
+            >
+              📋 棚卸し結果
+            </button>
           )}
           {role && (
             <button
