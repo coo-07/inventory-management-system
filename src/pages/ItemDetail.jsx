@@ -58,14 +58,20 @@ function ItemDetail() {
   const handleSeedTestData = async () => {
     if (seedLoading) return;
     setSeedLoading(true);
-    const { logs: newLogs, finalStock } = generateTestStockLogs(id, item.stock, 20);
-    const result = await seedTestLogs(id, newLogs, finalStock);
-    setSeedLoading(false);
-    if (!result.ok) {
-      showToast("❌ " + result.message);
-      return;
+    try {
+      const { logs: newLogs, finalStock } = generateTestStockLogs(id, item.stock, 20);
+      const result = await seedTestLogs(id, newLogs, finalStock);
+      if (!result.ok) {
+        showToast("❌ " + result.message);
+        return;
+      }
+      showToast("テスト履歴を追加しました");
+    } catch (error) {
+      console.error(error);
+      showToast("❌ 予期しないエラーが発生しました");
+    } finally {
+      setSeedLoading(false);
     }
-    showToast("テスト履歴を追加しました");
   };
 
   const handleConfirmDelete = () => {
