@@ -61,13 +61,19 @@ function Home() {
       return match ? Math.max(max, Number(match[1])) : max;
     }, 0);
     setTestDataLoading(true);
-    const result = await loadTestData(generateTestItems(maxNumber));
-    setTestDataLoading(false);
-    if (!result.ok) {
-      showToast("❌ " + result.message);
-      return;
+    try {
+      const result = await loadTestData(generateTestItems(maxNumber));
+      if (!result.ok) {
+        showToast("❌ " + result.message);
+        return;
+      }
+      showToast("テストデータを読み込みました");
+    } catch (error) {
+      console.error(error);
+      showToast("❌ 予期しないエラーが発生しました");
+    } finally {
+      setTestDataLoading(false);
     }
-    showToast("テストデータを読み込みました");
   };
 
   const handleDeleteTestData = async () => {
@@ -79,13 +85,19 @@ function Home() {
     const confirmed = window.confirm(`テストデータ（${testDataCount}件）を削除します。よろしいですか？`);
     if (!confirmed) return;
     setDeleteTestDataLoading(true);
-    const result = await deleteTestData();
-    setDeleteTestDataLoading(false);
-    if (!result.ok) {
-      showToast("❌ " + result.message);
-      return;
+    try {
+      const result = await deleteTestData();
+      if (!result.ok) {
+        showToast("❌ " + result.message);
+        return;
+      }
+      showToast("テストデータを削除しました");
+    } catch (error) {
+      console.error(error);
+      showToast("❌ 予期しないエラーが発生しました");
+    } finally {
+      setDeleteTestDataLoading(false);
     }
-    showToast("テストデータを削除しました");
   };
 
   return (
