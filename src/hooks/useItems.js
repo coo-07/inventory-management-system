@@ -215,6 +215,35 @@ export function useItems() {
     return { ok: true };
   }, []);
 
+  /**
+   * 開発用: テストデータ（名前が「テストN」の商品）とその入出荷履歴をまとめて削除する。
+   */
+  const deleteTestData = useCallback(async () => {
+    const targetIds = items.filter((item) => /^テスト\d+$/.test(item.name)).map((item) => item.id);
+
+    if (targetIds.length === 0) {
+      return { ok: true };
+    }
+
+    const { error: logsError } = await supabase.from("stock_logs").delete().in("item_id", targetIds);
+
+    if (logsError) {
+      console.error("テストデータの削除に失敗しました", logsError);
+      return { ok: false, message: "テストデータの削除に失敗しました" };
+    }
+
+    const { error: itemsError } = await supabase.from("items").delete().in("id", targetIds);
+
+    if (itemsError) {
+      console.error("テストデータの削除に失敗しました", itemsError);
+      return { ok: false, message: "テストデータの削除に失敗しました" };
+    }
+
+    setItems((prev) => prev.filter((item) => !targetIds.includes(item.id)));
+    setLogs((prev) => prev.filter((log) => !targetIds.includes(log.itemId)));
+    return { ok: true };
+  }, [items]);
+
   const getLogsByItemId = useCallback(
     (id) =>
       logs
@@ -271,5 +300,5 @@ export function useItems() {
     [items]
   );
 
-  return { items, logs, loading, refetch: fetchAll, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock, loadTestData, seedTestLogs };
+  return { items, logs, loading, refetch: fetchAll, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock, loadTestData, seedTestLogs, deleteTestData };
 }

@@ -8,7 +8,7 @@ import ItemList from "../components/ItemList";
 import Button from "../components/Button";
 
 function Home() {
-  const { items, loading, loadTestData } = useItems();
+  const { items, loading, loadTestData, deleteTestData } = useItems();
   const navigate = useNavigate();
   const showToast = useToast();
   const [search, setSearch] = useState("");
@@ -17,9 +17,15 @@ function Home() {
   const filter = searchParams.get("filter") || "all";
   const [addLoading, setAddLoading] = useState(false);
   const [testDataLoading, setTestDataLoading] = useState(false);
+  const [deleteTestDataLoading, setDeleteTestDataLoading] = useState(false);
 
   const categories = useMemo(
     () => [...new Set(items.map((item) => item.category).filter(Boolean))],
+    [items]
+  );
+
+  const testDataCount = useMemo(
+    () => items.filter((item) => /^テスト\d+$/.test(item.name)).length,
     [items]
   );
 
@@ -62,6 +68,24 @@ function Home() {
       return;
     }
     showToast("テストデータを読み込みました");
+  };
+
+  const handleDeleteTestData = async () => {
+    if (deleteTestDataLoading) return;
+    if (testDataCount === 0) {
+      showToast("削除対象のテストデータがありません");
+      return;
+    }
+    const confirmed = window.confirm(`テストデータ（${testDataCount}件）を削除します。よろしいですか？`);
+    if (!confirmed) return;
+    setDeleteTestDataLoading(true);
+    const result = await deleteTestData();
+    setDeleteTestDataLoading(false);
+    if (!result.ok) {
+      showToast("❌ " + result.message);
+      return;
+    }
+    showToast("テストデータを削除しました");
   };
 
   return (
@@ -123,6 +147,18 @@ function Home() {
               style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink-soft)" }}
             >
               {testDataLoading ? "読み込んでいます..." : "🧪 テストデータを読み込む"}
+            </button>
+          )}
+          {import.meta.env.DEV && (
+            <button
+              type="button"
+              onClick={handleDeleteTestData}
+              disabled={deleteTestDataLoading}
+              title="開発用: テスト名（テストN）の商品と履歴をSupabaseから削除します"
+              className="box-border inline-flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-md border px-3 text-[13px] font-bold whitespace-nowrap transition-colors hover:bg-[var(--bg)]! disabled:cursor-not-allowed disabled:opacity-60"
+              style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink-soft)" }}
+            >
+              {deleteTestDataLoading ? "削除しています..." : "🗑️ テストデータを削除する"}
             </button>
           )}
           <Button variant="primary" loading={addLoading} onClick={handleAddNew} className="whitespace-nowrap">
