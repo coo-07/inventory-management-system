@@ -37,6 +37,7 @@ function StaffLogin() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoFocus
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
