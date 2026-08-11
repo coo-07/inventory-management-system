@@ -1,11 +1,23 @@
 const CATEGORIES = ["文房具", "雑貨", "食品", "その他"];
 const UNITS = { 文房具: "本", 雑貨: "個", 食品: "箱", その他: "個" };
 
+function generateId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  // secure context でない環境（例: Windows PCでのネットワークIP経由httpアクセス）向けフォールバック
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 function buildItem(number, index, stock, threshold) {
   const now = new Date().toISOString();
   const category = CATEGORIES[index % CATEGORIES.length];
   return {
-    id: crypto.randomUUID(),
+    id: generateId(),
     name: `テスト${number}`,
     category,
     stock,
@@ -61,7 +73,7 @@ export function generateTestStockLogs(itemId, currentStock, count = 20) {
     const quantity = Math.floor(Math.random() * 10) + 1;
     stock = type === "in" ? stock + quantity : Math.max(0, stock - quantity);
     logs.push({
-      id: crypto.randomUUID(),
+      id: generateId(),
       itemId,
       type,
       quantity,
