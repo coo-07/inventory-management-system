@@ -18,6 +18,7 @@ function ItemDetail() {
   const { items, loading, getItemById, getLogsByItemId, deleteItem, seedTestLogs } = useItems();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [seedLoading, setSeedLoading] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const titleRef = useRef(null);
 
@@ -54,9 +55,16 @@ function ItemDetail() {
   const idx = items.findIndex((i) => i.id === id);
   const showNav = idx > 0 || (idx >= 0 && idx < items.length - 1);
 
-  const handleSeedTestData = () => {
+  const handleSeedTestData = async () => {
+    if (seedLoading) return;
+    setSeedLoading(true);
     const { logs: newLogs, finalStock } = generateTestStockLogs(id, item.stock, 20);
-    seedTestLogs(id, newLogs, finalStock);
+    const result = await seedTestLogs(id, newLogs, finalStock);
+    setSeedLoading(false);
+    if (!result.ok) {
+      showToast("❌ " + result.message);
+      return;
+    }
     showToast("テスト履歴を追加しました");
   };
 
@@ -162,8 +170,8 @@ function ItemDetail() {
             削除する
           </Button>
           {import.meta.env.DEV && (
-            <Button variant="secondary" onClick={handleSeedTestData}>
-              🎲 テスト履歴を追加（20件）
+            <Button variant="secondary" loading={seedLoading} onClick={handleSeedTestData}>
+              {seedLoading ? "追加しています..." : "🎲 テスト履歴を追加（20件）"}
             </Button>
           )}
         </div>

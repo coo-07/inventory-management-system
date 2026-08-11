@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { saveItems, saveLogs } from "../services/localStorage";
 import { supabase } from "../services/supabaseClient";
 
 /**
@@ -149,30 +148,71 @@ export function useItems() {
   /**
    * 開発用: テストデータを既存の商品リストに追加する（上書きしない）。
    */
-  const loadTestData = useCallback((testItems) => {
-    setItems((prev) => {
-      const next = [...prev, ...testItems];
-      saveItems(next);
-      return next;
-    });
+  const loadTestData = useCallback(async (testItems) => {
+    const { data: inserted, error } = await supabase
+      .from("items")
+      .insert(
+        testItems.map((item) => ({
+          name: item.name,
+          category: item.category,
+          stock: item.stock,
+          threshold: item.threshold,
+          unit: item.unit,
+          image_url: item.imageUrl || null,
+        }))
+      )
+      .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at");
+
+    if (error) {
+      console.error("テストデータの追加に失敗しました", error);
+      return { ok: false, message: "テストデータの追加に失敗しました" };
+    }
+
+    const newItems = (inserted ?? []).map(toCamelItem);
+    setItems((prev) => [...prev, ...newItems]);
+    return { ok: true, items: newItems };
   }, []);
 
   /**
    * 開発用: 指定商品にテストの入出荷履歴をまとめて追加し、在庫数を最終値に更新する。
    */
-  const seedTestLogs = useCallback((itemId, newLogs, finalStock) => {
-    setLogs((prev) => {
-      const next = [...prev, ...newLogs];
-      saveLogs(next);
-      return next;
-    });
-    setItems((prev) => {
-      const next = prev.map((item) =>
-        item.id === itemId ? { ...item, stock: finalStock, updatedAt: new Date().toISOString() } : item
-      );
-      saveItems(next);
-      return next;
-    });
+  const seedTestLogs = useCallback(async (itemId, newLogs, finalStock) => {
+    const now = new Date().toISOString();
+
+    const { data: updatedItem, error: itemError } = await supabase
+      .from("items")
+      .update({ stock: finalStock, updated_at: now })
+      .eq("id", itemId)
+      .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at")
+      .single();
+
+    if (itemError) {
+      console.error("テスト履歴の追加に失敗しました", itemError);
+      return { ok: false, message: "テスト履歴の追加に失敗しました" };
+    }
+
+    const { data: insertedLogs, error: logsError } = await supabase
+      .from("stock_logs")
+      .insert(
+        newLogs.map((log) => ({
+          item_id: itemId,
+          type: log.type,
+          quantity: log.quantity,
+          memo: log.memo,
+          after_stock: log.afterStock,
+          created_at: log.createdAt,
+        }))
+      )
+      .select("id,item_id,type,quantity,memo,after_stock,created_at");
+
+    if (logsError) {
+      console.error("テスト履歴の追加に失敗しました", logsError);
+      return { ok: false, message: "在庫は更新されましたが、履歴の記録に失敗しました" };
+    }
+
+    setItems((prev) => prev.map((i) => (i.id === itemId ? toCamelItem(updatedItem) : i)));
+    setLogs((prev) => [...prev, ...(insertedLogs ?? []).map(toCamelLog)]);
+    return { ok: true };
   }, []);
 
   const getLogsByItemId = useCallback(

@@ -16,6 +16,7 @@ function Home() {
   const [searchParams] = useSearchParams();
   const filter = searchParams.get("filter") || "all";
   const [addLoading, setAddLoading] = useState(false);
+  const [testDataLoading, setTestDataLoading] = useState(false);
 
   const categories = useMemo(
     () => [...new Set(items.map((item) => item.category).filter(Boolean))],
@@ -45,14 +46,21 @@ function Home() {
     }, 500);
   };
 
-  const handleLoadTestData = () => {
+  const handleLoadTestData = async () => {
+    if (testDataLoading) return;
     const confirmed = window.confirm("テストデータを20件追加します。よろしいですか？");
     if (!confirmed) return;
     const maxNumber = items.reduce((max, item) => {
       const match = /^テスト(\d+)$/.exec(item.name);
       return match ? Math.max(max, Number(match[1])) : max;
     }, 0);
-    loadTestData(generateTestItems(maxNumber));
+    setTestDataLoading(true);
+    const result = await loadTestData(generateTestItems(maxNumber));
+    setTestDataLoading(false);
+    if (!result.ok) {
+      showToast("❌ " + result.message);
+      return;
+    }
     showToast("テストデータを読み込みました");
   };
 
@@ -109,11 +117,12 @@ function Home() {
             <button
               type="button"
               onClick={handleLoadTestData}
-              title="開発用: テストデータ20件をLocalStorageに読み込みます"
-              className="box-border inline-flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-md border px-3 text-[13px] font-bold whitespace-nowrap transition-colors hover:bg-[var(--bg)]!"
+              disabled={testDataLoading}
+              title="開発用: テストデータ20件をSupabaseに追加します"
+              className="box-border inline-flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-md border px-3 text-[13px] font-bold whitespace-nowrap transition-colors hover:bg-[var(--bg)]! disabled:cursor-not-allowed disabled:opacity-60"
               style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink-soft)" }}
             >
-              🧪 テストデータを読み込む
+              {testDataLoading ? "読み込んでいます..." : "🧪 テストデータを読み込む"}
             </button>
           )}
           <Button variant="primary" loading={addLoading} onClick={handleAddNew} className="whitespace-nowrap">
