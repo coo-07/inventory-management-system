@@ -2840,6 +2840,16 @@ useEffect(() => {
 
 ---
 
+## 65. ログイン画面のパスワード欄にオートフォーカスを追加
+
+**経緯：** `AdminLogin.jsx`・`StaffLogin.jsx`はパスワード入力欄のみのシンプルな構成のため、画面表示直後からそのまま入力を始められるよう、パスワード欄に自動でカーソルが入るようにした。
+
+**実装内容：** 両ファイルとも、既存の`<input type="password">`に`autoFocus`属性を追加するのみ。`useRef`+`useEffect`によるフォーカス制御も検討したが、単一の入力欄しか持たない単純な画面であり、既存コードもフック等を使わない素直な実装のため、標準の`autoFocus`属性の方がコードスタイルとして自然と判断した。
+
+**実装・動作確認済み（2026/08/11）：** Playwrightで、`/admin-login`・`/staff-login`のいずれも画面遷移直後に`document.activeElement`が`input[type=password]`であることを確認。lintエラーなし（既存の無関係な警告2件のみ）。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか
