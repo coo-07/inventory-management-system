@@ -43,7 +43,7 @@ function Tanaoroshi() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[520px] px-6 py-24 text-center">
+      <div className="mx-auto max-w-[640px] px-6 py-24 text-center">
         <p style={{ color: "var(--ink-soft)" }}>読み込み中...</p>
       </div>
     );
@@ -51,7 +51,7 @@ function Tanaoroshi() {
 
   if (!isSingleMode && items.length === 0) {
     return (
-      <div className="mx-auto flex max-w-[520px] flex-col items-center gap-3 px-6 py-24 text-center">
+      <div className="mx-auto flex max-w-[640px] flex-col items-center gap-3 px-6 py-24 text-center">
         <p className="text-xl font-bold">棚卸し対象の商品がありません</p>
         <Link to="/" className="mt-2 text-sm underline" style={{ color: "var(--ink)" }}>
           トップへ戻る
@@ -62,7 +62,7 @@ function Tanaoroshi() {
 
   if (isSingleMode && !currentItem) {
     return (
-      <div className="mx-auto flex max-w-[520px] flex-col items-center gap-3 px-6 py-24 text-center">
+      <div className="mx-auto flex max-w-[640px] flex-col items-center gap-3 px-6 py-24 text-center">
         <p className="text-xl font-bold">商品が見つかりません</p>
         <Link to="/" className="mt-2 text-sm underline" style={{ color: "var(--ink)" }}>
           トップへ戻る
@@ -73,7 +73,7 @@ function Tanaoroshi() {
 
   if (!isSingleMode && completed) {
     return (
-      <div className="mx-auto flex max-w-[520px] flex-col items-center gap-3 px-6 py-24 text-center">
+      <div className="mx-auto flex max-w-[640px] flex-col items-center gap-3 px-6 py-24 text-center">
         <p className="text-2xl font-bold">🎉 棚卸しが完了しました。お疲れさまでした</p>
         <Link to="/" className="mt-2 text-sm underline" style={{ color: "var(--ink)" }}>
           トップへ戻る
@@ -117,7 +117,7 @@ function Tanaoroshi() {
   };
 
   return (
-    <div className="mx-auto max-w-[520px] px-6 py-5">
+    <div className="mx-auto max-w-[640px] px-6 py-5">
       {!isSingleMode && (
         <p className="m-0 mb-2 text-center text-sm font-bold" style={{ color: "var(--ink-soft)" }}>
           {index + 1} / {items.length}件
@@ -125,7 +125,7 @@ function Tanaoroshi() {
       )}
 
       <div
-        className="flex flex-col items-center gap-6.5 rounded-[var(--r-xl)] border-2 p-7"
+        className="flex flex-col items-center gap-6.5 rounded-[var(--r-xl)] border-2 p-8"
         style={{ background: "var(--surface)", borderColor: "var(--border)" }}
       >
         <div className="flex flex-col items-center gap-2">
@@ -137,7 +137,7 @@ function Tanaoroshi() {
           <p className="m-0 mb-3.5 text-center text-[15px]" style={{ color: "var(--ink-soft)" }}>
             登録されている数：{currentItem.stock}{currentItem.unit}
           </p>
-          <div className="flex items-center justify-center gap-6">
+          <div className="flex items-center justify-center gap-10">
             <button
               type="button"
               onClick={() => setQty((prev) => String(Math.max(0, (Number(prev) || 0) - 1)))}
@@ -166,6 +166,36 @@ function Tanaoroshi() {
             >
               ＋
             </button>
+          </div>
+          <div className="mt-3.5 flex justify-center gap-2.5">
+            <Button
+              variant="secondary"
+              onClick={() => setQty((prev) => String(Math.max(0, (Number(prev) || 0) - 10)))}
+              className="px-4 text-[15px]"
+            >
+              −10
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setQty((prev) => String(Math.max(0, (Number(prev) || 0) - 5)))}
+              className="px-4 text-[15px]"
+            >
+              −5
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setQty((prev) => String((Number(prev) || 0) + 5))}
+              className="px-4 text-[15px]"
+            >
+              +5
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setQty((prev) => String((Number(prev) || 0) + 10))}
+              className="px-4 text-[15px]"
+            >
+              +10
+            </Button>
           </div>
         </div>
 

@@ -26,7 +26,7 @@ function StockRecord() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[520px] px-6 py-5">
+      <div className="mx-auto max-w-[640px] px-6 py-5">
         <p style={{ color: "var(--ink-soft)" }}>読み込み中...</p>
       </div>
     );
@@ -34,7 +34,7 @@ function StockRecord() {
 
   if (!item) {
     return (
-      <div className="mx-auto max-w-[520px] px-6 py-5">
+      <div className="mx-auto max-w-[640px] px-6 py-5">
         <p style={{ color: "var(--ink-soft)" }}>商品が見つかりません</p>
       </div>
     );
@@ -72,14 +72,14 @@ function StockRecord() {
     "flex-1 box-border flex min-h-12 items-center justify-center gap-2.5 rounded-[var(--r-lg)] border-[3px] text-[17px] font-bold cursor-pointer";
 
   return (
-    <div className="mx-auto max-w-[520px] px-6 py-5">
+    <div className="mx-auto max-w-[640px] px-6 py-5">
       <p className="m-0 text-sm" style={{ color: "var(--ink-soft)" }}>
         対象商品
       </p>
       <p className="m-0 mb-6 text-2xl font-black">{item.name}</p>
 
       <div
-        className="flex flex-col gap-6.5 rounded-[var(--r-xl)] border-2 p-7"
+        className="flex flex-col gap-6.5 rounded-[var(--r-xl)] border-2 p-8"
         style={{ background: "var(--surface)", borderColor: "var(--border)" }}
       >
         <div className="flex gap-3">
@@ -125,7 +125,7 @@ function StockRecord() {
           <p className="m-0 mb-3.5 text-center text-[15px]" style={{ color: "var(--ink-soft)" }}>
             現在の在庫：{item.stock}{item.unit}
           </p>
-          <div className="flex items-center justify-center gap-6">
+          <div className="flex items-center justify-center gap-10">
             <button
               type="button"
               onClick={() => setQty((prev) => Math.max(1, (Number(prev) || 0) - 1))}
@@ -154,6 +154,36 @@ function StockRecord() {
             >
               ＋
             </button>
+          </div>
+          <div className="mt-3.5 flex justify-center gap-2.5">
+            <Button
+              variant="secondary"
+              onClick={() => setQty((prev) => Math.max(1, (Number(prev) || 0) - 10))}
+              className="px-4 text-[15px]"
+            >
+              −10
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setQty((prev) => Math.max(1, (Number(prev) || 0) - 5))}
+              className="px-4 text-[15px]"
+            >
+              −5
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setQty((prev) => (Number(prev) || 0) + 5)}
+              className="px-4 text-[15px]"
+            >
+              +5
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setQty((prev) => (Number(prev) || 0) + 10)}
+              className="px-4 text-[15px]"
+            >
+              +10
+            </Button>
           </div>
         </div>
 
