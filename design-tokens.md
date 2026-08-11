@@ -2928,6 +2928,16 @@ useEffect(() => {
 
 ---
 
+## 72. テスト履歴追加ボタンにも try/catch/finally によるローディング解除の保険を追加
+
+**経緯：** 71番でHome.jsxの「テストデータを読み込む」「テストデータを削除する」の2ボタンに適用した保険を、同じ理由でDEV限定のテスト系ボタンとして残っていた`ItemDetail.jsx`の「テスト履歴を追加（20件）」ボタンにも展開し、DEV限定のテスト系ボタン3箇所すべてを同じ「固まらない」設計に揃えた。
+
+**実装内容：** `ItemDetail.jsx`の`handleSeedTestData`で、`setSeedLoading(true)`以降（`generateTestStockLogs`の実行・`seedTestLogs`の呼び出し）を`try { ... } catch (error) { ... } finally { setSeedLoading(false); }`で囲む形に変更。`catch`では`console.error(error)`でエラー内容を記録した上で`showToast("❌ 予期しないエラーが発生しました")`を表示し、`finally`で必ず`setSeedLoading(false)`を実行する。
+
+**実装・動作確認済み（2026/08/11）：** lintエラーなし（既存の無関係な警告2件のみ）。意図的な例外発生時の動作確認は71番と同様の理由で未実施（ロジックのレビューベースでの確認のみ）。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか
