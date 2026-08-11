@@ -2918,6 +2918,16 @@ useEffect(() => {
 
 ---
 
+## 71. テストデータ読み込み・削除ボタンに try/catch/finally によるローディング解除の保険を追加
+
+**経緯：** 70番のcrypto.randomUUIDエラーは、`setTestDataLoading(true)` → 非同期処理 → `setTestDataLoading(false)` という直列の書き方のせいで、途中（今回は`generateTestItems`呼び出し自体）で例外が発生すると`setTestDataLoading(false)`まで実行が届かず、ボタンが「読み込んでいます...」のまま固まって見える二次被害を伴っていた。70番で根本原因（crypto.randomUUID）は修正済みだが、今後また別の予期しないエラー（ネットワーク瞬断・Supabase側の一時的なエラー等）が起きた場合の保険として、ローディング解除を確実に行うようにした。
+
+**実装内容：** `Home.jsx`の`handleLoadTestData`・`handleDeleteTestData`両方で、`setTestDataLoading(true)`/`setDeleteTestDataLoading(true)`以降の処理全体を`try { ... } catch (error) { ... } finally { setXxxLoading(false); }`で囲む形に変更。`catch`では`console.error(error)`でエラー内容を記録した上で`showToast("❌ 予期しないエラーが発生しました")`を表示し、`finally`で必ずローディング状態を解除する。成功時・`{ ok: false }`返却時・想定外の例外発生時のいずれの経路でも、ローディング状態が解除されずボタンが固まったままになることがなくなった。
+
+**実装・動作確認済み（2026/08/11）：** lintエラーなし（既存の無関係な警告2件のみ）。意図的な例外発生時の動作確認はPlaywright等での再現が難しいため未実施（ロジックのレビューベースでの確認のみ）。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか
