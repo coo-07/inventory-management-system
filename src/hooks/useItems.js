@@ -300,5 +300,50 @@ export function useItems() {
     [items]
   );
 
-  return { items, logs, loading, refetch: fetchAll, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock, loadTestData, seedTestLogs, deleteTestData };
+  /**
+   * 棚卸し結果を記録する。実際に数えた数（actualStock）をそのままitems.stockに反映し、
+   * stock_logsに type: "count" のログを追加する。一致・不一致にかかわらず必ずログを残す。
+   */
+  const recordCount = useCallback(
+    async (id, actualStock, memo = "") => {
+      const item = items.find((i) => i.id === id);
+      if (!item) return { ok: false, message: "商品が見つかりません" };
+
+      const diff = actualStock - item.stock;
+      const now = new Date().toISOString();
+
+      if (diff !== 0) {
+        const { data: updatedItem, error: itemError } = await supabase
+          .from("items")
+          .update({ stock: actualStock, updated_at: now })
+          .eq("id", id)
+          .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at")
+          .single();
+
+        if (itemError) {
+          console.error("棚卸し結果の反映に失敗しました", itemError);
+          return { ok: false, message: "棚卸し結果の反映に失敗しました" };
+        }
+
+        setItems((prev) => prev.map((i) => (i.id === id ? toCamelItem(updatedItem) : i)));
+      }
+
+      const { data: insertedLog, error: logError } = await supabase
+        .from("stock_logs")
+        .insert({ item_id: id, type: "count", quantity: diff, memo, after_stock: actualStock })
+        .select("id,item_id,type,quantity,memo,after_stock,created_at")
+        .single();
+
+      if (logError) {
+        console.error("棚卸し履歴の記録に失敗しました", logError);
+        return { ok: false, message: "在庫は更新されましたが、棚卸し履歴の記録に失敗しました" };
+      }
+
+      setLogs((prev) => [...prev, toCamelLog(insertedLog)]);
+      return { ok: true, diff };
+    },
+    [items]
+  );
+
+  return { items, logs, loading, refetch: fetchAll, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock, recordCount, loadTestData, seedTestLogs, deleteTestData };
 }
