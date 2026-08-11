@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ToastProvider } from "./context/ToastContext";
 import Header from "./components/Header";
 import RequireAuth from "./components/RequireAuth";
+import RequireAdmin from "./components/RequireAdmin";
 import RoleSelect from "./pages/RoleSelect";
 import AdminLogin from "./pages/AdminLogin";
 import StaffLogin from "./pages/StaffLogin";
@@ -68,7 +69,9 @@ function App() {
               path="/shop"
               element={
                 <RequireAuth>
-                  <Shop />
+                  <RequireAdmin>
+                    <Shop />
+                  </RequireAdmin>
                 </RequireAuth>
               }
             />
