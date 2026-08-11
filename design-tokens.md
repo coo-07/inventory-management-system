@@ -2908,6 +2908,16 @@ useEffect(() => {
 
 ---
 
+## 70. テストデータ生成のcrypto.randomUUID()をsecure context非依存に修正
+
+**経緯：** 69番の「テストデータを読み込む」ボタンが、MacBook Airでの開発時（localhost経由）は正常動作するのに、Windows PCでの実機確認時（`http://192.168.x.x:5173`のようなネットワークIPアドレス経由のhttpアクセス）だけ「読み込んでいます...」のまま固まって見える現象が判明した。原因は`src/utils/generateTestData.js`の`buildItem`・`generateTestStockLogs`内で使っている`crypto.randomUUID()`が、ブラウザの「安全な接続（secure context）」でしか使えない関数であるため。`localhost`はブラウザ側で特別扱いされ安全な接続とみなされるが、ネットワークIP経由のhttpアクセスは安全な接続とみなされず、`crypto.randomUUID`自体が存在しなくなり`TypeError: crypto.randomUUID is not a function`で処理が止まっていた。
+
+**実装内容：** ファイル冒頭に`generateId()`関数を追加。`crypto.randomUUID`が利用可能な環境ではそれをそのまま使い、利用できない環境（secure contextでない場合）は`Math.random()`ベースの自作UUID風文字列生成にフォールバックする。`buildItem`内・`generateTestStockLogs`内、それぞれの`id: crypto.randomUUID()`を`id: generateId()`に置き換えた。なお、ここで生成される`id`はSupabase側のinsert時には使われず（68番の実装で`items`/`stock_logs`テーブルのidは自動採番のため、`generateTestItems`/`generateTestStockLogs`が返す`id`はSupabase書き込み前のローカルなオブジェクト識別用途のみ）、影響範囲はテストデータ生成ロジックのみに閉じている。
+
+**実装・動作確認済み（2026/08/11）：** lintエラーなし（既存の無関係な警告2件のみ）。`crypto.randomUUID`が使えない環境の実機がこちらにないため、Windows PC・ネットワークIP経由でのボタン動作の再確認はユーザー自身による確認を依頼。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか
