@@ -198,35 +198,39 @@ function ItemImport() {
   const selectClass =
     "box-border w-full cursor-pointer rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[15px] transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!";
 
+  const dropZone = (
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className="rounded-[var(--r-md)] border-2 border-dashed p-5 transition-colors"
+      style={{ borderColor: isDragging ? "var(--blue)" : "var(--border)", background: "var(--surface)" }}
+    >
+      <p className="mb-3 text-[15px]" style={{ color: "var(--ink-soft)" }}>
+        ここにファイルをドラッグ&ドロップ、またはファイルを選択
+      </p>
+      <label className="mb-2 block text-[15px] font-bold">ファイルを選択（.xlsx / .csv）</label>
+      <input
+        type="file"
+        accept=".xlsx,.csv"
+        onChange={handleFileChange}
+        className="box-border w-full max-w-[420px] cursor-pointer rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[15px] transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!"
+        style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+      />
+    </div>
+  );
+
   return (
-    <div className="mx-auto max-w-[960px] px-6 py-5">
+    <div className="mx-auto max-w-[960px] px-6 py-5 xl:max-w-[1800px]">
       <h1 className="mb-6 text-[26px] font-bold">Excelから取り込む</h1>
 
       <div
         className="rounded-[var(--r-xl)] border-2 p-7"
         style={{ background: "var(--surface)", borderColor: "var(--border)" }}
       >
-        <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          className="rounded-[var(--r-md)] border-2 border-dashed p-5 transition-colors"
-          style={{ borderColor: isDragging ? "var(--blue)" : "var(--border)", background: "var(--surface)" }}
-        >
-          <p className="mb-3 text-[15px]" style={{ color: "var(--ink-soft)" }}>
-            ここにファイルをドラッグ&ドロップ、またはファイルを選択
-          </p>
-          <label className="mb-2 block text-[15px] font-bold">ファイルを選択（.xlsx / .csv）</label>
-          <input
-            type="file"
-            accept=".xlsx,.csv"
-            onChange={handleFileChange}
-            className="box-border w-full max-w-[420px] cursor-pointer rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[15px] transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!"
-            style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
-          />
-        </div>
+        {status !== "done" && dropZone}
 
-        <div className="mt-6">
+        <div className={status === "done" ? "" : "mt-6"}>
           {status === "idle" && (
             <p style={{ color: "var(--ink-soft)" }}>ファイルを選択してください</p>
           )}
@@ -239,8 +243,9 @@ function ItemImport() {
             </p>
           )}
           {status === "done" && rows && (
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-[3fr_2fr] lg:items-start">
-              <div className="lg:col-start-1">
+            <div className="grid grid-cols-1 gap-8 xl:grid-cols-[3fr_2fr] xl:items-start">
+              <div className="xl:col-start-1">
+                <div className="mb-6">{dropZone}</div>
                 <p className="mb-3 text-[15px]" style={{ color: "var(--ink-soft)" }}>
                   {fileName}（{rows.length}行）
                 </p>
@@ -263,9 +268,59 @@ function ItemImport() {
                     </tbody>
                   </table>
                 </div>
+
+                <div className="mt-8">
+                  <h2 className="mb-3 text-[19px] font-bold">プレビュー</h2>
+                  {!canPreview ? (
+                    <p style={{ color: "var(--ink-soft)" }}>商品名と在庫数の列を選択してください</p>
+                  ) : (
+                    <div>
+                      <p
+                        className="mb-3 text-[15px] font-bold"
+                        style={{ color: skippedCount > 0 ? "var(--orange-dark)" : "var(--ink-soft)" }}
+                      >
+                        有効な行：{validItems.length}件／スキップされる行：{skippedCount}件
+                      </p>
+                      <div className="overflow-x-auto rounded-[var(--r-md)] border-2" style={{ borderColor: "var(--border)" }}>
+                        <table className="w-full border-collapse text-left text-[14px]" style={{ color: "var(--ink)" }}>
+                          <thead>
+                            <tr style={{ background: "var(--bg)" }}>
+                              {["商品名", "カテゴリ", "在庫数", "発注点", "単位"].map((h) => (
+                                <th key={h} className="border px-3 py-2 font-bold" style={{ borderColor: "var(--border)" }}>
+                                  {h}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {validItems.slice(0, 5).map((item, i) => (
+                              <tr key={i}>
+                                <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                  {item.name}
+                                </td>
+                                <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                  {item.category}
+                                </td>
+                                <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                  {item.stock}
+                                </td>
+                                <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                  {item.threshold}
+                                </td>
+                                <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                  {item.unit}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="lg:col-start-2">
+              <div className="xl:col-start-2">
                 <h2 className="mb-2 text-[19px] font-bold">列の対応付け</h2>
                 <p className="mb-4 text-[13px]" style={{ color: "var(--ink-soft)" }}>
                   ※1行目には商品名・カテゴリなどの項目名が入っている必要があります。1行目にメモやタイトル行がある場合は、Excel側で先に削除してからアップロードしてください
@@ -294,86 +349,50 @@ function ItemImport() {
                     </div>
                   ))}
                 </div>
-              </div>
 
-              <div className="lg:col-start-1">
-                <h2 className="mb-3 text-[19px] font-bold">プレビュー</h2>
-                {!canPreview ? (
-                  <p style={{ color: "var(--ink-soft)" }}>商品名と在庫数の列を選択してください</p>
-                ) : (
-                  <div>
-                    <p
-                      className="mb-3 text-[15px] font-bold"
-                      style={{ color: skippedCount > 0 ? "var(--orange-dark)" : "var(--ink-soft)" }}
-                    >
-                      有効な行：{validItems.length}件／スキップされる行：{skippedCount}件
+                {newCategories.length > 0 && (
+                  <div className="mt-8">
+                    <h2 className="mb-2 text-[19px] font-bold">新しいカテゴリが見つかりました</h2>
+                    <p className="mb-4 text-[13px]" style={{ color: "var(--ink-soft)" }}>
+                      固定8分類にないカテゴリです。アイコンを選ぶと一覧画面などにそのまま表示されます（あとから「⚙️」の設定画面でも変更できます）
                     </p>
-                    <div className="overflow-x-auto rounded-[var(--r-md)] border-2" style={{ borderColor: "var(--border)" }}>
-                      <table className="w-full border-collapse text-left text-[14px]" style={{ color: "var(--ink)" }}>
-                        <thead>
-                          <tr style={{ background: "var(--bg)" }}>
-                            {["商品名", "カテゴリ", "在庫数", "発注点", "単位"].map((h) => (
-                              <th key={h} className="border px-3 py-2 font-bold" style={{ borderColor: "var(--border)" }}>
-                                {h}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {validItems.slice(0, 5).map((item, i) => (
-                            <tr key={i}>
-                              <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
-                                {item.name}
-                              </td>
-                              <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
-                                {item.category}
-                              </td>
-                              <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
-                                {item.stock}
-                              </td>
-                              <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
-                                {item.threshold}
-                              </td>
-                              <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
-                                {item.unit}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    <div className="relative">
+                      <div
+                        className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-px -translate-x-1/2 2xl:block"
+                        style={{ background: "var(--border)" }}
+                        aria-hidden="true"
+                      />
+                      <div className="grid grid-cols-1 2xl:grid-cols-2 2xl:gap-x-8">
+                        {newCategories.map((category, index) => {
+                          const isSaving = savingCategories.has(category);
+                          // 2xl未満は1列＝1件ごとに新しい行なのでindex>0で区切り線。2xl以上は2列グリッドの行単位（index>=2）で区切るため、
+                          // 1行目の右側（index===1）だけは2xl以上で区切り線を打ち消す
+                          const borderClass = index === 0 ? "" : index === 1 ? "border-t pt-4 2xl:border-t-0 2xl:pt-0" : "border-t pt-4";
+                          return (
+                            <div
+                              key={category}
+                              className={`pb-4 ${borderClass}`}
+                              style={{ borderColor: "var(--border)" }}
+                            >
+                              <p className="mb-2 text-[15px] font-bold">{category}</p>
+                              <CategoryIconPicker
+                                category={category}
+                                selectedIcon={customIcons[category]}
+                                onSelect={(icon) => saveCategoryIcon(category, icon)}
+                              />
+                              {isSaving && (
+                                <p className="mt-1.5 text-[13px]" style={{ color: "var(--ink-soft)" }}>
+                                  保存中...
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
-
-              {newCategories.length > 0 && (
-                <div className="lg:col-start-2">
-                  <h2 className="mb-2 text-[19px] font-bold">新しいカテゴリが見つかりました</h2>
-                  <p className="mb-4 text-[13px]" style={{ color: "var(--ink-soft)" }}>
-                    固定8分類にないカテゴリです。アイコンを選ぶと一覧画面などにそのまま表示されます（あとから「⚙️」の設定画面でも変更できます）
-                  </p>
-                  <div className="flex flex-col gap-5">
-                    {newCategories.map((category) => {
-                      const isSaving = savingCategories.has(category);
-                      return (
-                        <div key={category}>
-                          <p className="mb-2 text-[15px] font-bold">{category}</p>
-                          <CategoryIconPicker
-                            category={category}
-                            selectedIcon={customIcons[category]}
-                            onSelect={(icon) => saveCategoryIcon(category, icon)}
-                          />
-                          {isSaving && (
-                            <p className="mt-1.5 text-[13px]" style={{ color: "var(--ink-soft)" }}>
-                              保存中...
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>

@@ -30,7 +30,12 @@ export function matchPresetIcon(categoryName) {
  */
 function CategoryIconPicker({ category, selectedIcon, onSelect }) {
   return (
-    <div className="flex flex-wrap gap-2" role="group" aria-label={`${category || "カテゴリ"}のアイコンを選択`}>
+    <div
+      className="grid gap-2"
+      style={{ gridTemplateColumns: "repeat(6, 40px)" }}
+      role="group"
+      aria-label={`${category || "カテゴリ"}のアイコンを選択`}
+    >
       {PRESET_ICONS.map(({ icon, label }) => {
         const isSelected = icon === selectedIcon;
         return (
