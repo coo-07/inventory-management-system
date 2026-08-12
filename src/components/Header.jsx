@@ -9,6 +9,7 @@ function useBackLink() {
   const isTanaoroshiResults = useMatch("/items/tanaoroshi-results");
   const isDetail = useMatch("/items/:id");
   const isNew = useMatch("/items/new");
+  const isImport = useMatch("/items/import");
   const isEdit = useMatch("/items/:id/edit");
   const isRecord = useMatch("/items/:id/record");
   const isShop = useMatch("/shop");
@@ -16,6 +17,7 @@ function useBackLink() {
   if (isTanaoroshiResults) return { label: "一覧へ戻る", to: "/items" };
   if (isDetail) return { label: "一覧へ戻る", to: "/items" };
   if (isNew) return { label: "戻る", to: "/items" };
+  if (isImport) return { label: "一覧へ戻る", to: "/items" };
   if (isEdit) return { label: "戻る", to: `/items/${isEdit.params.id}` };
   if (isRecord) return { label: "商品詳細へ戻る", to: `/items/${isRecord.params.id}` };
   if (isShop) return { label: "一覧へ戻る", to: "/items" };

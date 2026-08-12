@@ -173,6 +173,9 @@ function Home() {
               {deleteTestDataLoading ? "削除しています..." : "🗑️ テストデータを削除する"}
             </button>
           )}
+          <Button variant="secondary" onClick={() => navigate("/items/import")} className="whitespace-nowrap">
+            📄 Excelから取り込む
+          </Button>
           <Button variant="primary" loading={addLoading} onClick={handleAddNew} className="whitespace-nowrap">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <line x1="10" y1="4" x2="10" y2="16" stroke="white" strokeWidth="2.5" strokeLinecap="round" />

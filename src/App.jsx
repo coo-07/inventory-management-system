@@ -9,6 +9,7 @@ import StaffLogin from "./pages/StaffLogin";
 import Tanaoroshi from "./pages/Tanaoroshi";
 import Home from "./pages/Home";
 import ItemForm from "./pages/ItemForm";
+import ItemImport from "./pages/ItemImport";
 import ItemDetail from "./pages/ItemDetail";
 import StockRecord from "./pages/StockRecord";
 import TanaoroshiResults from "./pages/TanaoroshiResults";
@@ -39,6 +40,14 @@ function App() {
               element={
                 <RequireAuth>
                   <ItemForm />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/items/import"
+              element={
+                <RequireAuth>
+                  <ItemImport />
                 </RequireAuth>
               }
             />
