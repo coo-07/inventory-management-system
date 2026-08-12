@@ -155,35 +155,39 @@ function StockRecord() {
               ＋
             </button>
           </div>
-          <div className="mt-3.5 flex justify-center gap-2.5">
-            <Button
-              variant="secondary"
-              onClick={() => setQty((prev) => Math.max(1, (Number(prev) || 0) - 10))}
-              className="px-4 text-[15px]"
-            >
-              −10
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => setQty((prev) => Math.max(1, (Number(prev) || 0) - 5))}
-              className="px-4 text-[15px]"
-            >
-              −5
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => setQty((prev) => (Number(prev) || 0) + 5)}
-              className="px-4 text-[15px]"
-            >
-              +5
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => setQty((prev) => (Number(prev) || 0) + 10)}
-              className="px-4 text-[15px]"
-            >
-              +10
-            </Button>
+          <div className="mt-3.5 flex justify-center gap-7">
+            <div className="flex gap-2.5">
+              <Button
+                variant="secondary"
+                onClick={() => setQty((prev) => Math.max(1, (Number(prev) || 0) - 10))}
+                className="px-4 text-[15px]"
+              >
+                −10
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setQty((prev) => Math.max(1, (Number(prev) || 0) - 5))}
+                className="px-4 text-[15px]"
+              >
+                −5
+              </Button>
+            </div>
+            <div className="flex gap-2.5">
+              <Button
+                variant="secondary"
+                onClick={() => setQty((prev) => (Number(prev) || 0) + 5)}
+                className="px-4 text-[15px]"
+              >
+                +5
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setQty((prev) => (Number(prev) || 0) + 10)}
+                className="px-4 text-[15px]"
+              >
+                +10
+              </Button>
+            </div>
           </div>
         </div>
 
