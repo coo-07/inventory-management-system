@@ -1,24 +1,89 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 
+const EMPTY_MAPPING = { name: null, category: null, stock: null, threshold: null, unit: null };
+
+const MAPPING_FIELDS = [
+  { key: "name", label: "商品名", required: true },
+  { key: "category", label: "カテゴリ", required: false },
+  { key: "stock", label: "在庫数", required: true },
+  { key: "threshold", label: "発注点", required: false },
+  { key: "unit", label: "単位", required: false },
+];
+
+function toTrimmedString(value) {
+  return (value === undefined || value === null ? "" : String(value)).trim();
+}
+
+// Number("")は0になってしまうため、空欄と非数値を別途チェックする
+function isBlankOrNonNumeric(value) {
+  const str = toTrimmedString(value);
+  if (str === "") return true;
+  return Number.isNaN(Number(str));
+}
+
+function getColumnCount(rows) {
+  return rows.reduce((max, row) => Math.max(max, row.length), 0);
+}
+
+function buildColumnOptions(rows) {
+  const headerRow = rows[0] || [];
+  const columnCount = getColumnCount(rows);
+  return Array.from({ length: columnCount }, (_, i) => {
+    const headerLabel = toTrimmedString(headerRow[i]) || "空欄";
+    return { value: i, label: `列${i + 1}（${headerLabel}）` };
+  });
+}
+
+// スキップ対象なら { skip: true }、有効な行ならマッピング済みの値を { skip: false, item } で返す
+function evaluateRow(row, columnMapping) {
+  const nameStr = toTrimmedString(row[columnMapping.name]);
+  if (nameStr === "") return { skip: true };
+
+  if (isBlankOrNonNumeric(row[columnMapping.stock])) return { skip: true };
+  const stock = Number(row[columnMapping.stock]);
+
+  let threshold = 0;
+  if (columnMapping.threshold !== null) {
+    if (isBlankOrNonNumeric(row[columnMapping.threshold])) return { skip: true };
+    threshold = Number(row[columnMapping.threshold]);
+  }
+
+  const category = columnMapping.category !== null ? toTrimmedString(row[columnMapping.category]) || "その他" : "その他";
+  const unit = columnMapping.unit !== null ? toTrimmedString(row[columnMapping.unit]) || "個" : "個";
+
+  return { skip: false, item: { name: nameStr, category, stock, threshold, unit } };
+}
+
 /**
- * Excel/CSVから在庫データを取り込むページ（ステップ①：中身をそのまま表示するところまで）。
- * Supabaseへの保存・列のマッピングは未実装。
+ * Excel/CSVから在庫データを取り込むページ。
+ * ステップ①：ファイルを選んで中身を表示、ステップ②：列マッピング・プレビューまで。
+ * Supabaseへの保存（ステップ④）は未実装。
  */
 function ItemImport() {
   const [rows, setRows] = useState(null);
   const [fileName, setFileName] = useState("");
   const [status, setStatus] = useState("idle");
+  const [columnMapping, setColumnMapping] = useState(EMPTY_MAPPING);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
+  const handleFile = (file) => {
     if (!file) return;
 
-    const isCsv = file.name.toLowerCase().endsWith(".csv");
+    const lowerName = file.name.toLowerCase();
+    const isCsv = lowerName.endsWith(".csv");
+    const isXlsx = lowerName.endsWith(".xlsx");
 
     setFileName(file.name);
-    setStatus("loading");
     setRows(null);
+    setColumnMapping(EMPTY_MAPPING);
+
+    if (!isCsv && !isXlsx) {
+      setStatus("error");
+      return;
+    }
+
+    setStatus("loading");
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -43,6 +108,55 @@ function ItemImport() {
     }
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    handleFile(file);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFile(file);
+  };
+
+  const columnOptions = useMemo(() => (rows ? buildColumnOptions(rows) : []), [rows]);
+  const dataRows = useMemo(() => (rows ? rows.slice(1) : []), [rows]);
+
+  const canPreview = columnMapping.name !== null && columnMapping.stock !== null;
+
+  const { validItems, skippedCount } = useMemo(() => {
+    if (!canPreview) return { validItems: [], skippedCount: 0 };
+    const items = [];
+    let skipped = 0;
+    for (const row of dataRows) {
+      const result = evaluateRow(row, columnMapping);
+      if (result.skip) {
+        skipped += 1;
+      } else {
+        items.push(result.item);
+      }
+    }
+    return { validItems: items, skippedCount: skipped };
+  }, [dataRows, columnMapping, canPreview]);
+
+  const updateMapping = (key, value) => {
+    setColumnMapping((prev) => ({ ...prev, [key]: value === "" ? null : Number(value) }));
+  };
+
+  const selectClass =
+    "box-border w-full cursor-pointer rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[15px] transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!";
+
   return (
     <div className="mx-auto max-w-[960px] px-6 py-5">
       <h1 className="mb-6 text-[26px] font-bold">Excelから取り込む</h1>
@@ -51,14 +165,25 @@ function ItemImport() {
         className="rounded-[var(--r-xl)] border-2 p-7"
         style={{ background: "var(--surface)", borderColor: "var(--border)" }}
       >
-        <label className="mb-2 block text-[15px] font-bold">ファイルを選択（.xlsx / .csv）</label>
-        <input
-          type="file"
-          accept=".xlsx,.csv"
-          onChange={handleFileChange}
-          className="box-border w-full max-w-[420px] cursor-pointer rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[15px] transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!"
-          style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
-        />
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className="rounded-[var(--r-md)] border-2 border-dashed p-5 transition-colors"
+          style={{ borderColor: isDragging ? "var(--blue)" : "var(--border)", background: "var(--surface)" }}
+        >
+          <p className="mb-3 text-[15px]" style={{ color: "var(--ink-soft)" }}>
+            ここにファイルをドラッグ&ドロップ、またはファイルを選択
+          </p>
+          <label className="mb-2 block text-[15px] font-bold">ファイルを選択（.xlsx / .csv）</label>
+          <input
+            type="file"
+            accept=".xlsx,.csv"
+            onChange={handleFileChange}
+            className="box-border w-full max-w-[420px] cursor-pointer rounded-[var(--r-md)] border-2 px-4 py-3.5 text-[15px] transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!"
+            style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+          />
+        </div>
 
         <div className="mt-6">
           {status === "idle" && (
@@ -95,6 +220,87 @@ function ItemImport() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              <div className="mt-8">
+                <h2 className="mb-2 text-[19px] font-bold">列の対応付け</h2>
+                <p className="mb-4 text-[13px]" style={{ color: "var(--ink-soft)" }}>
+                  ※1行目には商品名・カテゴリなどの項目名が入っている必要があります。メモやタイトル行がある場合は、Excel側で先に削除してからアップロードしてください
+                </p>
+
+                <div className="flex flex-wrap gap-4">
+                  {MAPPING_FIELDS.map((field) => (
+                    <div key={field.key} className="min-w-[220px] flex-auto">
+                      <label className="mb-2 block text-[15px] font-bold">
+                        {field.label}
+                        {field.required ? "（必須）" : "（任意）"}
+                      </label>
+                      <select
+                        value={columnMapping[field.key] === null ? "" : String(columnMapping[field.key])}
+                        onChange={(e) => updateMapping(field.key, e.target.value)}
+                        className={selectClass}
+                        style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+                      >
+                        <option value="">{field.required ? "選択してください" : "（マッピングしない）"}</option>
+                        {columnOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <h2 className="mb-3 text-[19px] font-bold">プレビュー</h2>
+                {!canPreview ? (
+                  <p style={{ color: "var(--ink-soft)" }}>商品名と在庫数の列を選択してください</p>
+                ) : (
+                  <div>
+                    <p
+                      className="mb-3 text-[15px] font-bold"
+                      style={{ color: skippedCount > 0 ? "var(--orange-dark)" : "var(--ink-soft)" }}
+                    >
+                      有効な行：{validItems.length}件／スキップされる行：{skippedCount}件
+                    </p>
+                    <div className="overflow-x-auto rounded-[var(--r-md)] border-2" style={{ borderColor: "var(--border)" }}>
+                      <table className="w-full border-collapse text-left text-[14px]" style={{ color: "var(--ink)" }}>
+                        <thead>
+                          <tr style={{ background: "var(--bg)" }}>
+                            {["商品名", "カテゴリ", "在庫数", "発注点", "単位"].map((h) => (
+                              <th key={h} className="border px-3 py-2 font-bold" style={{ borderColor: "var(--border)" }}>
+                                {h}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {validItems.slice(0, 5).map((item, i) => (
+                            <tr key={i}>
+                              <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                {item.name}
+                              </td>
+                              <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                {item.category}
+                              </td>
+                              <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                {item.stock}
+                              </td>
+                              <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                {item.threshold}
+                              </td>
+                              <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                {item.unit}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
