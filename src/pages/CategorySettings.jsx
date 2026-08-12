@@ -88,7 +88,11 @@ function CategorySettings() {
                   </div>
                   {isOpen && (
                     <div className="mt-4">
-                      <CategoryIconPicker category={category} onSelect={(icon) => handleSelectIcon(category, icon)} />
+                      <CategoryIconPicker
+                        category={category}
+                        selectedIcon={icon}
+                        onSelect={(icon) => handleSelectIcon(category, icon)}
+                      />
                     </div>
                   )}
                 </div>
