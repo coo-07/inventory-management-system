@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
+import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useToast } from "../context/ToastContext";
 import CategoryIcon from "../components/CategoryIcon";
 import Button from "../components/Button";
@@ -25,6 +26,7 @@ function Tanaoroshi() {
   const isSingleMode = Boolean(itemParam);
 
   const { items, loading, getItemById, recordCount } = useItems();
+  const { customIcons } = useCategoryIcons();
 
   const [index, setIndex] = useState(0);
   const [qty, setQty] = useState("");
@@ -129,7 +131,7 @@ function Tanaoroshi() {
         style={{ background: "var(--surface)", borderColor: "var(--border)" }}
       >
         <div className="flex flex-col items-center gap-2">
-          <CategoryIcon category={currentItem.category} size={52} />
+          <CategoryIcon category={currentItem.category} size={52} customIcons={customIcons} />
           <p className="m-0 text-center text-2xl font-black">{currentItem.name}</p>
         </div>
 

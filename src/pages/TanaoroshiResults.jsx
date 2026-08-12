@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
+import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { formatDate } from "../utils/formatDate";
 import CategoryIcon from "../components/CategoryIcon";
 import Button from "../components/Button";
@@ -11,6 +12,7 @@ import Button from "../components/Button";
 function TanaoroshiResults() {
   const navigate = useNavigate();
   const { logs, getItemById, loading } = useItems();
+  const { customIcons } = useCategoryIcons();
 
   if (loading) {
     return (
@@ -56,7 +58,7 @@ function TanaoroshiResults() {
                 <div className="flex min-w-[160px] flex-1 items-center gap-2">
                   {item ? (
                     <>
-                      <CategoryIcon category={item.category} size={20} />
+                      <CategoryIcon category={item.category} size={20} customIcons={customIcons} />
                       <span className="font-bold">{item.name}</span>
                     </>
                   ) : (

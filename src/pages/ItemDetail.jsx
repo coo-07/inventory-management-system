@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
+import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useToast } from "../context/ToastContext";
 import CategoryIcon, { getCategoryMeta } from "../components/CategoryIcon";
 import { getStockStatus } from "../utils/stockStatus";
@@ -16,6 +17,7 @@ function ItemDetail() {
   const navigate = useNavigate();
   const showToast = useToast();
   const { items, loading, getItemById, getLogsByItemId, deleteItem, seedTestLogs } = useItems();
+  const { customIcons } = useCategoryIcons();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [seedLoading, setSeedLoading] = useState(false);
@@ -51,7 +53,7 @@ function ItemDetail() {
 
   const logs = getLogsByItemId(id);
   const status = getStockStatus(item.stock, item.threshold);
-  const meta = getCategoryMeta(item.category);
+  const meta = getCategoryMeta(item.category, customIcons);
   const idx = items.findIndex((i) => i.id === id);
   const showNav = idx > 0 || (idx >= 0 && idx < items.length - 1);
 
@@ -103,7 +105,7 @@ function ItemDetail() {
             className="flex h-[200px] w-[200px] shrink-0 items-center justify-center rounded-[var(--r-xl)] lg:sticky lg:order-2 lg:w-full"
             style={{ background: meta.bg, top: "131px" }}
           >
-            <CategoryIcon category={item.category} size={56} />
+            <CategoryIcon category={item.category} size={56} customIcons={customIcons} />
           </div>
           <div className="min-w-[260px] flex-1 lg:order-1 lg:w-full lg:min-w-0">
             <h1 ref={titleRef} className="m-0 mb-1.5 text-[28px] font-black">{item.name}</h1>
@@ -113,7 +115,7 @@ function ItemDetail() {
                 className="inline-flex max-w-full items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold"
                 style={{ background: "var(--border)", color: "var(--ink)" }}
               >
-                <CategoryIcon category={item.category} size={15} />
+                <CategoryIcon category={item.category} size={15} customIcons={customIcons} />
                 <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{item.category}</span>
               </span>
               <span

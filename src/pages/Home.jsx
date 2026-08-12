@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
+import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useToast } from "../context/ToastContext";
 import { generateTestItems } from "../utils/generateTestData";
 import { getStockStatus } from "../utils/stockStatus";
@@ -9,6 +10,7 @@ import Button from "../components/Button";
 
 function Home() {
   const { items, loading, loadTestData, deleteTestData } = useItems();
+  const { customIcons } = useCategoryIcons();
   const navigate = useNavigate();
   const showToast = useToast();
   const [search, setSearch] = useState("");
@@ -149,6 +151,15 @@ function Home() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate("/settings/categories")}
+            title="カテゴリアイコン設定"
+            className="box-border inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border text-base transition-colors hover:bg-[var(--bg)]!"
+            style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink-soft)" }}
+          >
+            ⚙️
+          </button>
           {import.meta.env.DEV && (
             <button
               type="button"
@@ -191,6 +202,7 @@ function Home() {
         onSelect={(id) => navigate(`/items/${id}`)}
         hasAnyItems={items.length > 0}
         loading={loading}
+        customIcons={customIcons}
       />
     </div>
   );

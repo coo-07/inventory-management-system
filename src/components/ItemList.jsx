@@ -12,7 +12,7 @@ const BOTTOM_RESERVE = 70 + GRID_GAP;
 /**
  * 商品一覧のグリッド表示。列数・行数に応じてページサイズを決め、ページ送りする。
  */
-function ItemList({ items, onSelect, hasAnyItems, loading }) {
+function ItemList({ items, onSelect, hasAnyItems, loading, customIcons }) {
   const [gridEl, setGridEl] = useState(null);
   const [columns, setColumns] = useState(4);
   const [rows, setRows] = useState(3);
@@ -83,7 +83,7 @@ function ItemList({ items, onSelect, hasAnyItems, loading }) {
         style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 170px))" }}
       >
         {pagedItems.map((item) => (
-          <ItemCard key={item.id} item={item} onClick={() => onSelect(item.id)} />
+          <ItemCard key={item.id} item={item} customIcons={customIcons} onClick={() => onSelect(item.id)} />
         ))}
       </div>
       <Pagination current={currentPage} total={totalPages} onGo={setPage} />

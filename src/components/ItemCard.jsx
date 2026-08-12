@@ -4,9 +4,9 @@ import { getStockStatus } from "../utils/stockStatus";
 /**
  * 商品1件分のカード。カテゴリアイコン・在庫状況アイコン・在庫数を表示する。
  */
-function ItemCard({ item, onClick }) {
+function ItemCard({ item, onClick, customIcons }) {
   const status = getStockStatus(item.stock, item.threshold);
-  const meta = getCategoryMeta(item.category);
+  const meta = getCategoryMeta(item.category, customIcons);
   const cardBg = status.isOut ? "#FEE2E2" : "var(--surface)";
   const cardBorder = status.isOut ? "#EF4444" : "var(--border)";
   const showStatusBadge = status.isOut || status.isLow;
@@ -37,7 +37,7 @@ function ItemCard({ item, onClick }) {
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--r-md)]"
           style={{ background: meta.bg }}
         >
-          <CategoryIcon category={item.category} />
+          <CategoryIcon category={item.category} customIcons={customIcons} />
         </div>
         <p
           title={item.category}

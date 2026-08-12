@@ -1,5 +1,9 @@
 import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
+import { useCategoryIcons } from "../hooks/useCategoryIcons";
+import { useToast } from "../context/ToastContext";
+import { FIXED_CATEGORIES } from "../components/CategoryIcon";
+import CategoryIconPicker from "../components/CategoryIconPicker";
 
 const EMPTY_MAPPING = { name: null, category: null, stock: null, threshold: null, unit: null };
 
@@ -66,6 +70,9 @@ function ItemImport() {
   const [status, setStatus] = useState("idle");
   const [columnMapping, setColumnMapping] = useState(EMPTY_MAPPING);
   const [isDragging, setIsDragging] = useState(false);
+  const { customIcons, addOrUpdateCategoryIcon } = useCategoryIcons();
+  const showToast = useToast();
+  const [savingCategory, setSavingCategory] = useState(null);
 
   const handleFile = (file) => {
     if (!file) return;
@@ -149,6 +156,26 @@ function ItemImport() {
     }
     return { validItems: items, skippedCount: skipped };
   }, [dataRows, columnMapping, canPreview]);
+
+  const newCategories = useMemo(() => {
+    if (!canPreview) return [];
+    const set = new Set(
+      validItems
+        .map((item) => item.category)
+        .filter((cat) => cat && !FIXED_CATEGORIES.includes(cat) && !customIcons[cat])
+    );
+    return [...set].sort((a, b) => a.localeCompare(b, "ja"));
+  }, [validItems, customIcons, canPreview]);
+
+  const handleSelectNewCategoryIcon = async (category, icon) => {
+    if (savingCategory) return;
+    setSavingCategory(category);
+    const result = await addOrUpdateCategoryIcon(category, icon);
+    setSavingCategory(null);
+    if (!result.ok) {
+      showToast("❌ " + result.message);
+    }
+  };
 
   const updateMapping = (key, value) => {
     setColumnMapping((prev) => ({ ...prev, [key]: value === "" ? null : Number(value) }));
@@ -302,6 +329,34 @@ function ItemImport() {
                   </div>
                 )}
               </div>
+
+              {newCategories.length > 0 && (
+                <div className="mt-8">
+                  <h2 className="mb-2 text-[19px] font-bold">新しいカテゴリが見つかりました</h2>
+                  <p className="mb-4 text-[13px]" style={{ color: "var(--ink-soft)" }}>
+                    固定8分類にないカテゴリです。アイコンを選ぶと一覧画面などにそのまま表示されます（あとから「⚙️」の設定画面でも変更できます）
+                  </p>
+                  <div className="flex flex-col gap-5">
+                    {newCategories.map((category) => {
+                      const isSaving = savingCategory === category;
+                      return (
+                        <div key={category}>
+                          <p className="mb-2 text-[15px] font-bold">{category}</p>
+                          <CategoryIconPicker
+                            category={category}
+                            onSelect={(icon) => handleSelectNewCategoryIcon(category, icon)}
+                          />
+                          {isSaving && (
+                            <p className="mt-1.5 text-[13px]" style={{ color: "var(--ink-soft)" }}>
+                              保存中...
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

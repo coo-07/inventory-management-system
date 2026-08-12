@@ -3133,6 +3133,39 @@ npm install xlsx
 
 ---
 
+## 80. カテゴリアイコンの自由割り当て機能
+
+**経緯：** 2番・6番で確定した固定8分類（文房具・雑貨・食品・飲み物・ペット用品・衣類・美容・コスメ・その他）以外のカテゴリは、これまで全て📦のdefaultアイコン扱いだった。79番のExcel取り込み機能で、店舗ごとに独自のカテゴリ（「工具」「家電」など）を持ち込むケースが増えることが見えてきたため、固定8分類にないカテゴリにも、利用者が任意でアイコンを割り当てられる仕組みを追加した。Supabaseに`category_icons`テーブル（`category: text`・`icon: text`・`created_at: timestamptz`、`category`が実質的な主キー）を新設し、カテゴリ名→アイコンの対応を永続化する。
+
+**アイコン判定の優先順位：** `getCategoryMeta(category, customIcons)`（`CategoryIcon.jsx`）で以下の順に判定する。
+
+1. 固定8分類（`CATEGORY_META`）に一致 → 6番で決めた専用の絵文字＋背景色
+2. `customIcons`（`useCategoryIcons()`が返す`{ [category]: icon }`）に一致 → その絵文字＋固定8分類と同じdefault背景色（背景色は分類ごとに作り込まず統一）
+3. どちらにも一致しない → 従来通りdefault（📦・「その他」相当の背景色）
+
+`FIXED_CATEGORIES`（`CATEGORY_META`のキー＋「その他」の8件）を`CategoryIcon.jsx`からexportし、「固定8分類かどうか」の判定はこの配列を単一の情報源として`CategorySettings.jsx`・`ItemImport.jsx`の両方から参照する。
+
+**実装内容：**
+- `src/hooks/useCategoryIcons.js`：`category_icons`を全件取得して`{ [category]: icon }`のcustomIconsを保持。`addOrUpdateCategoryIcon(category, icon)`は`upsert({ category, icon }, { onConflict: "category" })`で、成功時はローカルstateにも即反映する（`useItems.js`・`useShop.js`と同じ`{ ok, message }`パターン）
+- `src/components/CategoryIconPicker.jsx`：プリセット12種類の絵文字ボタンを並べる共通コンポーネント。**設定画面（`CategorySettings.jsx`）とExcel取り込みプレビュー（`ItemImport.jsx`）の両方から同じコンポーネントを使い回している**（`category`・`onSelect`の2propsのみを受け取るシンプルな設計にし、保存処理は呼び出し側に持たせることで再利用しやすくした）
+- `CategoryIcon.jsx`の`getCategoryMeta`・`CategoryIcon`コンポーネントに`customIcons`引数/propsを追加。呼び出し側（`ItemCard.jsx`→`ItemList.jsx`→`Home.jsx`、`ItemDetail.jsx`、`Tanaoroshi.jsx`、`TanaoroshiResults.jsx`）はそれぞれ`useCategoryIcons()`を呼んでcustomIconsを渡すように更新。**`ItemCard`自体には`useCategoryIcons()`を呼ばせず、一覧ページ（`Home.jsx`）で1回だけ呼んで`ItemList`→`ItemCard`にpropsで渡す設計**にした（カード1枚ごとに個別にSupabaseへアイコンを取得しに行くと、商品数が多いページで無駄なリクエストが増えるため）
+- `src/pages/CategorySettings.jsx`（ルート：`/settings/categories`、`RequireAuth`で保護）：`useItems()`の商品から固定8分類に含まれないカテゴリをユニーク抽出し、現在のアイコン（未設定なら📦＋「未設定」表示）と「アイコンを変更する」ボタンを一覧表示。ボタンを押すとその場で`CategoryIconPicker`を展開し、選択すると`addOrUpdateCategoryIcon`を呼ぶ。保存中は19番の処理中表示パターン（ボタンラベルを「保存中...」に差し替え・`disabled`化）を踏襲
+- `Home.jsx`：検索行右側に⚙️の設定アイコンボタンを追加し、`/settings/categories`へ遷移
+- `Header.jsx`の`useBackLink()`に`/settings/categories → 一覧へ戻る／to: /items`を追加（79番の`/items/import`と同じパターンで、他の内部ページと同様に戻り導線を統一）
+- `ItemImport.jsx`：`validItems`のカテゴリ値をユニーク抽出し、固定8分類にもcustomIconsにも一致しないものを「新しいカテゴリが見つかりました」セクションに列挙。各カテゴリごとに`CategoryIconPicker`を表示し、選択すると即`addOrUpdateCategoryIcon`を呼ぶ。保存成功で`customIcons`が更新されると、そのカテゴリは判定条件（`!customIcons[cat]`）を満たさなくなり`useMemo`の再計算で自動的にリストから消える（消すための専用stateは持たせていない）。対象カテゴリが0件のときはセクション自体を表示しない
+
+**プリセットアイコン12種類：** 🧻 日用品／🚗 車用品／🚬 タバコ・喫煙具／🍬 お菓子／🍺 酒／🧊 冷凍食品／🧹 掃除用品／🔧 工具・DIY／💊 医薬品・衛生用品／🔋 電池・電球／📖 雑誌・書籍／🎮 ホビー・おもちゃ（各ボタンの`title`属性にラベルを設定）
+
+**経緯（テーブル未作成による中断と再確認）：** 実装直後の実機確認時点では、Supabase側に`category_icons`テーブルが実際には作成されておらず（PostgRESTのスキーマキャッシュに存在しない旨のエラー`PGRST205`）、`useCategoryIcons()`の取得・`addOrUpdateCategoryIcon`の保存がいずれも失敗する状態だった。アプリ側は失敗時にエラーをコンソールに出すだけでクラッシュせず、「未設定」のまま・エラートースト表示という想定通りのフォールバック動作をすることをまず確認。その後テーブル作成の連絡を受け、保存・再読み込み・一覧/詳細への反映まで含めて再確認し、正常に動作することを確認できた（下記ステータス参照）。
+
+**ステータス：** 実装・lintエラーなし・ビルド成功確認済み（2026/08/12）。`category_icons`テーブル作成前後の2段階でブラウザ確認を実施。
+
+- テーブル作成前：①一覧ページ・設定画面・Excel取り込みプレビューがcategory_icons不在でもクラッシュしないこと、②固定8分類にないカテゴリ（「ホビー用品」）の商品を実際に登録し、設定画面に「未設定」として表示されること、③Excel取り込みプレビューで複数の新規カテゴリ（「家電」「工具」）が正しく検出されること、④アイコン選択→保存失敗時にエラートースト・「未設定」のままという想定通りの挙動になること、を確認
+- テーブル作成後：固定8分類にないカテゴリ「工具」の商品を登録→設定画面で🔧を選択→Supabaseの`category_icons`テーブルに`{category: "工具", icon: "🔧"}`が保存されていることをREST APIで確認→ページを再読み込みしても🔧が表示されたまま（再フェッチで正しく復元）→商品一覧のカード・商品詳細画面（大アイコン・カテゴリバッジの両方）で🔧が反映されていることを確認
+- テスト用に登録した商品・`category_icons`の行はいずれも確認後に削除済み（Supabase上に残っていないことをREST APIへの問い合わせで確認）
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか
@@ -3174,3 +3207,4 @@ npm install xlsx
 - [x] Excel/CSV取り込み機能・ステップ①（ファイル選択→中身をそのまま表表示）、実装・確認済み（78番、2026/08/12）。列マッピング・Supabase保存は次ステップ以降
 - [x] Excel/CSV取り込み機能・ステップ②（列マッピングUI・スキップ判定・プレビュー）、実装・確認済み（79番、2026/08/12）。Supabase保存はステップ④で対応予定
 - [x] Excel/CSV取り込み機能：ドラッグ&ドロップでのファイル選択を追加、実装・確認済み（79-2番、2026/08/12）
+- [x] カテゴリアイコンの自由割り当て機能（80番、2026/08/12）：実装・実機確認済み。`category_icons`テーブル作成後、保存→再読み込み→一覧/詳細への反映まで確認完了

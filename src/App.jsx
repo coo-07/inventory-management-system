@@ -11,6 +11,7 @@ import Home from "./pages/Home";
 import ItemForm from "./pages/ItemForm";
 import ItemImport from "./pages/ItemImport";
 import ItemDetail from "./pages/ItemDetail";
+import CategorySettings from "./pages/CategorySettings";
 import StockRecord from "./pages/StockRecord";
 import TanaoroshiResults from "./pages/TanaoroshiResults";
 import Shop from "./pages/Shop";
@@ -48,6 +49,14 @@ function App() {
               element={
                 <RequireAuth>
                   <ItemImport />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/settings/categories"
+              element={
+                <RequireAuth>
+                  <CategorySettings />
                 </RequireAuth>
               }
             />
