@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
 import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useToast } from "../context/ToastContext";
@@ -12,6 +12,7 @@ function Home() {
   const { items, loading, loadTestData, deleteTestData } = useItems();
   const { customIcons } = useCategoryIcons();
   const navigate = useNavigate();
+  const location = useLocation();
   const showToast = useToast();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
@@ -20,6 +21,9 @@ function Home() {
   const [addLoading, setAddLoading] = useState(false);
   const [testDataLoading, setTestDataLoading] = useState(false);
   const [deleteTestDataLoading, setDeleteTestDataLoading] = useState(false);
+  // Excel取り込み（ItemImport.jsx）でスキップされた行の情報。navigateのstate経由で受け取り、それぞれ独立して閉じられる
+  const [skippedDuplicates, setSkippedDuplicates] = useState(location.state?.skippedDuplicates || []);
+  const [skippedReasons, setSkippedReasons] = useState(location.state?.skippedReasons || []);
 
   const categories = useMemo(
     () => [...new Set(items.map((item) => item.category).filter(Boolean))],
@@ -104,6 +108,48 @@ function Home() {
 
   return (
     <div className="mx-auto max-w-[2400px] px-6 py-5 pb-36 md:px-12">
+      {skippedReasons.length > 0 && (
+        <div
+          className="mb-5 flex flex-wrap items-start justify-between gap-3 rounded-[var(--r-md)] border-2 px-4.5 py-3.5"
+          style={{ borderColor: "var(--orange)", background: "var(--orange-light)" }}
+        >
+          <div>
+            <p className="m-0 mb-1.5 text-[14px] font-bold" style={{ color: "var(--orange-dark)" }}>
+              ⚠️ 取り込みでスキップされた行があります（{skippedReasons.length}件）
+            </p>
+            <ul className="m-0 list-disc pl-5 text-[13px]" style={{ color: "var(--orange-dark)" }}>
+              {skippedReasons.map((r, i) => (
+                <li key={i}>
+                  {r.rowNumber}行目：{r.reason}のためスキップ
+                </li>
+              ))}
+            </ul>
+          </div>
+          <Button variant="secondarySoft" onClick={() => setSkippedReasons([])} className="shrink-0">
+            確認しました
+          </Button>
+        </div>
+      )}
+
+      {skippedDuplicates.length > 0 && (
+        <div
+          className="mb-5 flex flex-wrap items-start justify-between gap-3 rounded-[var(--r-md)] border-2 px-4.5 py-3.5"
+          style={{ borderColor: "var(--orange)", background: "var(--orange-light)" }}
+        >
+          <div>
+            <p className="m-0 mb-1.5 text-[14px] font-bold" style={{ color: "var(--orange-dark)" }}>
+              ⚠️ 重複のため取り込みをスキップした商品（{skippedDuplicates.length}件）
+            </p>
+            <p className="m-0 text-[13px]" style={{ color: "var(--orange-dark)" }}>
+              {skippedDuplicates.join("、")}
+            </p>
+          </div>
+          <Button variant="secondarySoft" onClick={() => setSkippedDuplicates([])} className="shrink-0">
+            確認しました
+          </Button>
+        </div>
+      )}
+
       <div className="mb-7 flex flex-wrap items-end gap-4">
         <div className="flex min-w-[260px] max-w-96 flex-1 flex-col gap-1.5">
           <label className="text-[13px] font-bold" style={{ color: "var(--ink-soft)" }}>

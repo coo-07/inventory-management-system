@@ -78,7 +78,6 @@ function ItemImport() {
   const showToast = useToast();
   const [savingCategories, setSavingCategories] = useState(() => new Set());
   const autoMatchedRef = useRef(new Set());
-  const [duplicateMode, setDuplicateMode] = useState("skip");
   const [importing, setImporting] = useState(false);
 
   const handleFile = (file) => {
@@ -176,7 +175,8 @@ function ItemImport() {
   const existingNameSet = useMemo(() => new Set(existingItems.map((item) => item.name)), [existingItems]);
 
   // 重複名の一覧（ファイル内の重複・既存登録済みとの重複の両方をまとめて対象にする）と、
-  // ラジオボタンの選択に応じた実際の取り込み対象を算出する
+  // 実際の取り込み対象を算出する。重複はスキップする動作に固定する（既存登録済みと同名の行はすべて除外し、
+  // ファイル内で同名が複数ある場合は最初の1件のみを残す）
   const { duplicateNames, importTargets } = useMemo(() => {
     if (!canPreview) return { duplicateNames: [], importTargets: [] };
 
@@ -187,31 +187,23 @@ function ItemImport() {
 
     const dupNames = [];
     const seenDup = new Set();
+    const seenInFile = new Set();
+    const targets = [];
     for (const item of validItems) {
-      if (seenDup.has(item.name)) continue;
-      if (nameCounts.get(item.name) > 1 || existingNameSet.has(item.name)) {
+      const isDuplicate = nameCounts.get(item.name) > 1 || existingNameSet.has(item.name);
+      if (isDuplicate && !seenDup.has(item.name)) {
         seenDup.add(item.name);
         dupNames.push(item.name);
       }
-    }
 
-    let targets;
-    if (duplicateMode === "skip") {
-      // 既存登録済みと同名の行はすべて除外し、ファイル内で同名が複数ある場合は最初の1件のみを残す
-      const seenInFile = new Set();
-      targets = [];
-      for (const item of validItems) {
-        if (existingNameSet.has(item.name)) continue;
-        if (seenInFile.has(item.name)) continue;
-        seenInFile.add(item.name);
-        targets.push(item);
-      }
-    } else {
-      targets = validItems;
+      if (existingNameSet.has(item.name)) continue;
+      if (seenInFile.has(item.name)) continue;
+      seenInFile.add(item.name);
+      targets.push(item);
     }
 
     return { duplicateNames: dupNames, importTargets: targets };
-  }, [validItems, existingNameSet, duplicateMode, canPreview]);
+  }, [validItems, existingNameSet, canPreview]);
 
   const handleImport = async () => {
     if (importing || importTargets.length === 0) return;
@@ -223,7 +215,7 @@ function ItemImport() {
       return;
     }
     showToast(`✅ ${result.items.length}件の商品を取り込みました`);
-    navigate("/items");
+    navigate("/items", { state: { skippedDuplicates: duplicateNames, skippedReasons } });
   };
 
   const saveCategoryIcon = async (category, icon) => {
@@ -398,27 +390,6 @@ function ItemImport() {
                             ))}
                           </tbody>
                         </table>
-                      </div>
-
-                      <div className="mt-4 flex flex-col gap-2">
-                        <label className="flex cursor-pointer items-center gap-2 text-[14px]">
-                          <input
-                            type="radio"
-                            name="duplicateMode"
-                            checked={duplicateMode === "skip"}
-                            onChange={() => setDuplicateMode("skip")}
-                          />
-                          重複はスキップする（推奨）
-                        </label>
-                        <label className="flex cursor-pointer items-center gap-2 text-[14px]">
-                          <input
-                            type="radio"
-                            name="duplicateMode"
-                            checked={duplicateMode === "all"}
-                            onChange={() => setDuplicateMode("all")}
-                          />
-                          重複もすべて追加する
-                        </label>
                       </div>
 
                       <Button
