@@ -174,6 +174,34 @@ export function useItems() {
   }, []);
 
   /**
+   * Excel/CSV取り込み機能から、プレビューで確定した商品をまとめて登録する。
+   */
+  const importItems = useCallback(async (newItems) => {
+    const { data: inserted, error } = await supabase
+      .from("items")
+      .insert(
+        newItems.map((item) => ({
+          name: item.name,
+          category: item.category,
+          stock: item.stock,
+          threshold: item.threshold,
+          unit: item.unit,
+          image_url: item.imageUrl || null,
+        }))
+      )
+      .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at");
+
+    if (error) {
+      console.error("商品の一括登録に失敗しました", error);
+      return { ok: false, message: "商品の一括登録に失敗しました" };
+    }
+
+    const insertedItems = (inserted ?? []).map(toCamelItem);
+    setItems((prev) => [...prev, ...insertedItems]);
+    return { ok: true, items: insertedItems };
+  }, []);
+
+  /**
    * 開発用: 指定商品にテストの入出荷履歴をまとめて追加し、在庫数を最終値に更新する。
    */
   const seedTestLogs = useCallback(async (itemId, newLogs, finalStock) => {
@@ -345,5 +373,5 @@ export function useItems() {
     [items]
   );
 
-  return { items, logs, loading, refetch: fetchAll, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock, recordCount, loadTestData, seedTestLogs, deleteTestData };
+  return { items, logs, loading, refetch: fetchAll, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock, recordCount, importItems, loadTestData, seedTestLogs, deleteTestData };
 }

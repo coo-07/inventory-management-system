@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { useCategoryIcons } from "../hooks/useCategoryIcons";
+import { useItems } from "../hooks/useItems";
 import { useToast } from "../context/ToastContext";
 import { FIXED_CATEGORIES } from "../components/CategoryIcon";
 import CategoryIconPicker, { matchPresetIcon } from "../components/CategoryIconPicker";
+import Button from "../components/Button";
 
 const EMPTY_MAPPING = { name: null, category: null, stock: null, threshold: null, unit: null };
 
@@ -61,19 +64,22 @@ function evaluateRow(row, columnMapping) {
 
 /**
  * Excel/CSVから在庫データを取り込むページ。
- * ステップ①：ファイルを選んで中身を表示、ステップ②：列マッピング・プレビューまで。
- * Supabaseへの保存（ステップ④）は未実装。
+ * ファイルを選んで中身を表示 → 列マッピング・プレビュー → 重複チェック → Supabaseへの一括登録まで。
  */
 function ItemImport() {
+  const navigate = useNavigate();
   const [rows, setRows] = useState(null);
   const [fileName, setFileName] = useState("");
   const [status, setStatus] = useState("idle");
   const [columnMapping, setColumnMapping] = useState(EMPTY_MAPPING);
   const [isDragging, setIsDragging] = useState(false);
   const { customIcons, addOrUpdateCategoryIcon } = useCategoryIcons();
+  const { items: existingItems, importItems } = useItems();
   const showToast = useToast();
   const [savingCategories, setSavingCategories] = useState(() => new Set());
   const autoMatchedRef = useRef(new Set());
+  const [duplicateMode, setDuplicateMode] = useState("skip");
+  const [importing, setImporting] = useState(false);
 
   const handleFile = (file) => {
     if (!file) return;
@@ -166,6 +172,59 @@ function ItemImport() {
     const set = new Set(validItems.map((item) => item.category).filter((cat) => cat && !FIXED_CATEGORIES.includes(cat)));
     return [...set].sort((a, b) => a.localeCompare(b, "ja"));
   }, [validItems, canPreview]);
+
+  const existingNameSet = useMemo(() => new Set(existingItems.map((item) => item.name)), [existingItems]);
+
+  // 重複名の一覧（ファイル内の重複・既存登録済みとの重複の両方をまとめて対象にする）と、
+  // ラジオボタンの選択に応じた実際の取り込み対象を算出する
+  const { duplicateNames, importTargets } = useMemo(() => {
+    if (!canPreview) return { duplicateNames: [], importTargets: [] };
+
+    const nameCounts = new Map();
+    for (const item of validItems) {
+      nameCounts.set(item.name, (nameCounts.get(item.name) || 0) + 1);
+    }
+
+    const dupNames = [];
+    const seenDup = new Set();
+    for (const item of validItems) {
+      if (seenDup.has(item.name)) continue;
+      if (nameCounts.get(item.name) > 1 || existingNameSet.has(item.name)) {
+        seenDup.add(item.name);
+        dupNames.push(item.name);
+      }
+    }
+
+    let targets;
+    if (duplicateMode === "skip") {
+      // 既存登録済みと同名の行はすべて除外し、ファイル内で同名が複数ある場合は最初の1件のみを残す
+      const seenInFile = new Set();
+      targets = [];
+      for (const item of validItems) {
+        if (existingNameSet.has(item.name)) continue;
+        if (seenInFile.has(item.name)) continue;
+        seenInFile.add(item.name);
+        targets.push(item);
+      }
+    } else {
+      targets = validItems;
+    }
+
+    return { duplicateNames: dupNames, importTargets: targets };
+  }, [validItems, existingNameSet, duplicateMode, canPreview]);
+
+  const handleImport = async () => {
+    if (importing || importTargets.length === 0) return;
+    setImporting(true);
+    const result = await importItems(importTargets);
+    setImporting(false);
+    if (!result.ok) {
+      showToast("❌ " + result.message);
+      return;
+    }
+    showToast(`✅ ${result.items.length}件の商品を取り込みました`);
+    navigate("/items");
+  };
 
   const saveCategoryIcon = async (category, icon) => {
     setSavingCategories((prev) => new Set(prev).add(category));
@@ -293,6 +352,19 @@ function ItemImport() {
                           ))}
                         </ul>
                       )}
+                      {duplicateNames.length > 0 && (
+                        <div
+                          className="mb-3 rounded-[var(--r-md)] border-2 px-4 py-3"
+                          style={{ borderColor: "var(--orange)", background: "var(--orange-light)" }}
+                        >
+                          <p className="mb-1 text-[13px] font-bold" style={{ color: "var(--orange-dark)" }}>
+                            ⚠️ 重複の可能性がある商品（{duplicateNames.length}件）
+                          </p>
+                          <p className="text-[13px]" style={{ color: "var(--orange-dark)" }}>
+                            {duplicateNames.join("、")}
+                          </p>
+                        </div>
+                      )}
                       <div className="overflow-x-auto rounded-[var(--r-md)] border-2" style={{ borderColor: "var(--border)" }}>
                         <table className="w-full border-collapse text-left text-[14px]" style={{ color: "var(--ink)" }}>
                           <thead>
@@ -327,6 +399,37 @@ function ItemImport() {
                           </tbody>
                         </table>
                       </div>
+
+                      <div className="mt-4 flex flex-col gap-2">
+                        <label className="flex cursor-pointer items-center gap-2 text-[14px]">
+                          <input
+                            type="radio"
+                            name="duplicateMode"
+                            checked={duplicateMode === "skip"}
+                            onChange={() => setDuplicateMode("skip")}
+                          />
+                          重複はスキップする（推奨）
+                        </label>
+                        <label className="flex cursor-pointer items-center gap-2 text-[14px]">
+                          <input
+                            type="radio"
+                            name="duplicateMode"
+                            checked={duplicateMode === "all"}
+                            onChange={() => setDuplicateMode("all")}
+                          />
+                          重複もすべて追加する
+                        </label>
+                      </div>
+
+                      <Button
+                        variant="primary"
+                        loading={importing}
+                        disabled={importTargets.length === 0}
+                        onClick={handleImport}
+                        className="mt-4"
+                      >
+                        {importing ? "取り込んでいます..." : "この内容で取り込む"}
+                      </Button>
                     </div>
                   )}
                 </div>
