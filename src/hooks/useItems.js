@@ -133,10 +133,19 @@ export function useItems() {
   }, []);
 
   const deleteItem = useCallback(async (id) => {
+    // stock_logsがitemsを外部キー参照しているため、先に関連履歴を削除してからでないと
+    // items側の削除が外部キー制約違反（409）で失敗する（69番のdeleteTestDataと同じ順序）
+    const { error: logsError } = await supabase.from("stock_logs").delete().eq("item_id", id);
+
+    if (logsError) {
+      console.error("商品の削除に失敗しました", logsError.message, logsError.code);
+      return { ok: false, message: "商品の削除に失敗しました" };
+    }
+
     const { error } = await supabase.from("items").delete().eq("id", id);
 
     if (error) {
-      console.error("商品の削除に失敗しました", error);
+      console.error("商品の削除に失敗しました", error.message, error.code);
       return { ok: false, message: "商品の削除に失敗しました" };
     }
 
@@ -272,6 +281,35 @@ export function useItems() {
     return { ok: true };
   }, [items]);
 
+  /**
+   * 開発用: 全商品とその入出荷履歴をまとめて削除する。
+   */
+  const deleteAllItems = useCallback(async () => {
+    const targetIds = items.map((item) => item.id);
+
+    if (targetIds.length === 0) {
+      return { ok: true };
+    }
+
+    const { error: logsError } = await supabase.from("stock_logs").delete().in("item_id", targetIds);
+
+    if (logsError) {
+      console.error("全商品の削除に失敗しました", logsError);
+      return { ok: false, message: "全商品の削除に失敗しました" };
+    }
+
+    const { error: itemsError } = await supabase.from("items").delete().in("id", targetIds);
+
+    if (itemsError) {
+      console.error("全商品の削除に失敗しました", itemsError);
+      return { ok: false, message: "全商品の削除に失敗しました" };
+    }
+
+    setItems([]);
+    setLogs([]);
+    return { ok: true };
+  }, [items]);
+
   const getLogsByItemId = useCallback(
     (id) =>
       logs
@@ -373,5 +411,5 @@ export function useItems() {
     [items]
   );
 
-  return { items, logs, loading, refetch: fetchAll, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock, recordCount, importItems, loadTestData, seedTestLogs, deleteTestData };
+  return { items, logs, loading, refetch: fetchAll, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock, recordCount, importItems, loadTestData, seedTestLogs, deleteTestData, deleteAllItems };
 }

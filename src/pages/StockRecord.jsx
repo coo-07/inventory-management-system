@@ -159,6 +159,7 @@ function StockRecord() {
             <div className="flex gap-2.5">
               <Button
                 variant="secondary"
+                disabled={(Number(qty) || 0) - 10 < 1}
                 onClick={() => setQty((prev) => Math.max(1, (Number(prev) || 0) - 10))}
                 className="px-4 text-[15px]"
               >
@@ -166,6 +167,7 @@ function StockRecord() {
               </Button>
               <Button
                 variant="secondary"
+                disabled={(Number(qty) || 0) - 5 < 1}
                 onClick={() => setQty((prev) => Math.max(1, (Number(prev) || 0) - 5))}
                 className="px-4 text-[15px]"
               >

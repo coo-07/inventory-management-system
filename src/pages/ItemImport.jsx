@@ -45,14 +45,14 @@ function buildColumnOptions(rows) {
 // スキップ対象なら { skip: true, reason }、有効な行ならマッピング済みの値を { skip: false, item } で返す
 function evaluateRow(row, columnMapping) {
   const nameStr = toTrimmedString(row[columnMapping.name]);
-  if (nameStr === "") return { skip: true, reason: "商品名が空欄" };
+  if (nameStr === "") return { skip: true, reason: "商品名が空欄のため" };
 
-  if (isBlankOrNonNumeric(row[columnMapping.stock])) return { skip: true, reason: "在庫数が数値ではない" };
+  if (isBlankOrNonNumeric(row[columnMapping.stock])) return { skip: true, reason: "在庫数が数値ではないため" };
   const stock = Number(row[columnMapping.stock]);
 
   let threshold = 0;
   if (columnMapping.threshold !== null) {
-    if (isBlankOrNonNumeric(row[columnMapping.threshold])) return { skip: true, reason: "発注点が数値ではない" };
+    if (isBlankOrNonNumeric(row[columnMapping.threshold])) return { skip: true, reason: "発注点が数値ではないため" };
     threshold = Number(row[columnMapping.threshold]);
   }
 
@@ -215,7 +215,11 @@ function ItemImport() {
       return;
     }
     showToast(`✅ ${result.items.length}件の商品を取り込みました`);
-    navigate("/items", { state: { skippedDuplicates: duplicateNames, skippedReasons } });
+    // 商品一覧画面への遷移後、他画面を経由して一覧に戻ってきても注意喚起を表示し続けられるよう、
+    // navigateのstateではなくsessionStorageに保存する（ユーザーが「確認しました」を押すまで保持）
+    sessionStorage.setItem("importSkippedReasons", JSON.stringify(skippedReasons));
+    sessionStorage.setItem("importSkippedDuplicates", JSON.stringify(duplicateNames));
+    navigate("/items");
   };
 
   const saveCategoryIcon = async (category, icon) => {
@@ -339,7 +343,7 @@ function ItemImport() {
                         <ul className="mb-3 list-disc pl-5 text-[13px]" style={{ color: "var(--ink-soft)" }}>
                           {skippedReasons.slice(0, 5).map((r, i) => (
                             <li key={i}>
-                              {r.rowNumber}行目：{r.reason}のためスキップ
+                              {r.rowNumber}行目：{r.reason}スキップ
                             </li>
                           ))}
                         </ul>

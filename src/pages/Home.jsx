@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
 import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useToast } from "../context/ToastContext";
@@ -8,11 +8,18 @@ import { getStockStatus } from "../utils/stockStatus";
 import ItemList from "../components/ItemList";
 import Button from "../components/Button";
 
+function readSkippedFromStorage(key) {
+  try {
+    return JSON.parse(sessionStorage.getItem(key) || "[]");
+  } catch {
+    return [];
+  }
+}
+
 function Home() {
-  const { items, loading, loadTestData, deleteTestData } = useItems();
+  const { items, loading, loadTestData, deleteTestData, deleteAllItems } = useItems();
   const { customIcons } = useCategoryIcons();
   const navigate = useNavigate();
-  const location = useLocation();
   const showToast = useToast();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
@@ -21,9 +28,21 @@ function Home() {
   const [addLoading, setAddLoading] = useState(false);
   const [testDataLoading, setTestDataLoading] = useState(false);
   const [deleteTestDataLoading, setDeleteTestDataLoading] = useState(false);
-  // Excel取り込み（ItemImport.jsx）でスキップされた行の情報。navigateのstate経由で受け取り、それぞれ独立して閉じられる
-  const [skippedDuplicates, setSkippedDuplicates] = useState(location.state?.skippedDuplicates || []);
-  const [skippedReasons, setSkippedReasons] = useState(location.state?.skippedReasons || []);
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
+  // Excel取り込み（ItemImport.jsx）でスキップされた行の情報。sessionStorage経由で受け取ることで、
+  // 商品詳細画面などを経由して一覧に戻ってきても「確認しました」を押すまで表示し続ける
+  const [skippedDuplicates, setSkippedDuplicates] = useState(() => readSkippedFromStorage("importSkippedDuplicates"));
+  const [skippedReasons, setSkippedReasons] = useState(() => readSkippedFromStorage("importSkippedReasons"));
+
+  const dismissSkippedReasons = () => {
+    setSkippedReasons([]);
+    sessionStorage.removeItem("importSkippedReasons");
+  };
+
+  const dismissSkippedDuplicates = () => {
+    setSkippedDuplicates([]);
+    sessionStorage.removeItem("importSkippedDuplicates");
+  };
 
   const categories = useMemo(
     () => [...new Set(items.map((item) => item.category).filter(Boolean))],
@@ -106,6 +125,30 @@ function Home() {
     }
   };
 
+  const handleDeleteAllItems = async () => {
+    if (deleteAllLoading) return;
+    if (items.length === 0) {
+      showToast("削除対象の商品がありません");
+      return;
+    }
+    const confirmed = window.confirm(`全商品（${items.length}件）を削除します。よろしいですか？`);
+    if (!confirmed) return;
+    setDeleteAllLoading(true);
+    try {
+      const result = await deleteAllItems();
+      if (!result.ok) {
+        showToast("❌ " + result.message);
+        return;
+      }
+      showToast("全商品を削除しました");
+    } catch (error) {
+      console.error(error);
+      showToast("❌ 予期しないエラーが発生しました");
+    } finally {
+      setDeleteAllLoading(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-[2400px] px-6 py-5 pb-36 md:px-12">
       {skippedReasons.length > 0 && (
@@ -120,12 +163,12 @@ function Home() {
             <ul className="m-0 list-disc pl-5 text-[13px]" style={{ color: "var(--orange-dark)" }}>
               {skippedReasons.map((r, i) => (
                 <li key={i}>
-                  {r.rowNumber}行目：{r.reason}のためスキップ
+                  {r.rowNumber}行目：{r.reason}スキップ
                 </li>
               ))}
             </ul>
           </div>
-          <Button variant="secondarySoft" onClick={() => setSkippedReasons([])} className="shrink-0">
+          <Button variant="secondarySoft" onClick={dismissSkippedReasons} className="shrink-0">
             確認しました
           </Button>
         </div>
@@ -144,7 +187,7 @@ function Home() {
               {skippedDuplicates.join("、")}
             </p>
           </div>
-          <Button variant="secondarySoft" onClick={() => setSkippedDuplicates([])} className="shrink-0">
+          <Button variant="secondarySoft" onClick={dismissSkippedDuplicates} className="shrink-0">
             確認しました
           </Button>
         </div>
@@ -228,6 +271,18 @@ function Home() {
               style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink-soft)" }}
             >
               {deleteTestDataLoading ? "削除しています..." : "🗑️ テストデータを削除する"}
+            </button>
+          )}
+          {import.meta.env.DEV && (
+            <button
+              type="button"
+              onClick={handleDeleteAllItems}
+              disabled={deleteAllLoading}
+              title="開発用: 全商品と履歴をSupabaseから削除します"
+              className="box-border inline-flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-md border px-3 text-[13px] font-bold whitespace-nowrap transition-colors hover:bg-[var(--bg)]! disabled:cursor-not-allowed disabled:opacity-60"
+              style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink-soft)" }}
+            >
+              {deleteAllLoading ? "削除しています..." : "🗑️ 全商品を削除する"}
             </button>
           )}
           <Button variant="secondary" onClick={() => navigate("/items/import")} className="whitespace-nowrap">
