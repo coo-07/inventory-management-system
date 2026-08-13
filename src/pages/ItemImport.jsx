@@ -39,17 +39,17 @@ function buildColumnOptions(rows) {
   });
 }
 
-// スキップ対象なら { skip: true }、有効な行ならマッピング済みの値を { skip: false, item } で返す
+// スキップ対象なら { skip: true, reason }、有効な行ならマッピング済みの値を { skip: false, item } で返す
 function evaluateRow(row, columnMapping) {
   const nameStr = toTrimmedString(row[columnMapping.name]);
-  if (nameStr === "") return { skip: true };
+  if (nameStr === "") return { skip: true, reason: "商品名が空欄" };
 
-  if (isBlankOrNonNumeric(row[columnMapping.stock])) return { skip: true };
+  if (isBlankOrNonNumeric(row[columnMapping.stock])) return { skip: true, reason: "在庫数が数値ではない" };
   const stock = Number(row[columnMapping.stock]);
 
   let threshold = 0;
   if (columnMapping.threshold !== null) {
-    if (isBlankOrNonNumeric(row[columnMapping.threshold])) return { skip: true };
+    if (isBlankOrNonNumeric(row[columnMapping.threshold])) return { skip: true, reason: "発注点が数値ではない" };
     threshold = Number(row[columnMapping.threshold]);
   }
 
@@ -143,19 +143,22 @@ function ItemImport() {
 
   const canPreview = columnMapping.name !== null && columnMapping.stock !== null;
 
-  const { validItems, skippedCount } = useMemo(() => {
-    if (!canPreview) return { validItems: [], skippedCount: 0 };
+  const { validItems, skippedCount, skippedReasons } = useMemo(() => {
+    if (!canPreview) return { validItems: [], skippedCount: 0, skippedReasons: [] };
     const items = [];
+    const reasons = [];
     let skipped = 0;
-    for (const row of dataRows) {
+    dataRows.forEach((row, i) => {
       const result = evaluateRow(row, columnMapping);
       if (result.skip) {
         skipped += 1;
+        // dataRowsは1行目（項目名行）を除いた配列のため、元ファイルでの行番号は+2
+        reasons.push({ rowNumber: i + 2, reason: result.reason });
       } else {
         items.push(result.item);
       }
-    }
-    return { validItems: items, skippedCount: skipped };
+    });
+    return { validItems: items, skippedCount: skipped, skippedReasons: reasons };
   }, [dataRows, columnMapping, canPreview]);
 
   const newCategories = useMemo(() => {
@@ -281,6 +284,15 @@ function ItemImport() {
                       >
                         有効な行：{validItems.length}件／スキップされる行：{skippedCount}件
                       </p>
+                      {skippedReasons.length > 0 && (
+                        <ul className="mb-3 list-disc pl-5 text-[13px]" style={{ color: "var(--ink-soft)" }}>
+                          {skippedReasons.slice(0, 5).map((r, i) => (
+                            <li key={i}>
+                              {r.rowNumber}行目：{r.reason}のためスキップ
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                       <div className="overflow-x-auto rounded-[var(--r-md)] border-2" style={{ borderColor: "var(--border)" }}>
                         <table className="w-full border-collapse text-left text-[14px]" style={{ color: "var(--ink)" }}>
                           <thead>
