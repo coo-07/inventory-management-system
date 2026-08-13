@@ -41,8 +41,12 @@ function toCamelLog(row) {
  * LocalStorageへの読み書きを直接書かない。
  * 商品一覧・入出荷履歴の読み込みはSupabase（items / stock_logs テーブル）から行う。
  * 登録・編集・削除・入出荷記録は引き続きLocalStorageを使用する（未移行）。
+ *
+ * 実体はItemsContext.jsxのItemsProviderから呼び出され、アプリ全体で1つのstateを共有する
+ * （89番）。このフック自体を直接呼び出すと画面ごとに別々のstateを持ってしまうため、
+ * コンポーネント側は "../context/ItemsContext" のuseItemsを使うこと。
  */
-export function useItems() {
+export function useItemsInternal() {
   const [items, setItems] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);

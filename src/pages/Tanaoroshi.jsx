@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { useItems } from "../hooks/useItems";
+import { useItems } from "../context/ItemsContext";
 import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useToast } from "../context/ToastContext";
 import CategoryIcon from "../components/CategoryIcon";

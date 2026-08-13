@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link, useLocation, useMatch, useNavigate, useSearchParams } from "react-router-dom";
 import { getStockStatus } from "../utils/stockStatus";
-import { useItems } from "../hooks/useItems";
+import { useItems } from "../context/ItemsContext";
 import { useShop } from "../hooks/useShop";
 import { useAuth } from "../hooks/useAuth";
 

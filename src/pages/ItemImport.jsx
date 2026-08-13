@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { useCategoryIcons } from "../hooks/useCategoryIcons";
-import { useItems } from "../hooks/useItems";
+import { useItems } from "../context/ItemsContext";
 import { useToast } from "../context/ToastContext";
 import { FIXED_CATEGORIES } from "../components/CategoryIcon";
 import CategoryIconPicker, { matchPresetIcon } from "../components/CategoryIconPicker";

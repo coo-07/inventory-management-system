@@ -274,6 +274,32 @@ className="... hover:bg-blue-600 transition-colors border border-transparent hov
   - 在庫管理システムの将来機能としては、企画書12章「Excel/CSVインポート」を発展させる形で反映可能
   - このアイデア自体は在庫管理システムに限らず、汎用的なDifyアプリ（「ぐちゃぐちゃデータ整形AI」）としても成立しうるため、ポートフォリオ全体の企画候補としてClaudeの記憶にも登録済み
 
+### 将来のデータモデル拡張候補（商品項目の追加）
+
+一般的な在庫管理システムで使われる項目のうち、現在のitemsテーブルにない以下の項目を、将来追加する候補としてメモしておく。
+
+**優先候補（まず検討する4項目）：**
+- 商品コード（SKU）：商品を重複なく一意に識別する英数字
+- 仕入先名：どこから買うかを明確にする欄
+- 仕入単価：商品を1単位買い付ける時の価格
+- 保管場所（棚番号）：倉庫のどこにあるかを示す情報
+
+**その他の候補（優先度は低いが記録として残す）：**
+- 販売単価、在庫総額（在庫数×仕入単価で自動計算）
+- 仕入先コード、リードタイム（発注から納品までの日数）、最適発注数
+- 状態フラグ（通常／良品／不良品／保留）、ロット番号、製造日、消費期限／賞味期限
+- JANコード（バーコード）
+- 最終入出庫日、更新者
+
+**着手する場合の影響範囲メモ：** 項目を1つ追加するだけでも、以下すべてに波及する見込みのため、Excel/CSV取り込み機能とは別の、データモデル拡張という独立したフェーズとして扱う想定。
+- Supabaseのitemsテーブル定義変更（マイグレーション）
+- 商品登録・編集フォームへの入力欄追加
+- 商品一覧カード・商品詳細画面への表示追加
+- Excel/CSV取り込みの列マッピング（MAPPING_FIELDSへの追加。79番系/81番の配列化対応により、この部分は追加が容易になっている見込み）
+- 場合によっては棚卸し画面・入出荷記録画面への影響も要確認
+
+**着手タイミング：** 9/1の最終発表を優先し、現時点では着手しない。発表後、必要に応じて優先候補4項目から着手を検討する。
+
 ---
 
 ## 13. レスポンシブ・省スペース対応ルール（ノートPC実機対応）
@@ -3421,6 +3447,26 @@ npm install xlsx
 **動作確認：** ボタンの表示・DEV限定であること・確認メッセージの文言（件数の動的表示）をコード・実画面で確認した。ロジックは既に実データで繰り返し動作確認済みの`deleteTestData`・86番の`deleteItem`（`stock_logs`→`items`の順で削除）と全く同じ形であるため処理自体の正しさは踏襲できているが、**実際の「全商品削除」の実行はユーザーの実データ（ノート・ボールペン等、本番想定の14商品）を破壊する不可逆操作となるため、今回はこのセッションでは実行していない**。実行して問題ないか、ユーザー側で改めて確認の上、必要なタイミングで押してもらう想定。
 
 **ステータス：** 実装・lintエラーなし。実際の削除操作はユーザー側での実行待ち（2026/08/13）。
+
+---
+
+## 89. useItemsをContext化し、Header.jsxと各画面でitems/logsのstateを共有
+
+**経緯：** これまでHeader.jsxとHome.jsx（他ページも含む）がそれぞれ独立に`useItems()`を呼んでおり、それぞれ別々のitems/logsのstateを持っていた。そのため、Home.jsx側で商品を削除・追加してもHeader.jsxの「すべて◯件」などの件数表示にはすぐ反映されず、画面遷移（location.pathname変化によるrefetch）かページのリロードをしないと最新件数が表示されない、という不具合があった。ToastContext.jsxと同じProviderパターンを踏襲し、`useItems()`のロジックを1箇所のContextに集約してアプリ全体で同じstateを共有する形に変更した。
+
+**1. `src/hooks/useItems.js`：** 中身は変更せず、エクスポート名のみ`useItems`から`useItemsInternal`に変更（実体はそのまま）。ファイル自体は削除せず、ロジックの実体として残した。
+
+**2. `src/context/ItemsContext.jsx`（新規）：** `useItemsInternal`をimportし、`createContext`・`ItemsProvider`（内部で`useItemsInternal()`を1回だけ呼び、その戻り値を`value`として`Context.Provider`に渡す）・`useItems()`（`useContext`で取り出し、Providerの外で呼ばれた場合は`throw new Error(...)`）をエクスポートする、ToastContext.jsxと同一パターンの実装。`useItems()`の関数名・戻り値の形（items, logs, loading, refetch, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock, recordCount, importItems, loadTestData, seedTestLogs, deleteTestData, deleteAllItems）は従来と完全に同じにし、呼び出し側のロジックは一切変更していない。
+
+**3. `src/App.jsx`：** `ToastProvider`のすぐ内側（Header・Routesを囲む位置）に`ItemsProvider`を追加。認証不要の`/tanaoroshi`ルートも含め、全ルートが同じitems/logsのstateを共有する。
+
+**4. 9ファイルのimport文のみ変更：** `Header.jsx`・`Home.jsx`・`ItemDetail.jsx`・`ItemForm.jsx`・`ItemImport.jsx`・`Tanaoroshi.jsx`・`TanaoroshiResults.jsx`・`CategorySettings.jsx`・`StockRecord.jsx`の9ファイルについて、`import { useItems } from "../hooks/useItems"`を`import { useItems } from "../context/ItemsContext"`に書き換えた（全ファイル同じ階層のため相対パスは共通）。コードの他の部分は一切変更していない。
+
+**5. Header.jsxのrefetch処理：** `location.pathname`変化時に`refetchItems()`・`refetchShop()`を呼ぶ既存処理は、他ユーザーが同時に操作した場合の最新化のため変更せずそのまま残した。
+
+**動作確認：** 実データ・実ブラウザで確認した。①商品一覧画面で「テストデータを読み込む」を押すと、画面遷移なしでHeaderの「現在の状況」（すべて／在庫切れ／在庫少／在庫あり／入出荷）が即座に20件分の内訳に更新されることを確認。②続けて「全商品を削除する」を押すと、画面遷移なしでHeaderの件数表示が即座に消える（0件になり非表示になる既存仕様どおりの挙動）ことを確認。③新規登録・入出荷記録（+10）・商品編集・棚卸し（記録）・棚卸し結果一覧・カテゴリ設定・Excel取り込み画面・商品削除（stock_logsに履歴のある商品を含む）を1画面ずつ実際に操作し、すべて従来どおり正常に動作し、importパスの誤りによる画面クラッシュが無いことをコンソールエラーが皆無であることとあわせて確認した。
+
+**ステータス：** 実装・lintエラーなし・実ブラウザでの動作確認済み（2026/08/13）。
 
 ---
 

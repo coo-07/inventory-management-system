@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useItems } from "../hooks/useItems";
+import { useItems } from "../context/ItemsContext";
 import { useToast } from "../context/ToastContext";
 import PhotoUpload from "../components/PhotoUpload";
 import Button from "../components/Button";

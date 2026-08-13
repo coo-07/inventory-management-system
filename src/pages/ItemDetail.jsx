@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useItems } from "../hooks/useItems";
+import { useItems } from "../context/ItemsContext";
 import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useToast } from "../context/ToastContext";
 import CategoryIcon, { getCategoryMeta } from "../components/CategoryIcon";

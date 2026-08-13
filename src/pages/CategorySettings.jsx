@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useItems } from "../hooks/useItems";
+import { useItems } from "../context/ItemsContext";
 import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useToast } from "../context/ToastContext";
 import { FIXED_CATEGORIES } from "../components/CategoryIcon";

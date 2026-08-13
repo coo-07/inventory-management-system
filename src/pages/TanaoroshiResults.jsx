@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useItems } from "../hooks/useItems";
+import { useItems } from "../context/ItemsContext";
 import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { formatDate } from "../utils/formatDate";
 import CategoryIcon from "../components/CategoryIcon";
