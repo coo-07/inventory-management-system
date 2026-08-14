@@ -3470,6 +3470,18 @@ npm install xlsx
 
 ---
 
+## 90. 商品詳細画面「ページ先頭へ戻る」ボタンの表示判定をIntersectionObserverからscrollイベント方式に変更
+
+**経緯：** ItemDetail.jsxの「ページ先頭へ戻る」矢印ボタンは、商品名の`<h1>`要素をIntersectionObserverで監視し、画面外に出たら表示する実装だったが、ページ最上部にいるのにボタンが表示されてしまう不具合があった。監視対象を「現在の在庫」ボックスに変更し、判定方式もIntersectionObserverではなくscrollイベント＋`getBoundingClientRect()`による直接判定に切り替えた。
+
+**実装：** `ItemDetail.jsx`で、`titleRef`（`<h1>`用）を`stockBoxRef`に置き換え、「現在の在庫」ボックス（`現在の在庫`ラベルと在庫数を表示する`div`）に`ref={stockBoxRef}`を付与。IntersectionObserverのセットアップを削除し、`useEffect`内で`scroll`イベントリスナーを登録、ハンドラ内で`stockBoxRef.current.getBoundingClientRect().bottom < 0`を判定して`showBackToTop`を更新する方式にした。マウント時にも一度`handleScroll()`を呼び、初期表示を正しく判定する。ボタンクリック時の`window.scrollTo({ top: 0, behavior: "smooth" })`処理は変更していない。
+
+**動作確認：** Playwright（Chrome拡張の自動操作）で、テスト履歴を20件追加して十分な高さのページを作った上で、①ページ最上部（在庫ボックスが見えている状態）ではボタンが表示されないこと、②スクロールして在庫ボックスが画面外に出たらボタンが表示されること、③再度上にスクロールして在庫ボックスが見えたらボタンが消えること、④ボタンをクリックするとページ先頭に戻り、ボタンが再び消えることをスクリーンショットで確認した。動作確認は管理者ログインの実パスワードを扱わずに行うため、`App.jsx`の`/items/:id`ルートから一時的に`RequireAuth`を外して検証し、確認後は元の状態に完全に戻している（`git diff`でApp.jsxに差分が無いことを確認済み）。lintエラーなし（既存の無関係な警告のみ）。
+
+**ステータス：** 実装・動作確認済み（2026/08/14）。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか

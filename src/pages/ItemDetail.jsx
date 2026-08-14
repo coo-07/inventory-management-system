@@ -22,14 +22,19 @@ function ItemDetail() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [seedLoading, setSeedLoading] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const titleRef = useRef(null);
+  const stockBoxRef = useRef(null);
 
   const item = getItemById(id);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => setShowBackToTop(!entry.isIntersecting), { threshold: 0 });
-    if (titleRef.current) observer.observe(titleRef.current);
-    return () => observer.disconnect();
+    const handleScroll = () => {
+      if (!stockBoxRef.current) return;
+      const rect = stockBoxRef.current.getBoundingClientRect();
+      setShowBackToTop(rect.bottom < 0);
+    };
+    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [item?.id]);
 
   if (loading) {
@@ -108,7 +113,7 @@ function ItemDetail() {
             <CategoryIcon category={item.category} size={56} customIcons={customIcons} />
           </div>
           <div className="min-w-[260px] flex-1 lg:order-1 lg:w-full lg:min-w-0">
-            <h1 ref={titleRef} className="m-0 mb-1.5 text-[28px] font-black">{item.name}</h1>
+            <h1 className="m-0 mb-1.5 text-[28px] font-black">{item.name}</h1>
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <span
                 title={item.category}
@@ -127,6 +132,7 @@ function ItemDetail() {
             </div>
 
             <div
+              ref={stockBoxRef}
               className="flex flex-col gap-2 rounded-[var(--r-lg)] p-5 sm:flex-row sm:items-center sm:justify-between"
               style={{ background: status.bg }}
             >
