@@ -40,6 +40,9 @@ export function ToastProvider({ children }) {
             borderColor: "var(--green)",
             color: "var(--green-dark)",
             boxShadow: "0 4px 16px oklch(0.2 0.02 260 / 0.15)",
+            // 「元に戻す」ボタンなど内部要素へのクリックを親要素のスタイルに左右されず
+            // 確実に受け付けられるよう明示しておく（pointer-events:noneの継承事故を防ぐ保険）
+            pointerEvents: "auto",
           }}
         >
           <span>{message}</span>
