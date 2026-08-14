@@ -2,7 +2,10 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "../services/supabaseClient";
 import { useToast } from "../context/ToastContext";
 
-const DELETE_UNDO_DURATION_MS = 5000;
+// 削除の猶予時間（Undo可能な時間）。実際にSupabaseへ削除リクエストを送るまでの待機時間と、
+// Undoトーストの表示時間（duration）の両方でこの定数を参照する。片方だけ変更してズレが
+// 生じないよう、値はここ1箇所のみで管理する
+const DELETE_UNDO_DURATION_MS = 10000;
 
 /**
  * SupabaseのitemsテーブルはスネークケースなのでcamelCaseに変換する。
