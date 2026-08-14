@@ -61,6 +61,9 @@ function Home() {
   // 商品詳細画面などを経由して一覧に戻ってきても「確認しました」を押すまで表示し続ける
   const [duplicateResults, setDuplicateResults] = useState(() => readSkippedFromStorage("importDuplicateResults"));
   const [skippedReasons, setSkippedReasons] = useState(() => readSkippedFromStorage("importSkippedReasons"));
+  // 2つのバナーは初期状態を必ず折りたたみにし、開閉状態はそれぞれ独立して持たせる
+  const [isSkipDetailExpanded, setIsSkipDetailExpanded] = useState(false);
+  const [isDuplicateDetailExpanded, setIsDuplicateDetailExpanded] = useState(false);
 
   const dismissSkippedReasons = () => {
     setSkippedReasons([]);
@@ -181,92 +184,112 @@ function Home() {
     <div className="mx-auto max-w-[2400px] px-6 py-5 pb-36 md:px-12">
       {skippedReasons.length > 0 && (
         <div
-          className="mb-5 flex flex-wrap items-start justify-between gap-3 rounded-[var(--r-md)] border-2 px-4.5 py-3.5"
+          className="mb-5 rounded-[var(--r-md)] border-2 px-4.5 py-3.5"
           style={{ borderColor: "var(--orange)", background: "var(--orange-light)" }}
         >
-          <div className="min-w-0 flex-1">
-            <p className="m-0 mb-2 text-[14px] font-bold" style={{ color: "var(--orange-dark)" }}>
-              ⚠️ 取り込みでスキップされた行があります（{skippedReasons.length}件）
-            </p>
-            <div className="overflow-x-auto rounded-[var(--r-md)] border" style={{ borderColor: "var(--orange)" }}>
-              <table className="w-full border-collapse text-left text-[13px]" style={{ color: "var(--orange-dark)" }}>
-                <thead>
-                  <tr style={{ background: "var(--orange-light)" }}>
-                    {["行番号", "商品名", "カテゴリ", "在庫数", "発注点", "単位", "スキップ理由"].map((h) => (
-                      <th key={h} className="border px-3 py-2 font-bold whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {skippedReasons.map((r, i) => (
-                    <tr key={i} style={{ background: "var(--surface)" }}>
-                      <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
-                        {r.rowNumber}
-                      </td>
-                      <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
-                        {formatRawCell(r.raw?.name ?? null)}
-                      </td>
-                      <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
-                        {formatRawCell(r.raw?.category ?? null)}
-                      </td>
-                      <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
-                        {formatRawCell(r.raw?.stock ?? null)}
-                      </td>
-                      <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
-                        {formatRawCell(r.raw?.threshold ?? null)}
-                      </td>
-                      <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
-                        {formatRawCell(r.raw?.unit ?? null)}
-                      </td>
-                      <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
-                        {r.reason}
-                      </td>
+          <button
+            type="button"
+            onClick={() => setIsSkipDetailExpanded((prev) => !prev)}
+            aria-expanded={isSkipDetailExpanded}
+            className="flex w-full cursor-pointer items-center justify-between gap-3 border-none bg-transparent p-0 text-left text-[14px] font-bold"
+            style={{ color: "var(--orange-dark)" }}
+          >
+            <span>⚠️ 取り込みでスキップされた行があります（{skippedReasons.length}件）</span>
+            <span aria-hidden="true">{isSkipDetailExpanded ? "▼" : "▶"}</span>
+          </button>
+
+          {isSkipDetailExpanded && (
+            <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0 flex-1 overflow-x-auto rounded-[var(--r-md)] border" style={{ borderColor: "var(--orange)" }}>
+                <table className="w-full border-collapse text-left text-[13px]" style={{ color: "var(--orange-dark)" }}>
+                  <thead>
+                    <tr style={{ background: "var(--orange-light)" }}>
+                      {["行番号", "商品名", "カテゴリ", "在庫数", "発注点", "単位", "スキップ理由"].map((h) => (
+                        <th key={h} className="border px-3 py-2 font-bold whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
+                          {h}
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {skippedReasons.map((r, i) => (
+                      <tr key={i} style={{ background: "var(--surface)" }}>
+                        <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
+                          {r.rowNumber}
+                        </td>
+                        <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
+                          {formatRawCell(r.raw?.name ?? null)}
+                        </td>
+                        <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
+                          {formatRawCell(r.raw?.category ?? null)}
+                        </td>
+                        <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
+                          {formatRawCell(r.raw?.stock ?? null)}
+                        </td>
+                        <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
+                          {formatRawCell(r.raw?.threshold ?? null)}
+                        </td>
+                        <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
+                          {formatRawCell(r.raw?.unit ?? null)}
+                        </td>
+                        <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
+                          {r.reason}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Button variant="secondarySoft" onClick={dismissSkippedReasons} className="shrink-0">
+                確認しました
+              </Button>
             </div>
-          </div>
-          <Button variant="secondarySoft" onClick={dismissSkippedReasons} className="shrink-0">
-            確認しました
-          </Button>
+          )}
         </div>
       )}
 
       {duplicateResults.length > 0 && (
         <div
-          className="mb-5 flex flex-wrap items-start justify-between gap-3 rounded-[var(--r-md)] border-2 px-4.5 py-3.5"
+          className="mb-5 rounded-[var(--r-md)] border-2 px-4.5 py-3.5"
           style={{ borderColor: "var(--orange)", background: "var(--orange-light)" }}
         >
-          <div>
-            <p className="m-0 mb-1.5 text-[14px] font-bold" style={{ color: "var(--orange-dark)" }}>
-              ⚠️ 重複商品の処理結果（{duplicateResults.length}件）
-            </p>
-            <ul className="m-0 list-disc pl-5 text-[13px]" style={{ color: "var(--orange-dark)" }}>
-              {duplicateResults.map((r, i) => (
-                <li key={i}>
-                  {r.action === "skip" ? (
-                    <>
-                      {r.name}：変更しませんでした（スキップ）
-                    </>
-                  ) : r.action === "add" ? (
-                    <>
-                      {r.name}：{r.beforeStock}個 → {r.afterStock}個に加算しました（{r.beforeStock}個＋{r.afterStock - r.beforeStock}個）
-                    </>
-                  ) : (
-                    <>
-                      {r.name}：{r.beforeStock}個 → {r.afterStock}個に置き換えました
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <Button variant="secondarySoft" onClick={dismissDuplicateResults} className="shrink-0">
-            確認しました
-          </Button>
+          <button
+            type="button"
+            onClick={() => setIsDuplicateDetailExpanded((prev) => !prev)}
+            aria-expanded={isDuplicateDetailExpanded}
+            className="flex w-full cursor-pointer items-center justify-between gap-3 border-none bg-transparent p-0 text-left text-[14px] font-bold"
+            style={{ color: "var(--orange-dark)" }}
+          >
+            <span>⚠️ 重複商品の処理結果（{duplicateResults.length}件）</span>
+            <span aria-hidden="true">{isDuplicateDetailExpanded ? "▼" : "▶"}</span>
+          </button>
+
+          {isDuplicateDetailExpanded && (
+            <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+              <ul className="m-0 list-disc pl-5 text-[13px]" style={{ color: "var(--orange-dark)" }}>
+                {duplicateResults.map((r, i) => (
+                  <li key={i}>
+                    {r.action === "skip" ? (
+                      <>
+                        {r.name}：変更しませんでした（スキップ）
+                      </>
+                    ) : r.action === "add" ? (
+                      <>
+                        {r.name}：{r.beforeStock}個 → {r.afterStock}個に加算しました（{r.beforeStock}個＋{r.afterStock - r.beforeStock}個）
+                      </>
+                    ) : (
+                      <>
+                        {r.name}：{r.beforeStock}個 → {r.afterStock}個に置き換えました
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <Button variant="secondarySoft" onClick={dismissDuplicateResults} className="shrink-0">
+                確認しました
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
