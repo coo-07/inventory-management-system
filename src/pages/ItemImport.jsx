@@ -42,6 +42,20 @@ function buildColumnOptions(rows) {
   });
 }
 
+// マッピングされた列の生の値をそのまま保持する（無効な値でも文字列として保持する）。
+// 列がマッピングされていない項目はnullを返し、マッピングされているが空欄の項目は""を返す
+// （呼び出し側でnullは「－」、""は「（空欄）」として表示し分けられるようにするため）
+function buildRawRow(row, columnMapping) {
+  const get = (key) => (columnMapping[key] === null ? null : toTrimmedString(row[columnMapping[key]]));
+  return {
+    name: get("name"),
+    category: get("category"),
+    stock: get("stock"),
+    threshold: get("threshold"),
+    unit: get("unit"),
+  };
+}
+
 // スキップ対象なら { skip: true, reason }、有効な行ならマッピング済みの値を { skip: false, item } で返す
 function evaluateRow(row, columnMapping) {
   const nameStr = toTrimmedString(row[columnMapping.name]);
@@ -74,11 +88,14 @@ function ItemImport() {
   const [columnMapping, setColumnMapping] = useState(EMPTY_MAPPING);
   const [isDragging, setIsDragging] = useState(false);
   const { customIcons, addOrUpdateCategoryIcon } = useCategoryIcons();
-  const { items: existingItems, importItems } = useItems();
+  const { items: existingItems, importItems, recordStock } = useItems();
   const showToast = useToast();
   const [savingCategories, setSavingCategories] = useState(() => new Set());
   const autoMatchedRef = useRef(new Set());
   const [importing, setImporting] = useState(false);
+  // 既存商品との重複行について、商品名をキーに選択中の処理方法（"replace" | "add" | "skip"）を保持する。
+  // 未選択（キーが存在しない）の場合は安全側に倒して"skip"扱いにする
+  const [duplicateActions, setDuplicateActions] = useState({});
 
   const handleFile = (file) => {
     if (!file) return;
@@ -158,7 +175,7 @@ function ItemImport() {
       if (result.skip) {
         skipped += 1;
         // dataRowsは1行目（項目名行）を除いた配列のため、元ファイルでの行番号は+2
-        reasons.push({ rowNumber: i + 2, reason: result.reason });
+        reasons.push({ rowNumber: i + 2, reason: result.reason, raw: buildRawRow(row, columnMapping) });
       } else {
         items.push(result.item);
       }
@@ -172,53 +189,142 @@ function ItemImport() {
     return [...set].sort((a, b) => a.localeCompare(b, "ja"));
   }, [validItems, canPreview]);
 
-  const existingNameSet = useMemo(() => new Set(existingItems.map((item) => item.name)), [existingItems]);
-
-  // 重複名の一覧（ファイル内の重複・既存登録済みとの重複の両方をまとめて対象にする）と、
-  // 実際の取り込み対象を算出する。重複はスキップする動作に固定する（既存登録済みと同名の行はすべて除外し、
-  // ファイル内で同名が複数ある場合は最初の1件のみを残す）
-  const { duplicateNames, importTargets } = useMemo(() => {
-    if (!canPreview) return { duplicateNames: [], importTargets: [] };
-
+  // ファイル内でのみ重複している商品名（先頭の1件だけが取り込み対象になる）。参考表示用
+  const fileDuplicateNames = useMemo(() => {
+    if (!canPreview) return [];
     const nameCounts = new Map();
     for (const item of validItems) {
       nameCounts.set(item.name, (nameCounts.get(item.name) || 0) + 1);
     }
+    return [...nameCounts.entries()].filter(([, count]) => count > 1).map(([name]) => name);
+  }, [validItems, canPreview]);
 
-    const dupNames = [];
-    const seenDup = new Set();
+  // 「ファイル内での重複」と「既存登録済みとの重複」は扱いが異なるため区別する。
+  // ファイル内重複：従来通り最初の1件のみを取り込み対象に残し、2件目以降は無視する。
+  // 既存登録済みとの重複：importTargets（自動で新規登録される商品）からは除外し、
+  // duplicateMatches（ユーザーが置き換え・加算・スキップを選ぶ対象）としてまとめる
+  const { importTargets, duplicateMatches } = useMemo(() => {
+    if (!canPreview) return { importTargets: [], duplicateMatches: [] };
+
     const seenInFile = new Set();
-    const targets = [];
+    const dedupedItems = [];
     for (const item of validItems) {
-      const isDuplicate = nameCounts.get(item.name) > 1 || existingNameSet.has(item.name);
-      if (isDuplicate && !seenDup.has(item.name)) {
-        seenDup.add(item.name);
-        dupNames.push(item.name);
-      }
-
-      if (existingNameSet.has(item.name)) continue;
       if (seenInFile.has(item.name)) continue;
       seenInFile.add(item.name);
-      targets.push(item);
+      dedupedItems.push(item);
     }
 
-    return { duplicateNames: dupNames, importTargets: targets };
-  }, [validItems, existingNameSet, canPreview]);
+    const targets = [];
+    const matches = [];
+    for (const item of dedupedItems) {
+      const existingItem = existingItems.find((e) => e.name === item.name);
+      if (existingItem) {
+        matches.push({ importedItem: item, existingItem });
+      } else {
+        targets.push(item);
+      }
+    }
+
+    return { importTargets: targets, duplicateMatches: matches };
+  }, [validItems, existingItems, canPreview]);
+
+  const getDuplicateAction = (name) => duplicateActions[name] || "skip";
+
+  const setDuplicateAction = (name, action) => {
+    setDuplicateActions((prev) => ({ ...prev, [name]: action }));
+  };
+
+  const setAllDuplicateActions = (action) => {
+    const next = {};
+    for (const match of duplicateMatches) {
+      next[match.importedItem.name] = action;
+    }
+    setDuplicateActions(next);
+  };
 
   const handleImport = async () => {
-    if (importing || importTargets.length === 0) return;
+    if (importing) return;
+    if (importTargets.length === 0 && duplicateMatches.length === 0) return;
     setImporting(true);
-    const result = await importItems(importTargets);
-    setImporting(false);
-    if (!result.ok) {
-      showToast("❌ " + result.message);
-      return;
+
+    let registeredCount = 0;
+    if (importTargets.length > 0) {
+      const result = await importItems(importTargets);
+      if (!result.ok) {
+        setImporting(false);
+        showToast("❌ " + result.message);
+        return;
+      }
+      registeredCount = result.items.length;
     }
-    showToast(`✅ ${result.items.length}件の商品を取り込みました`);
+
+    const duplicateResults = [];
+    let hadError = false;
+    for (const match of duplicateMatches) {
+      const { importedItem, existingItem } = match;
+      const action = getDuplicateAction(importedItem.name);
+      const beforeStock = existingItem.stock;
+
+      if (action === "skip") {
+        duplicateResults.push({ name: importedItem.name, action: "skip", beforeStock, afterStock: beforeStock });
+        continue;
+      }
+
+      if (action === "replace") {
+        const diff = importedItem.stock - beforeStock;
+        if (diff > 0) {
+          const result = await recordStock(existingItem.id, "in", diff, "Excel取込み：在庫を置き換え");
+          if (!result.ok) {
+            hadError = true;
+            continue;
+          }
+        } else if (diff < 0) {
+          const result = await recordStock(existingItem.id, "out", Math.abs(diff), "Excel取込み：在庫を置き換え");
+          if (!result.ok) {
+            hadError = true;
+            continue;
+          }
+        }
+        duplicateResults.push({ name: importedItem.name, action: "replace", beforeStock, afterStock: importedItem.stock });
+        continue;
+      }
+
+      if (action === "add") {
+        if (importedItem.stock > 0) {
+          const result = await recordStock(existingItem.id, "in", importedItem.stock, "Excel取込み：在庫に加算");
+          if (!result.ok) {
+            hadError = true;
+            continue;
+          }
+        }
+        duplicateResults.push({
+          name: importedItem.name,
+          action: "add",
+          beforeStock,
+          afterStock: beforeStock + importedItem.stock,
+        });
+      }
+    }
+
+    setImporting(false);
+
+    const updatedCount = duplicateResults.filter((r) => r.action !== "skip").length;
+    const messageParts = [];
+    if (registeredCount > 0) messageParts.push(`${registeredCount}件を新規登録`);
+    if (updatedCount > 0) messageParts.push(`${updatedCount}件の在庫を更新`);
+
+    if (hadError) {
+      showToast("❌ 一部の在庫更新に失敗しました" + (messageParts.length > 0 ? `（${messageParts.join("、")}は完了）` : ""));
+    } else if (messageParts.length > 0) {
+      showToast(`✅ ${messageParts.join("、")}しました`);
+    } else {
+      showToast("変更はありませんでした");
+    }
+
     // 商品一覧画面への遷移後、他画面を経由して一覧に戻ってきても注意喚起を表示し続けられるよう、
     // navigateのstateではなくsessionStorageに保存する（ユーザーが「確認しました」を押すまで保持）
     sessionStorage.setItem("importSkippedReasons", JSON.stringify(skippedReasons));
-    sessionStorage.setItem("importSkippedDuplicates", JSON.stringify(duplicateNames));
+    sessionStorage.setItem("importDuplicateResults", JSON.stringify(duplicateResults));
     navigate("/items");
   };
 
@@ -348,16 +454,16 @@ function ItemImport() {
                           ))}
                         </ul>
                       )}
-                      {duplicateNames.length > 0 && (
+                      {fileDuplicateNames.length > 0 && (
                         <div
                           className="mb-3 rounded-[var(--r-md)] border-2 px-4 py-3"
                           style={{ borderColor: "var(--orange)", background: "var(--orange-light)" }}
                         >
                           <p className="mb-1 text-[13px] font-bold" style={{ color: "var(--orange-dark)" }}>
-                            ⚠️ 重複の可能性がある商品（{duplicateNames.length}件）
+                            ⚠️ ファイル内で重複している商品名（最初の1件のみ取り込みます・{fileDuplicateNames.length}件）
                           </p>
                           <p className="text-[13px]" style={{ color: "var(--orange-dark)" }}>
-                            {duplicateNames.join("、")}
+                            {fileDuplicateNames.join("、")}
                           </p>
                         </div>
                       )}
@@ -396,10 +502,134 @@ function ItemImport() {
                         </table>
                       </div>
 
+                      {duplicateMatches.length > 0 && (
+                        <div className="mt-8">
+                          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                            <h3 className="text-[17px] font-bold">重複商品の確認（{duplicateMatches.length}件）</h3>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="secondary"
+                                onClick={() => setAllDuplicateActions("replace")}
+                                className="text-[13px]"
+                              >
+                                すべて置き換える
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                onClick={() => setAllDuplicateActions("skip")}
+                                className="text-[13px]"
+                              >
+                                すべてスキップする
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-4">
+                            {duplicateMatches.map(({ importedItem, existingItem }) => {
+                              const action = getDuplicateAction(importedItem.name);
+                              const sum = existingItem.stock + importedItem.stock;
+                              const radioName = `duplicate-${importedItem.name}`;
+                              return (
+                                <div
+                                  key={importedItem.name}
+                                  className="rounded-[var(--r-md)] border-2 p-4"
+                                  style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+                                >
+                                  <p className="mb-3 text-[15px] font-bold">商品名：{importedItem.name}</p>
+                                  <div
+                                    className="mb-4 overflow-x-auto rounded-[var(--r-md)] border"
+                                    style={{ borderColor: "var(--border)" }}
+                                  >
+                                    <table className="w-full border-collapse text-left text-[14px]" style={{ color: "var(--ink)" }}>
+                                      <thead>
+                                        <tr style={{ background: "var(--bg)" }}>
+                                          <th className="border px-3 py-2" style={{ borderColor: "var(--border)" }} />
+                                          <th className="border px-3 py-2 font-bold" style={{ borderColor: "var(--border)" }}>
+                                            現在の登録内容
+                                          </th>
+                                          <th className="border px-3 py-2 font-bold" style={{ borderColor: "var(--border)" }}>
+                                            取り込みデータ
+                                          </th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        <tr>
+                                          <td className="border px-3 py-2 font-bold whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                            在庫数
+                                          </td>
+                                          <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                            {existingItem.stock}{existingItem.unit}
+                                          </td>
+                                          <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                            {importedItem.stock}{importedItem.unit}
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </div>
+
+                                  <p className="mb-2 text-[14px] font-bold">この商品はどうしますか？</p>
+                                  <div className="flex flex-col gap-3">
+                                    <label className="flex cursor-pointer items-start gap-2">
+                                      <input
+                                        type="radio"
+                                        name={radioName}
+                                        checked={action === "replace"}
+                                        onChange={() => setDuplicateAction(importedItem.name, "replace")}
+                                        className="mt-1 shrink-0"
+                                      />
+                                      <span>
+                                        <span className="block text-[14px] font-bold">
+                                          {importedItem.stock}{importedItem.unit}に置き換える
+                                        </span>
+                                        <span className="block text-[13px]" style={{ color: "var(--ink-soft)" }}>
+                                          今の在庫（{existingItem.stock}{existingItem.unit}）を、取り込んだ数（{importedItem.stock}{importedItem.unit}）に置き換えます。棚卸しなどで実際の在庫数に合わせたいときに選んでください。
+                                        </span>
+                                      </span>
+                                    </label>
+                                    <label className="flex cursor-pointer items-start gap-2">
+                                      <input
+                                        type="radio"
+                                        name={radioName}
+                                        checked={action === "add"}
+                                        onChange={() => setDuplicateAction(importedItem.name, "add")}
+                                        className="mt-1 shrink-0"
+                                      />
+                                      <span>
+                                        <span className="block text-[14px] font-bold">
+                                          {existingItem.stock}{existingItem.unit}に{importedItem.stock}{importedItem.unit}を加算する（{sum}{existingItem.unit}になります）
+                                        </span>
+                                        <span className="block text-[13px]" style={{ color: "var(--ink-soft)" }}>
+                                          今の在庫（{existingItem.stock}{existingItem.unit}）に、取り込んだ数（{importedItem.stock}{importedItem.unit}）を追加します。新しく仕入れた分を追加登録したいときに選んでください。
+                                        </span>
+                                      </span>
+                                    </label>
+                                    <label className="flex cursor-pointer items-start gap-2">
+                                      <input
+                                        type="radio"
+                                        name={radioName}
+                                        checked={action === "skip"}
+                                        onChange={() => setDuplicateAction(importedItem.name, "skip")}
+                                        className="mt-1 shrink-0"
+                                      />
+                                      <span>
+                                        <span className="block text-[14px] font-bold">スキップする（今の内容のまま変更しない）</span>
+                                        <span className="block text-[13px]" style={{ color: "var(--ink-soft)" }}>
+                                          取り込みデータは反映せず、今の登録内容をそのまま残します。
+                                        </span>
+                                      </span>
+                                    </label>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
                       <Button
                         variant="primary"
                         loading={importing}
-                        disabled={importTargets.length === 0}
+                        disabled={importTargets.length === 0 && duplicateMatches.length === 0}
                         onClick={handleImport}
                         className="mt-4"
                       >

@@ -16,6 +16,14 @@ function readSkippedFromStorage(key) {
   }
 }
 
+// rawの値は「マッピングされていない列」がnull、「マッピングされているが空欄」が""として渡ってくるため、
+// それぞれ「－」「（空欄）」として表示し分ける
+function formatRawCell(value) {
+  if (value === null) return "－";
+  if (value === "") return "（空欄）";
+  return value;
+}
+
 function Home() {
   const { items, loading, loadTestData, deleteTestData, deleteAllItems } = useItems();
   const { customIcons } = useCategoryIcons();
@@ -29,9 +37,9 @@ function Home() {
   const [testDataLoading, setTestDataLoading] = useState(false);
   const [deleteTestDataLoading, setDeleteTestDataLoading] = useState(false);
   const [deleteAllLoading, setDeleteAllLoading] = useState(false);
-  // Excel取り込み（ItemImport.jsx）でスキップされた行の情報。sessionStorage経由で受け取ることで、
+  // Excel取り込み（ItemImport.jsx）でスキップされた行・重複商品の処理結果。sessionStorage経由で受け取ることで、
   // 商品詳細画面などを経由して一覧に戻ってきても「確認しました」を押すまで表示し続ける
-  const [skippedDuplicates, setSkippedDuplicates] = useState(() => readSkippedFromStorage("importSkippedDuplicates"));
+  const [duplicateResults, setDuplicateResults] = useState(() => readSkippedFromStorage("importDuplicateResults"));
   const [skippedReasons, setSkippedReasons] = useState(() => readSkippedFromStorage("importSkippedReasons"));
 
   const dismissSkippedReasons = () => {
@@ -39,9 +47,9 @@ function Home() {
     sessionStorage.removeItem("importSkippedReasons");
   };
 
-  const dismissSkippedDuplicates = () => {
-    setSkippedDuplicates([]);
-    sessionStorage.removeItem("importSkippedDuplicates");
+  const dismissDuplicateResults = () => {
+    setDuplicateResults([]);
+    sessionStorage.removeItem("importDuplicateResults");
   };
 
   const categories = useMemo(
@@ -156,17 +164,50 @@ function Home() {
           className="mb-5 flex flex-wrap items-start justify-between gap-3 rounded-[var(--r-md)] border-2 px-4.5 py-3.5"
           style={{ borderColor: "var(--orange)", background: "var(--orange-light)" }}
         >
-          <div>
-            <p className="m-0 mb-1.5 text-[14px] font-bold" style={{ color: "var(--orange-dark)" }}>
+          <div className="min-w-0 flex-1">
+            <p className="m-0 mb-2 text-[14px] font-bold" style={{ color: "var(--orange-dark)" }}>
               ⚠️ 取り込みでスキップされた行があります（{skippedReasons.length}件）
             </p>
-            <ul className="m-0 list-disc pl-5 text-[13px]" style={{ color: "var(--orange-dark)" }}>
-              {skippedReasons.map((r, i) => (
-                <li key={i}>
-                  {r.rowNumber}行目：{r.reason}スキップ
-                </li>
-              ))}
-            </ul>
+            <div className="overflow-x-auto rounded-[var(--r-md)] border" style={{ borderColor: "var(--orange)" }}>
+              <table className="w-full border-collapse text-left text-[13px]" style={{ color: "var(--orange-dark)" }}>
+                <thead>
+                  <tr style={{ background: "var(--orange-light)" }}>
+                    {["行番号", "商品名", "カテゴリ", "在庫数", "発注点", "単位", "スキップ理由"].map((h) => (
+                      <th key={h} className="border px-3 py-2 font-bold whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {skippedReasons.map((r, i) => (
+                    <tr key={i} style={{ background: "var(--surface)" }}>
+                      <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
+                        {r.rowNumber}
+                      </td>
+                      <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
+                        {formatRawCell(r.raw?.name ?? null)}
+                      </td>
+                      <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
+                        {formatRawCell(r.raw?.category ?? null)}
+                      </td>
+                      <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
+                        {formatRawCell(r.raw?.stock ?? null)}
+                      </td>
+                      <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
+                        {formatRawCell(r.raw?.threshold ?? null)}
+                      </td>
+                      <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
+                        {formatRawCell(r.raw?.unit ?? null)}
+                      </td>
+                      <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--orange)" }}>
+                        {r.reason}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
           <Button variant="secondarySoft" onClick={dismissSkippedReasons} className="shrink-0">
             確認しました
@@ -174,20 +215,36 @@ function Home() {
         </div>
       )}
 
-      {skippedDuplicates.length > 0 && (
+      {duplicateResults.length > 0 && (
         <div
           className="mb-5 flex flex-wrap items-start justify-between gap-3 rounded-[var(--r-md)] border-2 px-4.5 py-3.5"
           style={{ borderColor: "var(--orange)", background: "var(--orange-light)" }}
         >
           <div>
             <p className="m-0 mb-1.5 text-[14px] font-bold" style={{ color: "var(--orange-dark)" }}>
-              ⚠️ 重複のため取り込みをスキップした商品（{skippedDuplicates.length}件）
+              ⚠️ 重複商品の処理結果（{duplicateResults.length}件）
             </p>
-            <p className="m-0 text-[13px]" style={{ color: "var(--orange-dark)" }}>
-              {skippedDuplicates.join("、")}
-            </p>
+            <ul className="m-0 list-disc pl-5 text-[13px]" style={{ color: "var(--orange-dark)" }}>
+              {duplicateResults.map((r, i) => (
+                <li key={i}>
+                  {r.action === "skip" ? (
+                    <>
+                      {r.name}：変更しませんでした（スキップ）
+                    </>
+                  ) : r.action === "add" ? (
+                    <>
+                      {r.name}：{r.beforeStock}個 → {r.afterStock}個に加算しました（{r.beforeStock}個＋{r.afterStock - r.beforeStock}個）
+                    </>
+                  ) : (
+                    <>
+                      {r.name}：{r.beforeStock}個 → {r.afterStock}個に置き換えました
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
-          <Button variant="secondarySoft" onClick={dismissSkippedDuplicates} className="shrink-0">
+          <Button variant="secondarySoft" onClick={dismissDuplicateResults} className="shrink-0">
             確認しました
           </Button>
         </div>
