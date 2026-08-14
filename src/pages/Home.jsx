@@ -5,6 +5,7 @@ import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useToast } from "../context/ToastContext";
 import { generateTestItems } from "../utils/generateTestData";
 import { getStockStatus } from "../utils/stockStatus";
+import { updateListParams } from "../utils/listSearchParams";
 import ItemList from "../components/ItemList";
 import Button from "../components/Button";
 
@@ -29,10 +30,29 @@ function Home() {
   const { customIcons } = useCategoryIcons();
   const navigate = useNavigate();
   const showToast = useToast();
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const category = searchParams.get("category") || "";
   const filter = searchParams.get("filter") || "all";
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+
+  // 検索ワード・カテゴリ・ステータスタブ・ページ番号をURLクエリパラメータとして保持することで、
+  // 商品詳細画面などを経由して一覧に戻ってきても絞り込み状態が失われないようにする。
+  // 検索欄への入力など連続した変更で履歴を積みすぎないよう、常にreplaceで現在のURLを置き換える
+  const updateParam = (key, value) => {
+    setSearchParams(updateListParams(searchParams, { [key]: value }), { replace: true });
+  };
+
+  // 検索欄は表示用にローカルstateを持つ。value={searchParams.get("search")}のように直接URL値を
+  // バインドすると、setSearchParams（URL更新）が1レンダー分遅れて反映されるため、素早く連続して
+  // 入力した際に古いURL値で入力欄の表示が巻き戻り、文字が欠落してしまう。ローカルstateなら
+  // 入力のたびに即座に表示が更新され、URLへの反映（永続化用）は裏で追従させるだけで済む
+  const [searchInput, setSearchInput] = useState(() => searchParams.get("search") || "");
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchInput(value);
+    updateParam("search", value);
+  };
+
   const [addLoading, setAddLoading] = useState(false);
   const [testDataLoading, setTestDataLoading] = useState(false);
   const [deleteTestDataLoading, setDeleteTestDataLoading] = useState(false);
@@ -65,7 +85,7 @@ function Home() {
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
       const status = getStockStatus(item.stock, item.threshold);
-      const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = item.name.toLowerCase().includes(searchInput.toLowerCase());
       const matchesCategory = !category || item.category === category;
       const matchesFilter =
         filter === "all" ? true :
@@ -74,7 +94,7 @@ function Home() {
         filter === "available" ? (!status.isOut && !status.isLow) : true;
       return matchesSearch && matchesCategory && matchesFilter;
     });
-  }, [items, search, category, filter]);
+  }, [items, searchInput, category, filter]);
 
   const handleAddNew = () => {
     if (addLoading) return;
@@ -268,8 +288,8 @@ function Home() {
             </svg>
             <input
               type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchInput}
+              onChange={handleSearchChange}
               placeholder="商品名で検索"
               className="box-border min-h-12 w-full rounded-[var(--r-lg)] border-2 py-3 pr-4 pl-[46px] text-[17px] transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!"
               style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
@@ -283,7 +303,7 @@ function Home() {
           </label>
           <select
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e) => updateParam("category", e.target.value)}
             className="box-border min-h-12 cursor-pointer rounded-[var(--r-lg)] border-2 px-4.5 text-base transition-colors hover:border-[var(--ink-soft)]!"
             style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
           >
@@ -361,6 +381,8 @@ function Home() {
         hasAnyItems={items.length > 0}
         loading={loading}
         customIcons={customIcons}
+        page={page}
+        onPageChange={(nextPage) => updateParam("page", nextPage)}
       />
     </div>
   );

@@ -4,6 +4,8 @@ import { getStockStatus } from "../utils/stockStatus";
 import { useItems } from "../context/ItemsContext";
 import { useShop } from "../hooks/useShop";
 import { useAuth } from "../hooks/useAuth";
+import { useGoBack } from "../hooks/useGoBack";
+import { updateListParams } from "../utils/listSearchParams";
 
 function useBackLink() {
   const isTanaoroshiResults = useMatch("/items/tanaoroshi-results");
@@ -57,7 +59,18 @@ function Header() {
   const todayCount = logs.filter((l) => l.createdAt.slice(0, 10) === todayStr).length;
 
   const activeFilter = searchParams.get("filter") || "all";
-  const setFilter = (value) => setSearchParams(value === "all" ? {} : { filter: value });
+  // 検索ワード・カテゴリなど他のクエリパラメータを保持したまま、ステータスタブのみを更新する
+  // （以前は setSearchParams({ filter: value }) でURL全体を置き換えていたため、
+  // タブを切り替えるたびに検索ワード・カテゴリ・ページ番号が消えてしまっていた）
+  const setFilter = (value) => setSearchParams(updateListParams(searchParams, { filter: value }), { replace: true });
+
+  // 「戻る」系リンクは固定の遷移先ではなく、ブラウザの履歴を1つ戻ることで一覧の検索・絞り込み・
+  // ページ番号（URLクエリパラメータ）を保ったまま戻れるようにする（履歴が無い場合はbackLink.toへ）
+  const goBack = useGoBack();
+  const handleBack = () => {
+    if (!backLink) return;
+    goBack(backLink.to);
+  };
 
   return (
     <header
@@ -214,9 +227,10 @@ function Header() {
 
       {backLink && (
         <div className="mx-auto max-w-[2400px] px-8 pb-3.5">
-          <Link
-            to={backLink.to}
-            className="-mx-2 -my-1 inline-flex items-center gap-2 rounded-lg px-2 py-1 text-[17px] font-bold transition-colors hover:bg-[var(--border)]!"
+          <button
+            type="button"
+            onClick={handleBack}
+            className="-mx-2 -my-1 inline-flex cursor-pointer items-center gap-2 rounded-lg border-none bg-transparent px-2 py-1 text-[17px] font-bold transition-colors hover:bg-[var(--border)]!"
             style={{ color: "var(--ink)" }}
           >
             <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
@@ -229,7 +243,7 @@ function Header() {
               />
             </svg>
             {backLink.label}
-          </Link>
+          </button>
         </div>
       )}
     </header>

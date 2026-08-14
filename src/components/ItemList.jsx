@@ -11,12 +11,13 @@ const BOTTOM_RESERVE = 70 + GRID_GAP;
 
 /**
  * 商品一覧のグリッド表示。列数・行数に応じてページサイズを決め、ページ送りする。
+ * ページ番号は親（Home.jsx）がURLクエリパラメータで管理し、page/onPageChangeとして受け取る
+ * （商品詳細画面などから「一覧へ戻る」で戻ってきても同じページを保てるようにするため）。
  */
-function ItemList({ items, onSelect, hasAnyItems, loading, customIcons }) {
+function ItemList({ items, onSelect, hasAnyItems, loading, customIcons, page, onPageChange }) {
   const [gridEl, setGridEl] = useState(null);
   const [columns, setColumns] = useState(4);
   const [rows, setRows] = useState(3);
-  const [page, setPage] = useState(1);
 
   useEffect(() => {
     // items が空の間はグリッド自体が存在しないため、その後グリッドが
@@ -43,10 +44,6 @@ function ItemList({ items, onSelect, hasAnyItems, loading, customIcons }) {
       window.removeEventListener("resize", measure);
     };
   }, [gridEl]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [items]);
 
   if (items.length === 0) {
     if (loading) {
@@ -86,7 +83,7 @@ function ItemList({ items, onSelect, hasAnyItems, loading, customIcons }) {
           <ItemCard key={item.id} item={item} customIcons={customIcons} onClick={() => onSelect(item.id)} />
         ))}
       </div>
-      <Pagination current={currentPage} total={totalPages} onGo={setPage} />
+      <Pagination current={currentPage} total={totalPages} onGo={onPageChange} />
     </>
   );
 }

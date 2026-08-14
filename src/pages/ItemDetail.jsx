@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useItems } from "../context/ItemsContext";
 import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useToast } from "../context/ToastContext";
+import { useGoBack } from "../hooks/useGoBack";
 import CategoryIcon, { getCategoryMeta } from "../components/CategoryIcon";
 import { getStockStatus } from "../utils/stockStatus";
 import { formatDate } from "../utils/formatDate";
@@ -18,6 +19,7 @@ function ItemDetail() {
   const showToast = useToast();
   const { items, loading, getItemById, getLogsByItemId, deleteItem, seedTestLogs } = useItems();
   const { customIcons } = useCategoryIcons();
+  const goBack = useGoBack();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [seedLoading, setSeedLoading] = useState(false);
@@ -49,9 +51,14 @@ function ItemDetail() {
     return (
       <div className="mx-auto max-w-[720px] px-6 py-5">
         <p style={{ color: "var(--ink-soft)" }}>商品が見つかりません</p>
-        <Link to="/items" className="mt-2 inline-block text-sm underline" style={{ color: "var(--ink)" }}>
+        <button
+          type="button"
+          onClick={() => goBack("/items")}
+          className="mt-2 inline-block cursor-pointer border-none bg-transparent p-0 text-sm underline"
+          style={{ color: "var(--ink)" }}
+        >
           一覧へ戻る
-        </Link>
+        </button>
       </div>
     );
   }
