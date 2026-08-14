@@ -1,5 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "../services/supabaseClient";
+import { useToast } from "../context/ToastContext";
+
+const DELETE_UNDO_DURATION_MS = 5000;
 
 /**
  * SupabaseのitemsテーブルはスネークケースなのでcamelCaseに変換する。
@@ -50,6 +53,13 @@ export function useItemsInternal() {
   const [items, setItems] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const showToast = useToast();
+  // 削除保留中（Undo可能）の商品idの集合。ここに含まれるidはitems（返り値）から除外し、
+  // 一覧・詳細では即座に削除済みのように見せる。実体のitems/logs stateからはまだ消していない
+  const [pendingDeleteIds, setPendingDeleteIds] = useState(() => new Set());
+  // idごとの削除タイマー（setTimeoutの戻り値）。ItemsProviderはApp.jsxの直下・Routesの外側に
+  // あり画面遷移で再マウントされないため、ここに保持したタイマーはページ遷移をまたいでも消えない
+  const pendingDeleteTimersRef = useRef(new Map());
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -84,7 +94,14 @@ export function useItemsInternal() {
     fetchAll();
   }, [fetchAll]);
 
-  const getItemById = useCallback((id) => items.find((item) => item.id === id), [items]);
+  // 削除保留中の商品を除いた一覧。コンポーネント側にはこちらを渡すことで、
+  // 一覧・詳細どちらも呼び出し元を変更せずに「削除済みのように見せる」を実現する
+  const visibleItems = useMemo(
+    () => items.filter((item) => !pendingDeleteIds.has(item.id)),
+    [items, pendingDeleteIds]
+  );
+
+  const getItemById = useCallback((id) => visibleItems.find((item) => item.id === id), [visibleItems]);
 
   const addItem = useCallback(async (data) => {
     const { data: inserted, error } = await supabase
@@ -136,27 +153,77 @@ export function useItemsInternal() {
     return { ok: true, item: updatedItem };
   }, []);
 
-  const deleteItem = useCallback(async (id) => {
-    // stock_logsがitemsを外部キー参照しているため、先に関連履歴を削除してからでないと
-    // items側の削除が外部キー制約違反（409）で失敗する（69番のdeleteTestDataと同じ順序）
-    const { error: logsError } = await supabase.from("stock_logs").delete().eq("item_id", id);
-
-    if (logsError) {
-      console.error("商品の削除に失敗しました", logsError.message, logsError.code);
-      return { ok: false, message: "商品の削除に失敗しました" };
+  /**
+   * 削除保留（Undo）を解除し、タイマーをキャンセルして元通り表示に戻す。
+   * Supabaseへは何もリクエストしない（まだ削除リクエスト自体を送っていないため）。
+   */
+  const undoDeleteItem = useCallback((id) => {
+    const timeoutId = pendingDeleteTimersRef.current.get(id);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      pendingDeleteTimersRef.current.delete(id);
     }
-
-    const { error } = await supabase.from("items").delete().eq("id", id);
-
-    if (error) {
-      console.error("商品の削除に失敗しました", error.message, error.code);
-      return { ok: false, message: "商品の削除に失敗しました" };
-    }
-
-    setItems((prev) => prev.filter((item) => item.id !== id));
-    setLogs((prev) => prev.filter((log) => log.itemId !== id));
-    return { ok: true };
+    setPendingDeleteIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
   }, []);
+
+  /**
+   * 商品削除にUndo（元に戻す）機能を持たせるため、即座にはSupabaseへ削除リクエストを送らない。
+   * 呼び出し直後はitemsから除外して画面上は削除済みのように見せつつ、5秒間のタイマーを仕掛ける。
+   * 5秒以内にundoDeleteItem(id)が呼ばれなければ、そのタイミングで実際にSupabaseへ削除リクエストを送る。
+   * 同じ商品に対して既に削除待ちタイマーがある場合は一旦キャンセルしてから仕掛け直す（1商品につき
+   * 常に1つのタイマーのみを保持する）。
+   */
+  const deleteItem = useCallback(
+    (id) => {
+      const existingTimer = pendingDeleteTimersRef.current.get(id);
+      if (existingTimer) clearTimeout(existingTimer);
+
+      setPendingDeleteIds((prev) => new Set(prev).add(id));
+
+      const runDelete = async () => {
+        pendingDeleteTimersRef.current.delete(id);
+        setPendingDeleteIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+
+        // stock_logsがitemsを外部キー参照しているため、先に関連履歴を削除してからでないと
+        // items側の削除が外部キー制約違反（409）で失敗する（69番のdeleteTestDataと同じ順序）
+        const { error: logsError } = await supabase.from("stock_logs").delete().eq("item_id", id);
+        if (logsError) {
+          console.error("商品の削除に失敗しました", logsError.message, logsError.code);
+          showToast("❌ 商品の削除に失敗しました");
+          return;
+        }
+
+        const { error } = await supabase.from("items").delete().eq("id", id);
+        if (error) {
+          console.error("商品の削除に失敗しました", error.message, error.code);
+          showToast("❌ 商品の削除に失敗しました");
+          return;
+        }
+
+        setItems((prev) => prev.filter((item) => item.id !== id));
+        setLogs((prev) => prev.filter((log) => log.itemId !== id));
+      };
+
+      pendingDeleteTimersRef.current.set(id, setTimeout(runDelete, DELETE_UNDO_DURATION_MS));
+
+      showToast("✅ 削除しました", {
+        action: { label: "元に戻す", onClick: () => undoDeleteItem(id) },
+        duration: DELETE_UNDO_DURATION_MS,
+      });
+
+      return { ok: true };
+    },
+    [showToast, undoDeleteItem]
+  );
 
   /**
    * 開発用: テストデータを既存の商品リストに追加する（上書きしない）。
@@ -415,5 +482,23 @@ export function useItemsInternal() {
     [items]
   );
 
-  return { items, logs, loading, refetch: fetchAll, getItemById, addItem, updateItem, deleteItem, getLogsByItemId, recordStock, recordCount, importItems, loadTestData, seedTestLogs, deleteTestData, deleteAllItems };
+  return {
+    items: visibleItems,
+    logs,
+    loading,
+    refetch: fetchAll,
+    getItemById,
+    addItem,
+    updateItem,
+    deleteItem,
+    undoDeleteItem,
+    getLogsByItemId,
+    recordStock,
+    recordCount,
+    importItems,
+    loadTestData,
+    seedTestLogs,
+    deleteTestData,
+    deleteAllItems,
+  };
 }

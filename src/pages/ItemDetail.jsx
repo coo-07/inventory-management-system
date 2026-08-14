@@ -88,19 +88,16 @@ function ItemDetail() {
     }
   };
 
+  // deleteItemは即座に完了する（実際のSupabaseへの削除リクエストは5秒後、Undoされなければ
+  // ItemsContext側で送られる）。「削除しました　元に戻す」のトーストもItemsContext側が表示するため、
+  // ここではダイアログを閉じて一覧へ戻るだけでよい
   const handleConfirmDelete = () => {
     if (deleteLoading) return;
     setDeleteLoading(true);
-    setTimeout(async () => {
-      const result = await deleteItem(id);
+    setTimeout(() => {
+      deleteItem(id);
       setDeleteLoading(false);
-      if (!result.ok) {
-        setDeleteOpen(false);
-        showToast("❌ " + result.message);
-        return;
-      }
       setDeleteOpen(false);
-      showToast("✅ 削除しました");
       navigate("/items");
     }, 1000);
   };
