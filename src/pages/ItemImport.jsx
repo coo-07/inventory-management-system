@@ -407,8 +407,15 @@ function ItemImport() {
             </p>
           )}
           {status === "done" && rows && (
+            // 1カラム表示（xl未満）ではJSXの記述順どおり「生データ表→列の対応付け→プレビュー→
+            // 重複確認→新しいカテゴリ→取り込むボタン」という自然な操作フローで上から並ぶ。
+            // xl以上のときだけ、各項目にxl:col-start-{1|2}とxl:order-*を指定して、従来通りの
+            // 2カラムの見た目（左：生データ表＋プレビュー＋重複確認＋取り込むボタン／
+            // 右：列の対応付け＋新しいカテゴリ）に組み替える。col-startだけで強制配置していた
+            // 従来の実装（左右2つの大きなdivをJSX順に並べる方式）だと、1カラムに戻ったときに
+            // 取り込むボタンが列の対応付けより前に表示されてしまっていたため、この方式に変更した
             <div className="grid grid-cols-1 gap-8 xl:grid-cols-[3fr_2fr] xl:items-start">
-              <div className="xl:col-start-1">
+              <div className="xl:order-1 xl:col-start-1">
                 <div className="mb-6">{dropZone}</div>
                 <p className="mb-3 text-[15px]" style={{ color: "var(--ink-soft)" }}>
                   {fileName}（{rows.length}行）
@@ -432,215 +439,9 @@ function ItemImport() {
                     </tbody>
                   </table>
                 </div>
-
-                <div className="mt-8">
-                  <h2 className="mb-3 text-[19px] font-bold">プレビュー</h2>
-                  {!canPreview ? (
-                    <p style={{ color: "var(--ink-soft)" }}>商品名と在庫数の列を選択してください</p>
-                  ) : (
-                    <div>
-                      <p
-                        className="mb-3 text-[15px] font-bold"
-                        style={{ color: skippedCount > 0 ? "var(--orange-dark)" : "var(--ink-soft)" }}
-                      >
-                        有効な行：{validItems.length}件／スキップされる行：{skippedCount}件
-                      </p>
-                      {skippedReasons.length > 0 && (
-                        <ul className="mb-3 list-disc pl-5 text-[13px]" style={{ color: "var(--ink-soft)" }}>
-                          {skippedReasons.slice(0, 5).map((r, i) => (
-                            <li key={i}>
-                              {r.rowNumber}行目：{r.reason}スキップ
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      {fileDuplicateNames.length > 0 && (
-                        <div
-                          className="mb-3 rounded-[var(--r-md)] border-2 px-4 py-3"
-                          style={{ borderColor: "var(--orange)", background: "var(--orange-light)" }}
-                        >
-                          <p className="mb-1 text-[13px] font-bold" style={{ color: "var(--orange-dark)" }}>
-                            ⚠️ ファイル内で重複している商品名（最初の1件のみ取り込みます・{fileDuplicateNames.length}件）
-                          </p>
-                          <p className="text-[13px]" style={{ color: "var(--orange-dark)" }}>
-                            {fileDuplicateNames.join("、")}
-                          </p>
-                        </div>
-                      )}
-                      <div className="overflow-x-auto rounded-[var(--r-md)] border-2" style={{ borderColor: "var(--border)" }}>
-                        <table className="w-full border-collapse text-left text-[14px]" style={{ color: "var(--ink)" }}>
-                          <thead>
-                            <tr style={{ background: "var(--bg)" }}>
-                              {["商品名", "カテゴリ", "在庫数", "発注点", "単位"].map((h) => (
-                                <th key={h} className="border px-3 py-2 font-bold" style={{ borderColor: "var(--border)" }}>
-                                  {h}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {validItems.slice(0, 5).map((item, i) => (
-                              <tr key={i}>
-                                <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
-                                  {item.name}
-                                </td>
-                                <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
-                                  {item.category}
-                                </td>
-                                <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
-                                  {item.stock}
-                                </td>
-                                <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
-                                  {item.threshold}
-                                </td>
-                                <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
-                                  {item.unit}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {duplicateMatches.length > 0 && (
-                        <div className="mt-8">
-                          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                            <h3 className="text-[17px] font-bold">重複商品の確認（{duplicateMatches.length}件）</h3>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="secondary"
-                                onClick={() => setAllDuplicateActions("replace")}
-                                className="text-[13px]"
-                              >
-                                すべて置き換える
-                              </Button>
-                              <Button
-                                variant="secondary"
-                                onClick={() => setAllDuplicateActions("skip")}
-                                className="text-[13px]"
-                              >
-                                すべてスキップする
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="flex flex-col gap-4">
-                            {duplicateMatches.map(({ importedItem, existingItem }) => {
-                              const action = getDuplicateAction(importedItem.name);
-                              const sum = existingItem.stock + importedItem.stock;
-                              const radioName = `duplicate-${importedItem.name}`;
-                              return (
-                                <div
-                                  key={importedItem.name}
-                                  className="rounded-[var(--r-md)] border-2 p-4"
-                                  style={{ borderColor: "var(--border)", background: "var(--surface)" }}
-                                >
-                                  <p className="mb-3 text-[15px] font-bold">商品名：{importedItem.name}</p>
-                                  <div
-                                    className="mb-4 overflow-x-auto rounded-[var(--r-md)] border"
-                                    style={{ borderColor: "var(--border)" }}
-                                  >
-                                    <table className="w-full border-collapse text-left text-[14px]" style={{ color: "var(--ink)" }}>
-                                      <thead>
-                                        <tr style={{ background: "var(--bg)" }}>
-                                          <th className="border px-3 py-2" style={{ borderColor: "var(--border)" }} />
-                                          <th className="border px-3 py-2 font-bold" style={{ borderColor: "var(--border)" }}>
-                                            現在の登録内容
-                                          </th>
-                                          <th className="border px-3 py-2 font-bold" style={{ borderColor: "var(--border)" }}>
-                                            取り込みデータ
-                                          </th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        <tr>
-                                          <td className="border px-3 py-2 font-bold whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
-                                            在庫数
-                                          </td>
-                                          <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
-                                            {existingItem.stock}{existingItem.unit}
-                                          </td>
-                                          <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
-                                            {importedItem.stock}{importedItem.unit}
-                                          </td>
-                                        </tr>
-                                      </tbody>
-                                    </table>
-                                  </div>
-
-                                  <p className="mb-2 text-[14px] font-bold">この商品はどうしますか？</p>
-                                  <div className="flex flex-col gap-3">
-                                    <label className="flex cursor-pointer items-start gap-2">
-                                      <input
-                                        type="radio"
-                                        name={radioName}
-                                        checked={action === "replace"}
-                                        onChange={() => setDuplicateAction(importedItem.name, "replace")}
-                                        className="mt-1 shrink-0"
-                                      />
-                                      <span>
-                                        <span className="block text-[14px] font-bold">
-                                          {importedItem.stock}{importedItem.unit}に置き換える
-                                        </span>
-                                        <span className="block text-[13px]" style={{ color: "var(--ink-soft)" }}>
-                                          今の在庫（{existingItem.stock}{existingItem.unit}）を、取り込んだ数（{importedItem.stock}{importedItem.unit}）に置き換えます。棚卸しなどで実際の在庫数に合わせたいときに選んでください。
-                                        </span>
-                                      </span>
-                                    </label>
-                                    <label className="flex cursor-pointer items-start gap-2">
-                                      <input
-                                        type="radio"
-                                        name={radioName}
-                                        checked={action === "add"}
-                                        onChange={() => setDuplicateAction(importedItem.name, "add")}
-                                        className="mt-1 shrink-0"
-                                      />
-                                      <span>
-                                        <span className="block text-[14px] font-bold">
-                                          {existingItem.stock}{existingItem.unit}に{importedItem.stock}{importedItem.unit}を加算する（{sum}{existingItem.unit}になります）
-                                        </span>
-                                        <span className="block text-[13px]" style={{ color: "var(--ink-soft)" }}>
-                                          今の在庫（{existingItem.stock}{existingItem.unit}）に、取り込んだ数（{importedItem.stock}{importedItem.unit}）を追加します。新しく仕入れた分を追加登録したいときに選んでください。
-                                        </span>
-                                      </span>
-                                    </label>
-                                    <label className="flex cursor-pointer items-start gap-2">
-                                      <input
-                                        type="radio"
-                                        name={radioName}
-                                        checked={action === "skip"}
-                                        onChange={() => setDuplicateAction(importedItem.name, "skip")}
-                                        className="mt-1 shrink-0"
-                                      />
-                                      <span>
-                                        <span className="block text-[14px] font-bold">スキップする（今の内容のまま変更しない）</span>
-                                        <span className="block text-[13px]" style={{ color: "var(--ink-soft)" }}>
-                                          取り込みデータは反映せず、今の登録内容をそのまま残します。
-                                        </span>
-                                      </span>
-                                    </label>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      <Button
-                        variant="primary"
-                        loading={importing}
-                        disabled={importTargets.length === 0 && duplicateMatches.length === 0}
-                        onClick={handleImport}
-                        className="mt-4"
-                      >
-                        {importing ? "取り込んでいます..." : "この内容で取り込む"}
-                      </Button>
-                    </div>
-                  )}
-                </div>
               </div>
 
-              <div className="xl:col-start-2">
+              <div className="xl:order-1 xl:col-start-2">
                 <h2 className="mb-2 text-[19px] font-bold">列の対応付け</h2>
                 <p className="mb-4 text-[13px]" style={{ color: "var(--ink-soft)" }}>
                   ※1行目には商品名・カテゴリなどの項目名が入っている必要があります。1行目にメモやタイトル行がある場合は、Excel側で先に削除してからアップロードしてください
@@ -669,50 +470,259 @@ function ItemImport() {
                     </div>
                   ))}
                 </div>
+              </div>
 
-                {newCategories.length > 0 && (
-                  <div className="mt-8">
-                    <h2 className="mb-2 text-[19px] font-bold">新しいカテゴリが見つかりました</h2>
-                    <p className="mb-4 text-[13px]" style={{ color: "var(--ink-soft)" }}>
-                      固定8分類にないカテゴリです。アイコンを選ぶと一覧画面などにそのまま表示されます（あとから「⚙️」の設定画面でも変更できます）
+              <div className="xl:order-2 xl:col-start-1">
+                <h2 className="mb-3 text-[19px] font-bold">プレビュー</h2>
+                {!canPreview ? (
+                  <p style={{ color: "var(--ink-soft)" }}>商品名と在庫数の列を選択してください</p>
+                ) : (
+                  <div>
+                    <p
+                      className="mb-3 text-[15px] font-bold"
+                      style={{ color: skippedCount > 0 ? "var(--orange-dark)" : "var(--ink-soft)" }}
+                    >
+                      有効な行：{validItems.length}件／スキップされる行：{skippedCount}件
                     </p>
-                    <div className="relative">
+                    {skippedReasons.length > 0 && (
+                      <ul className="mb-3 list-disc pl-5 text-[13px]" style={{ color: "var(--ink-soft)" }}>
+                        {skippedReasons.slice(0, 5).map((r, i) => (
+                          <li key={i}>
+                            {r.rowNumber}行目：{r.reason}スキップ
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {fileDuplicateNames.length > 0 && (
                       <div
-                        className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-px -translate-x-1/2 2xl:block"
-                        style={{ background: "var(--border)" }}
-                        aria-hidden="true"
-                      />
-                      <div className="grid grid-cols-1 2xl:grid-cols-2 2xl:gap-x-8">
-                        {newCategories.map((category, index) => {
-                          const isSaving = savingCategories.has(category);
-                          // 2xl未満は1列＝1件ごとに新しい行なのでindex>0で区切り線。2xl以上は2列グリッドの行単位（index>=2）で区切るため、
-                          // 1行目の右側（index===1）だけは2xl以上で区切り線を打ち消す
-                          const borderClass = index === 0 ? "" : index === 1 ? "border-t pt-4 2xl:border-t-0 2xl:pt-0" : "border-t pt-4";
-                          return (
-                            <div
-                              key={category}
-                              className={`pb-4 ${borderClass}`}
-                              style={{ borderColor: "var(--border)" }}
-                            >
-                              <p className="mb-2 text-[15px] font-bold">{category}</p>
-                              <CategoryIconPicker
-                                category={category}
-                                selectedIcon={customIcons[category]}
-                                onSelect={(icon) => saveCategoryIcon(category, icon)}
-                              />
-                              {isSaving && (
-                                <p className="mt-1.5 text-[13px]" style={{ color: "var(--ink-soft)" }}>
-                                  保存中...
-                                </p>
-                              )}
-                            </div>
-                          );
-                        })}
+                        className="mb-3 rounded-[var(--r-md)] border-2 px-4 py-3"
+                        style={{ borderColor: "var(--orange)", background: "var(--orange-light)" }}
+                      >
+                        <p className="mb-1 text-[13px] font-bold" style={{ color: "var(--orange-dark)" }}>
+                          ⚠️ ファイル内で重複している商品名（最初の1件のみ取り込みます・{fileDuplicateNames.length}件）
+                        </p>
+                        <p className="text-[13px]" style={{ color: "var(--orange-dark)" }}>
+                          {fileDuplicateNames.join("、")}
+                        </p>
                       </div>
+                    )}
+                    <div className="overflow-x-auto rounded-[var(--r-md)] border-2" style={{ borderColor: "var(--border)" }}>
+                      <table className="w-full border-collapse text-left text-[14px]" style={{ color: "var(--ink)" }}>
+                        <thead>
+                          <tr style={{ background: "var(--bg)" }}>
+                            {["商品名", "カテゴリ", "在庫数", "発注点", "単位"].map((h) => (
+                              <th key={h} className="border px-3 py-2 font-bold" style={{ borderColor: "var(--border)" }}>
+                                {h}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {validItems.slice(0, 5).map((item, i) => (
+                            <tr key={i}>
+                              <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                {item.name}
+                              </td>
+                              <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                {item.category}
+                              </td>
+                              <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                {item.stock}
+                              </td>
+                              <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                {item.threshold}
+                              </td>
+                              <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                {item.unit}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 )}
               </div>
+
+              {canPreview && duplicateMatches.length > 0 && (
+                <div className="xl:order-3 xl:col-start-1">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                    <h3 className="text-[17px] font-bold">重複商品の確認（{duplicateMatches.length}件）</h3>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="secondary"
+                        onClick={() => setAllDuplicateActions("replace")}
+                        className="text-[13px]"
+                      >
+                        すべて置き換える
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={() => setAllDuplicateActions("skip")}
+                        className="text-[13px]"
+                      >
+                        すべてスキップする
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    {duplicateMatches.map(({ importedItem, existingItem }) => {
+                      const action = getDuplicateAction(importedItem.name);
+                      const sum = existingItem.stock + importedItem.stock;
+                      const radioName = `duplicate-${importedItem.name}`;
+                      return (
+                        <div
+                          key={importedItem.name}
+                          className="rounded-[var(--r-md)] border-2 p-4"
+                          style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+                        >
+                          <p className="mb-3 text-[15px] font-bold">商品名：{importedItem.name}</p>
+                          <div
+                            className="mb-4 overflow-x-auto rounded-[var(--r-md)] border"
+                            style={{ borderColor: "var(--border)" }}
+                          >
+                            <table className="w-full border-collapse text-left text-[14px]" style={{ color: "var(--ink)" }}>
+                              <thead>
+                                <tr style={{ background: "var(--bg)" }}>
+                                  <th className="border px-3 py-2" style={{ borderColor: "var(--border)" }} />
+                                  <th className="border px-3 py-2 font-bold" style={{ borderColor: "var(--border)" }}>
+                                    現在の登録内容
+                                  </th>
+                                  <th className="border px-3 py-2 font-bold" style={{ borderColor: "var(--border)" }}>
+                                    取り込みデータ
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <td className="border px-3 py-2 font-bold whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                    在庫数
+                                  </td>
+                                  <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                    {existingItem.stock}{existingItem.unit}
+                                  </td>
+                                  <td className="border px-3 py-2 whitespace-nowrap" style={{ borderColor: "var(--border)" }}>
+                                    {importedItem.stock}{importedItem.unit}
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <p className="mb-2 text-[14px] font-bold">この商品はどうしますか？</p>
+                          <div className="flex flex-col gap-3">
+                            <label className="flex cursor-pointer items-start gap-2">
+                              <input
+                                type="radio"
+                                name={radioName}
+                                checked={action === "replace"}
+                                onChange={() => setDuplicateAction(importedItem.name, "replace")}
+                                className="mt-1 shrink-0"
+                              />
+                              <span>
+                                <span className="block text-[14px] font-bold">
+                                  {importedItem.stock}{importedItem.unit}に置き換える
+                                </span>
+                                <span className="block text-[13px]" style={{ color: "var(--ink-soft)" }}>
+                                  今の在庫（{existingItem.stock}{existingItem.unit}）を、取り込んだ数（{importedItem.stock}{importedItem.unit}）に置き換えます。棚卸しなどで実際の在庫数に合わせたいときに選んでください。
+                                </span>
+                              </span>
+                            </label>
+                            <label className="flex cursor-pointer items-start gap-2">
+                              <input
+                                type="radio"
+                                name={radioName}
+                                checked={action === "add"}
+                                onChange={() => setDuplicateAction(importedItem.name, "add")}
+                                className="mt-1 shrink-0"
+                              />
+                              <span>
+                                <span className="block text-[14px] font-bold">
+                                  {existingItem.stock}{existingItem.unit}に{importedItem.stock}{importedItem.unit}を加算する（{sum}{existingItem.unit}になります）
+                                </span>
+                                <span className="block text-[13px]" style={{ color: "var(--ink-soft)" }}>
+                                  今の在庫（{existingItem.stock}{existingItem.unit}）に、取り込んだ数（{importedItem.stock}{importedItem.unit}）を追加します。新しく仕入れた分を追加登録したいときに選んでください。
+                                </span>
+                              </span>
+                            </label>
+                            <label className="flex cursor-pointer items-start gap-2">
+                              <input
+                                type="radio"
+                                name={radioName}
+                                checked={action === "skip"}
+                                onChange={() => setDuplicateAction(importedItem.name, "skip")}
+                                className="mt-1 shrink-0"
+                              />
+                              <span>
+                                <span className="block text-[14px] font-bold">スキップする（今の内容のまま変更しない）</span>
+                                <span className="block text-[13px]" style={{ color: "var(--ink-soft)" }}>
+                                  取り込みデータは反映せず、今の登録内容をそのまま残します。
+                                </span>
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {newCategories.length > 0 && (
+                <div className="xl:order-2 xl:col-start-2">
+                  <h2 className="mb-2 text-[19px] font-bold">新しいカテゴリが見つかりました</h2>
+                  <p className="mb-4 text-[13px]" style={{ color: "var(--ink-soft)" }}>
+                    固定8分類にないカテゴリです。アイコンを選ぶと一覧画面などにそのまま表示されます（あとから「⚙️」の設定画面でも変更できます）
+                  </p>
+                  <div className="relative">
+                    <div
+                      className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-px -translate-x-1/2 2xl:block"
+                      style={{ background: "var(--border)" }}
+                      aria-hidden="true"
+                    />
+                    <div className="grid grid-cols-1 2xl:grid-cols-2 2xl:gap-x-8">
+                      {newCategories.map((category, index) => {
+                        const isSaving = savingCategories.has(category);
+                        // 2xl未満は1列＝1件ごとに新しい行なのでindex>0で区切り線。2xl以上は2列グリッドの行単位（index>=2）で区切るため、
+                        // 1行目の右側（index===1）だけは2xl以上で区切り線を打ち消す
+                        const borderClass = index === 0 ? "" : index === 1 ? "border-t pt-4 2xl:border-t-0 2xl:pt-0" : "border-t pt-4";
+                        return (
+                          <div
+                            key={category}
+                            className={`pb-4 ${borderClass}`}
+                            style={{ borderColor: "var(--border)" }}
+                          >
+                            <p className="mb-2 text-[15px] font-bold">{category}</p>
+                            <CategoryIconPicker
+                              category={category}
+                              selectedIcon={customIcons[category]}
+                              onSelect={(icon) => saveCategoryIcon(category, icon)}
+                            />
+                            {isSaving && (
+                              <p className="mt-1.5 text-[13px]" style={{ color: "var(--ink-soft)" }}>
+                                保存中...
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {canPreview && (
+                <div className="xl:order-4 xl:col-start-1">
+                  <Button
+                    variant="primary"
+                    loading={importing}
+                    disabled={importTargets.length === 0 && duplicateMatches.length === 0}
+                    onClick={handleImport}
+                  >
+                    {importing ? "取り込んでいます..." : "この内容で取り込む"}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
