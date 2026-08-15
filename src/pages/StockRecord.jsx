@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useItems } from "../context/ItemsContext";
 import { useToast } from "../context/ToastContext";
+import { useGoBack } from "../hooks/useGoBack";
 import Button from "../components/Button";
 
 function toHalfWidthDigits(str) {
@@ -13,7 +14,7 @@ function sanitizeDigits(str) {
 
 function StockRecord() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const goBack = useGoBack();
   const showToast = useToast();
   const { loading, getItemById, recordStock } = useItems();
   const item = getItemById(id);
@@ -64,7 +65,7 @@ function StockRecord() {
       }
       setError("");
       showToast("✅ 在庫を更新しました");
-      navigate(`/items/${id}`);
+      goBack(`/items/${id}`);
     }, 1000);
   };
 

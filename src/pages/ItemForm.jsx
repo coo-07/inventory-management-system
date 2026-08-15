@@ -304,6 +304,42 @@ function ItemForm() {
                   ＋
                 </button>
               </div>
+              <div className="mt-3.5 flex justify-center gap-7">
+                <div className="flex gap-2.5">
+                  <Button
+                    variant="secondary"
+                    disabled={(Number(form.stock) || 0) - 10 < 0}
+                    onClick={() => setForm((prev) => ({ ...prev, stock: Math.max(0, (Number(prev.stock) || 0) - 10) }))}
+                    className="px-4 text-[15px]"
+                  >
+                    −10
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    disabled={(Number(form.stock) || 0) - 5 < 0}
+                    onClick={() => setForm((prev) => ({ ...prev, stock: Math.max(0, (Number(prev.stock) || 0) - 5) }))}
+                    className="px-4 text-[15px]"
+                  >
+                    −5
+                  </Button>
+                </div>
+                <div className="flex gap-2.5">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setForm((prev) => ({ ...prev, stock: (Number(prev.stock) || 0) + 5 }))}
+                    className="px-4 text-[15px]"
+                  >
+                    +5
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setForm((prev) => ({ ...prev, stock: (Number(prev.stock) || 0) + 10 }))}
+                    className="px-4 text-[15px]"
+                  >
+                    +10
+                  </Button>
+                </div>
+              </div>
               {fieldErrors.stock && (
                 <p className="mt-1.5 text-[13px] font-bold" style={{ color: "var(--red)" }}>
                   {fieldErrors.stock}
@@ -347,6 +383,42 @@ function ItemForm() {
                 >
                   ＋
                 </button>
+              </div>
+              <div className="mt-3.5 flex justify-center gap-7">
+                <div className="flex gap-2.5">
+                  <Button
+                    variant="secondary"
+                    disabled={(Number(form.threshold) || 0) - 10 < 0}
+                    onClick={() => setForm((prev) => ({ ...prev, threshold: Math.max(0, (Number(prev.threshold) || 0) - 10) }))}
+                    className="px-4 text-[15px]"
+                  >
+                    −10
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    disabled={(Number(form.threshold) || 0) - 5 < 0}
+                    onClick={() => setForm((prev) => ({ ...prev, threshold: Math.max(0, (Number(prev.threshold) || 0) - 5) }))}
+                    className="px-4 text-[15px]"
+                  >
+                    −5
+                  </Button>
+                </div>
+                <div className="flex gap-2.5">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setForm((prev) => ({ ...prev, threshold: (Number(prev.threshold) || 0) + 5 }))}
+                    className="px-4 text-[15px]"
+                  >
+                    +5
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setForm((prev) => ({ ...prev, threshold: (Number(prev.threshold) || 0) + 10 }))}
+                    className="px-4 text-[15px]"
+                  >
+                    +10
+                  </Button>
+                </div>
               </div>
               {fieldErrors.threshold && (
                 <p className="mt-1.5 text-[13px] font-bold" style={{ color: "var(--red)" }}>
