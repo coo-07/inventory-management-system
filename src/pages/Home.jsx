@@ -4,7 +4,7 @@ import { useItems } from "../context/ItemsContext";
 import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useToast } from "../context/ToastContext";
 import { generateTestItems } from "../utils/generateTestData";
-import { getStockStatus } from "../utils/stockStatus";
+import { filterItems } from "../utils/filterItems";
 import { updateListParams } from "../utils/listSearchParams";
 import ItemList from "../components/ItemList";
 import Button from "../components/Button";
@@ -85,19 +85,10 @@ function Home() {
     [items]
   );
 
-  const filteredItems = useMemo(() => {
-    return items.filter((item) => {
-      const status = getStockStatus(item.stock, item.threshold);
-      const matchesSearch = item.name.toLowerCase().includes(searchInput.toLowerCase());
-      const matchesCategory = !category || item.category === category;
-      const matchesFilter =
-        filter === "all" ? true :
-        filter === "low" ? status.isLow :
-        filter === "out" ? status.isOut :
-        filter === "available" ? (!status.isOut && !status.isLow) : true;
-      return matchesSearch && matchesCategory && matchesFilter;
-    });
-  }, [items, searchInput, category, filter]);
+  const filteredItems = useMemo(
+    () => filterItems(items, { search: searchInput, category, filter }),
+    [items, searchInput, category, filter]
+  );
 
   const handleAddNew = () => {
     if (addLoading) return;
@@ -400,7 +391,14 @@ function Home() {
 
       <ItemList
         items={filteredItems}
-        onSelect={(id) => navigate(`/items/${id}`)}
+        onSelect={(id) => {
+          // 詳細画面の「次へ／前へ」を絞り込み結果と連動させるため、絞り込み条件を
+          // クエリパラメータとして引き継ぐ（pageは詳細画面では使わないため付けない）
+          const params = new URLSearchParams(searchParams);
+          params.delete("page");
+          const query = params.toString();
+          navigate(`/items/${id}${query ? `?${query}` : ""}`);
+        }}
         hasAnyItems={items.length > 0}
         loading={loading}
         customIcons={customIcons}

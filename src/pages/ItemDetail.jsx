@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useItems } from "../context/ItemsContext";
 import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useToast } from "../context/ToastContext";
 import { useGoBack } from "../hooks/useGoBack";
 import CategoryIcon, { getCategoryMeta } from "../components/CategoryIcon";
 import { getStockStatus } from "../utils/stockStatus";
+import { filterItems } from "../utils/filterItems";
 import { formatDate } from "../utils/formatDate";
 import { generateTestStockLogs } from "../utils/generateTestData";
 import StockLogList from "../components/StockLogList";
@@ -16,6 +17,7 @@ import Button from "../components/Button";
 function ItemDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const showToast = useToast();
   const { items, loading, getItemById, getLogsByItemId, deleteItem, seedTestLogs } = useItems();
   const { customIcons } = useCategoryIcons();
@@ -66,8 +68,20 @@ function ItemDetail() {
   const logs = getLogsByItemId(id);
   const status = getStockStatus(item.stock, item.threshold);
   const meta = getCategoryMeta(item.category, customIcons);
-  const idx = items.findIndex((i) => i.id === id);
-  const showNav = idx > 0 || (idx >= 0 && idx < items.length - 1);
+  // 一覧画面での絞り込み条件（search・category・filter）をクエリパラメータ経由で
+  // 引き継いでいる場合は、その絞り込み結果を「次へ／前へ」の対象にする。パラメータが
+  // 一つも無い場合（詳細ページを直接開いた等）は従来通り全商品を対象にする
+  const hasFilterParams =
+    searchParams.has("search") || searchParams.has("category") || searchParams.has("filter");
+  const navItems = hasFilterParams
+    ? filterItems(items, {
+        search: searchParams.get("search") || "",
+        category: searchParams.get("category") || "",
+        filter: searchParams.get("filter") || "all",
+      })
+    : items;
+  const idx = navItems.findIndex((i) => i.id === id);
+  const showNav = idx > 0 || (idx >= 0 && idx < navItems.length - 1);
 
   const handleSeedTestData = async () => {
     if (seedLoading) return;
@@ -203,8 +217,14 @@ function ItemDetail() {
       {showNav && (
         <Pagination
           current={idx + 1}
-          total={items.length}
-          onGo={(n) => navigate(`/items/${items[n - 1].id}`)}
+          total={navItems.length}
+          onGo={(n) => {
+            // 履歴をpushすると「一覧へ戻る」（navigate(-1)）が1つ前の商品詳細に
+            // 戻ってしまうため、replaceで現在の履歴エントリを置き換える。絞り込み
+            // 条件のクエリパラメータもそのまま引き継ぐ
+            const query = searchParams.toString();
+            navigate(`/items/${navItems[n - 1].id}${query ? `?${query}` : ""}`, { replace: true });
+          }}
         />
       )}
 
