@@ -31,7 +31,7 @@ export function matchPresetIcon(categoryName) {
 function CategoryIconPicker({ category, selectedIcon, onSelect }) {
   return (
     <div
-      className="grid gap-2"
+      className="grid gap-2 overflow-x-auto pb-1"
       style={{ gridTemplateColumns: "repeat(6, 40px)" }}
       role="group"
       aria-label={`${category || "カテゴリ"}のアイコンを選択`}

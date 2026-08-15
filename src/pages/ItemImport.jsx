@@ -87,7 +87,7 @@ function ItemImport() {
   const [status, setStatus] = useState("idle");
   const [columnMapping, setColumnMapping] = useState(EMPTY_MAPPING);
   const [isDragging, setIsDragging] = useState(false);
-  const { customIcons, addOrUpdateCategoryIcon } = useCategoryIcons();
+  const { customIcons, loading: categoryIconsLoading, addOrUpdateCategoryIcon } = useCategoryIcons();
   const { items: existingItems, importItems, recordStock } = useItems();
   const showToast = useToast();
   const [savingCategories, setSavingCategories] = useState(() => new Set());
@@ -341,8 +341,12 @@ function ItemImport() {
     }
   };
 
-  // 新しいカテゴリが見つかった際、キーワードに一致するプリセットアイコンがあれば自動で保存する（80-2番）
+  // 新しいカテゴリが見つかった際、キーワードに一致するプリセットアイコンがあれば自動で保存する（80-2番）。
+  // customIconsはSupabaseからの非同期取得のため、取得完了前（categoryIconsLoading中）にnewCategoriesが
+  // 確定すると「既に設定済みかどうか」を空のcustomIconsで誤判定してしまう競合状態があった（97-1番）。
+  // 取得完了を待ってから判定することで、実行タイミングによらず常に同じ結果になるようにする
   useEffect(() => {
+    if (categoryIconsLoading) return;
     for (const category of newCategories) {
       if (autoMatchedRef.current.has(category)) continue;
       autoMatchedRef.current.add(category);
@@ -353,7 +357,7 @@ function ItemImport() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [newCategories]);
+  }, [newCategories, customIcons, categoryIconsLoading]);
 
   const updateMapping = (key, value) => {
     setColumnMapping((prev) => ({ ...prev, [key]: value === "" ? null : Number(value) }));
@@ -414,7 +418,7 @@ function ItemImport() {
             // 右：列の対応付け＋新しいカテゴリ）に組み替える。col-startだけで強制配置していた
             // 従来の実装（左右2つの大きなdivをJSX順に並べる方式）だと、1カラムに戻ったときに
             // 取り込むボタンが列の対応付けより前に表示されてしまっていたため、この方式に変更した
-            <div className="grid grid-cols-1 gap-8 xl:grid-cols-[3fr_2fr] xl:items-start">
+            <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] xl:items-start">
               <div className="xl:order-1 xl:col-start-1">
                 <div className="mb-6">{dropZone}</div>
                 <p className="mb-3 text-[15px]" style={{ color: "var(--ink-soft)" }}>
