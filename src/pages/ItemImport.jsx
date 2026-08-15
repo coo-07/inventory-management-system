@@ -7,6 +7,7 @@ import { useToast } from "../context/ToastContext";
 import { FIXED_CATEGORIES } from "../components/CategoryIcon";
 import CategoryIconPicker, { matchPresetIcon } from "../components/CategoryIconPicker";
 import Button from "../components/Button";
+import Dropdown from "../components/Dropdown";
 
 const EMPTY_MAPPING = { name: null, category: null, stock: null, threshold: null, unit: null };
 
@@ -360,7 +361,7 @@ function ItemImport() {
   }, [newCategories, customIcons, categoryIconsLoading]);
 
   const updateMapping = (key, value) => {
-    setColumnMapping((prev) => ({ ...prev, [key]: value === "" ? null : Number(value) }));
+    setColumnMapping((prev) => ({ ...prev, [key]: value }));
   };
 
   const selectClass =
@@ -454,23 +455,21 @@ function ItemImport() {
                 <div className="flex flex-wrap gap-4">
                   {MAPPING_FIELDS.map((field) => (
                     <div key={field.key} className="min-w-[220px] flex-auto">
-                      <label className="mb-2 block text-[15px] font-bold">
+                      <label htmlFor={`mapping-${field.key}`} className="mb-2 block text-[15px] font-bold">
                         {field.label}
                         {field.required ? "（必須）" : "（任意）"}
                       </label>
-                      <select
-                        value={columnMapping[field.key] === null ? "" : String(columnMapping[field.key])}
-                        onChange={(e) => updateMapping(field.key, e.target.value)}
+                      <Dropdown
+                        id={`mapping-${field.key}`}
+                        value={columnMapping[field.key]}
+                        onChange={(value) => updateMapping(field.key, value)}
+                        placeholder={field.required ? "選択してください" : "（マッピングしない）"}
+                        options={[
+                          { value: null, label: field.required ? "選択してください" : "（マッピングしない）" },
+                          ...columnOptions,
+                        ]}
                         className={selectClass}
-                        style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
-                      >
-                        <option value="">{field.required ? "選択してください" : "（マッピングしない）"}</option>
-                        {columnOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
+                      />
                     </div>
                   ))}
                 </div>
