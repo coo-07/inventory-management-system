@@ -418,7 +418,7 @@ function ItemImport() {
             // 右：列の対応付け＋新しいカテゴリ）に組み替える。col-startだけで強制配置していた
             // 従来の実装（左右2つの大きなdivをJSX順に並べる方式）だと、1カラムに戻ったときに
             // 取り込むボタンが列の対応付けより前に表示されてしまっていたため、この方式に変更した
-            <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] xl:items-start">
+            <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,4fr)_minmax(0,2fr)] xl:items-start">
               <div className="xl:order-1 xl:col-start-1">
                 <div className="mb-6">{dropZone}</div>
                 <p className="mb-3 text-[15px]" style={{ color: "var(--ink-soft)" }}>
