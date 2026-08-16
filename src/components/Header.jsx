@@ -16,8 +16,10 @@ function useBackLink() {
   const isRecord = useMatch("/items/:id/record");
   const isShop = useMatch("/shop");
   const isCategorySettings = useMatch("/settings/categories");
+  const isReports = useMatch("/reports");
 
   if (isTanaoroshiResults) return { label: "一覧へ戻る", to: "/items" };
+  if (isReports) return { label: "一覧へ戻る", to: "/items" };
   if (isDetail) return { label: "一覧へ戻る", to: "/items" };
   if (isNew) return { label: "戻る", to: "/items" };
   if (isImport) return { label: "一覧へ戻る", to: "/items" };
@@ -210,6 +212,16 @@ function Header() {
               style={{ background: "var(--surface)", color: "var(--ink-soft)", borderColor: "var(--border)" }}
             >
               📋 棚卸し結果
+            </button>
+          )}
+          {role && (
+            <button
+              type="button"
+              onClick={() => navigate("/reports")}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border-2 px-3.5 py-1.5 text-sm font-bold whitespace-nowrap transition-colors hover:border-[var(--blue)]! hover:bg-[var(--blue-light)]! hover:text-[var(--blue-dark)]!"
+              style={{ background: "var(--surface)", color: "var(--ink-soft)", borderColor: "var(--border)" }}
+            >
+              📊 レポート
             </button>
           )}
           {role && (

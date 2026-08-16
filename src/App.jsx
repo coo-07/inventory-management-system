@@ -15,6 +15,7 @@ import ItemDetail from "./pages/ItemDetail";
 import CategorySettings from "./pages/CategorySettings";
 import StockRecord from "./pages/StockRecord";
 import TanaoroshiResults from "./pages/TanaoroshiResults";
+import Reports from "./pages/Reports";
 import Shop from "./pages/Shop";
 import NotFound from "./pages/NotFound";
 
@@ -67,6 +68,14 @@ function App() {
                 element={
                   <RequireAuth>
                     <TanaoroshiResults />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/reports"
+                element={
+                  <RequireAuth>
+                    <Reports />
                   </RequireAuth>
                 }
               />

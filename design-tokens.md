@@ -3800,6 +3800,34 @@ npm install xlsx
 
 ---
 
+## 106. 在庫推移グラフ機能（新規レポート画面／`/reports`）の実装
+
+**経緯：** 在庫数の時系列推移をグラフで確認したいという要望があり、新規レポート画面を追加した。新しいテーブルやAPIは増やさず、既存の`items`（現在の在庫数）と`stock_logs`（入出荷・棚卸しの履歴、`afterStock`＝記録直後の在庫数を保持）から過去の任意時点の在庫数を逆算する方式にした。
+
+**データ計算方法（`src/utils/stockTrend.js`）：**
+- `getLogDelta(log)`：ログ1件の在庫増減量（符号付き）。`type: "in"`→`+quantity`、`"out"`→`-quantity`、`"count"`（棚卸し）→`quantity`（棚卸しは登録時点で実数との差分を符号付きで保存済みのため、そのまま使える）
+- `getItemStockAsOfDate(item, itemLogsAsc, targetDate)`：ある商品の、指定日23:59:59時点の在庫数。その日以前で一番新しいログがあればその`afterStock`を採用。無ければ「まだ履歴が無い期間」とみなし、履歴が1件でもあれば一番古いログの`afterStock`からそのログの`delta`を引いた値（＝そのログが記録される直前の在庫数）、履歴が1件も無ければ`item.stock`（現在値のまま）を返す
+- `getDateRangeDays(periodDays)`：今日を含む過去N日分の`Date`配列を古い順に生成
+- `buildItemTrend(item, allLogs, periodDays)` / `buildTotalTrend(items, allLogs, periodDays)`：上記を組み合わせ、グラフにそのまま渡せる`[{ date: "8/16", stock: 42 }, ...]`形式を生成。`buildTotalTrend`は各日について、その日時点でまだ`createdAt`を迎えていない（＝未登録だった）商品を合計から除外する
+
+**画面構成（`src/pages/Reports.jsx`）：**
+- 表示切り替えタブ「全体の在庫推移」／「商品ごとの推移」と、期間切り替えボタン「7日間」／「30日間」を、Header.jsxの絞り込みタブと同じスタイル（選択中は青背景・白文字、未選択は枠線のみ）で統一
+- 「商品ごとの推移」選択時のみ商品選択の`<select>`を表示（未選択時プレースホルダー「商品を選択してください」、商品0件時は選択欄を無効化し「登録されている商品がありません」を表示）。未選択の間はグラフを描画せず案内文のみ表示
+- グラフは`recharts`（新規導入、`npm install recharts`）の`LineChart`。`ResponsiveContainer`で幅100%、`XAxis dataKey="date"`・`YAxis`・`Tooltip`・`Line type="monotone" dataKey="stock"`。線の色は`var(--blue)`（既存のブランドカラーのCSS変数）
+- `loading`中は「読み込み中...」を表示（Shop.jsxと同じパターン）
+- データの組み立て（計算ロジック）はすべて`stockTrend.js`側の関数呼び出しのみで、Reports.jsx自体には計算ロジックを書いていない
+
+**画面遷移：**
+- `App.jsx`に`/reports`ルートを追加（`RequireAuth`で保護。未ログイン時は`/`へリダイレクト、既存の`/items/tanaoroshi-results`と同じ構成）
+- `Header.jsx`の`useBackLink()`に`/reports`判定を追加し「一覧へ戻る」（`/items`）を表示。`/items/:id`の`useMatch`が`tanaoroshi-results`のような文字列にもマッチしてしまう問題（88番）と同種の事故を避けるため、`isReports`の判定も他の`/items`配下ではないルートと同様に独立した`useMatch("/reports")`として定義（`/reports`は`/items`配下のパスではないため実際には衝突しないが、念のため既存の判定群と同じ書き方に揃えた）
+- ログイン中（`role`あり）の場合のみ、「📋 棚卸し結果」ボタンの隣に「📊 レポート」ボタンを追加し`/reports`へ遷移できるようにした
+
+**動作確認：** `stockTrend.js`の計算関数は認証を必要としない純粋関数のため、Node.js上で直接importして単体検証した：`getLogDelta`の3パターン、履歴が無い商品が現在値のまま横一直線になること、履歴の前後・間の時点での在庫数の逆算、`buildTotalTrend`が商品の登録日より前の日を合計から正しく除外すること、をいずれもassertで確認済み。lint・buildもエラーなし。ただし画面自体（タブ切り替え・期間切り替え・商品選択・グラフ描画・ヘッダーからの遷移・「一覧へ戻る」・未ログイン時のリダイレクト）は認証が必要なため実ブラウザでの確認ができておらず、「動作確認してほしいこと」1〜5は実機での確認をお願いしたい。
+
+**ステータス：** 実装済み（2026/08/16）。計算ロジックは単体検証済み、画面の実機確認は未実施。
+
+---
+
 ## 未決定・次回検討事項
 
 - [ ] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか
