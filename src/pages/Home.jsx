@@ -1,13 +1,23 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useItems } from "../context/ItemsContext";
 import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useToast } from "../context/ToastContext";
 import { generateTestItems } from "../utils/generateTestData";
 import { filterItems } from "../utils/filterItems";
+import { downloadItemsAsExcel, downloadItemsAsCsv } from "../utils/itemExport";
 import { updateListParams } from "../utils/listSearchParams";
 import ItemList from "../components/ItemList";
 import Button from "../components/Button";
+
+// ステータスタブの値（Header.jsxのsetFilterが使う"all"|"out"|"low"|"available"）に対応するラベル。
+// ダウンロードメニューで「表示中の◯◯ N件」のように絞り込み内容を説明するために使う
+const STATUS_LABELS = { out: "在庫切れ", low: "在庫少", available: "在庫あり" };
+function getFilterStatusLabel(filterValue, hasOtherFilters) {
+  if (STATUS_LABELS[filterValue]) return STATUS_LABELS[filterValue];
+  if (hasOtherFilters) return "絞り込み結果"; // 検索・カテゴリのみで絞り込んでいる場合
+  return null;
+}
 
 function readSkippedFromStorage(key) {
   try {
@@ -34,6 +44,14 @@ function Home() {
   const category = searchParams.get("category") || "";
   const filter = searchParams.get("filter") || "all";
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
+  // 検索ワード・カテゴリ・ステータスタブのいずれかがURLに存在する（＝既定値でない）場合、
+  // 絞り込み中と判定する。ダウンロードメニューの項目数の出し分け（2個 or 4個）に使う
+  const hasFilterParams =
+    searchParams.has("search") || searchParams.has("category") || searchParams.has("filter");
+  // ステータスタブ以外（検索・カテゴリ）での絞り込みがあるかどうか。ステータスタブが"all"のまま
+  // 検索・カテゴリだけで絞り込んでいる場合に「絞り込み結果」というラベルを出すための判定
+  const hasOtherFilterParams = searchParams.has("search") || searchParams.has("category");
+  const filterStatusLabel = getFilterStatusLabel(filter, hasOtherFilterParams);
 
   // 検索ワード・カテゴリ・ステータスタブ・ページ番号をURLクエリパラメータとして保持することで、
   // 商品詳細画面などを経由して一覧に戻ってきても絞り込み状態が失われないようにする。
@@ -89,6 +107,78 @@ function Home() {
     () => filterItems(items, { search: searchInput, category, filter }),
     [items, searchInput, category, filter]
   );
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  // 「📥 ダウンロード」ボタンのメニュー開閉状態。外側クリック・Escキーで閉じる（下のuseEffect参照）
+  const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
+  const downloadMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!isDownloadMenuOpen) return;
+    const handlePointerDown = (e) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(e.target)) {
+        setIsDownloadMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") setIsDownloadMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isDownloadMenuOpen]);
+
+  const downloadMenuItems = hasFilterParams
+    ? [
+        {
+          key: "excel-filtered",
+          label: `Excelでダウンロード（表示中の${filterStatusLabel} ${filteredItems.length}件）`,
+          disabled: filteredItems.length === 0,
+          onClick: () => downloadItemsAsExcel(filteredItems, `在庫データ_絞り込み_${todayStr}.xlsx`),
+        },
+        {
+          key: "excel-all",
+          label: `Excelでダウンロード（全${items.length}件）`,
+          disabled: items.length === 0,
+          onClick: () => downloadItemsAsExcel(items, `在庫データ_${todayStr}.xlsx`),
+        },
+        {
+          key: "csv-filtered",
+          label: `CSVでダウンロード（表示中の${filterStatusLabel} ${filteredItems.length}件）`,
+          disabled: filteredItems.length === 0,
+          onClick: () => downloadItemsAsCsv(filteredItems, `在庫データ_絞り込み_${todayStr}.csv`),
+        },
+        {
+          key: "csv-all",
+          label: `CSVでダウンロード（全${items.length}件・外部システム連携用）`,
+          disabled: items.length === 0,
+          onClick: () => downloadItemsAsCsv(items, `在庫データ_${todayStr}.csv`),
+        },
+      ]
+    : [
+        {
+          key: "excel",
+          label: `Excelでダウンロード（全${items.length}件）`,
+          disabled: items.length === 0,
+          onClick: () => downloadItemsAsExcel(items, `在庫データ_${todayStr}.xlsx`),
+        },
+        {
+          key: "csv",
+          label: `CSVでダウンロード（全${items.length}件・外部システム連携用）`,
+          disabled: items.length === 0,
+          onClick: () => downloadItemsAsCsv(items, `在庫データ_${todayStr}.csv`),
+        },
+      ];
+
+  const handleDownloadMenuItemClick = (item) => {
+    if (item.disabled) return;
+    item.onClick();
+    setIsDownloadMenuOpen(false);
+  };
 
   const handleAddNew = () => {
     if (addLoading) return;
@@ -330,7 +420,7 @@ function Home() {
           </select>
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => navigate("/settings/categories")}
@@ -379,6 +469,47 @@ function Home() {
           <Button variant="secondary" onClick={() => navigate("/items/import")} className="whitespace-nowrap">
             📄 Excelから取り込む
           </Button>
+          <div className="relative" ref={downloadMenuRef}>
+            <Button
+              variant="secondary"
+              onClick={() => setIsDownloadMenuOpen((prev) => !prev)}
+              className="whitespace-nowrap"
+            >
+              📥 ダウンロード
+            </Button>
+            {isDownloadMenuOpen && (
+              <ul
+                role="menu"
+                aria-label="ダウンロード"
+                className="absolute right-0 z-30 mt-1 w-max min-w-[300px] overflow-hidden rounded-[var(--r-md)] border-2 py-1 shadow-lg"
+                style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+              >
+                {downloadMenuItems.map((item) => (
+                  <li key={item.key} role="none">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={item.disabled}
+                      onClick={() => handleDownloadMenuItemClick(item)}
+                      className={`block w-full border-none bg-transparent px-4 py-2 text-left text-[15px] transition-colors ${
+                        item.disabled
+                          ? "cursor-not-allowed opacity-50"
+                          : "cursor-pointer hover:bg-[var(--blue-light)]! hover:text-[var(--blue-dark)]!"
+                      }`}
+                      style={{ color: item.disabled ? "var(--ink-soft)" : "var(--ink)" }}
+                    >
+                      {item.label}
+                      {item.disabled && (
+                        <span className="mt-0.5 block text-[12px]" style={{ color: "var(--ink-soft)" }}>
+                          対象の商品がありません
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <Button variant="primary" loading={addLoading} onClick={handleAddNew} className="whitespace-nowrap">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <line x1="10" y1="4" x2="10" y2="16" stroke="white" strokeWidth="2.5" strokeLinecap="round" />

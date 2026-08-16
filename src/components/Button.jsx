@@ -25,12 +25,14 @@ function Button({
   disabled = false,
   loading = false,
   className = "",
+  title,
 }) {
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
+      title={title}
       style={VARIANT_STYLES[variant]}
       className={`box-border inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[var(--r-lg)] px-6 text-[17px] font-bold transition-colors ${
         disabled || loading ? "cursor-not-allowed opacity-60" : `cursor-pointer ${HOVER_CLASS[variant]}`
