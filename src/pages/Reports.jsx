@@ -42,14 +42,14 @@ function Reports() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[960px] px-6 py-5">
+      <div className="mx-auto max-w-[2400px] px-6 py-5 md:px-12">
         <p style={{ color: "var(--ink-soft)" }}>読み込み中...</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-[960px] px-6 py-5">
+    <div className="mx-auto max-w-[2400px] px-6 py-5 md:px-12">
       <h1 className="mb-6 text-[26px] font-bold">在庫レポート</h1>
 
       <div className="mb-5 flex flex-wrap items-center gap-2.5">
