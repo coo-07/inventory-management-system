@@ -10,14 +10,10 @@ import { updateListParams } from "../utils/listSearchParams";
 import ItemList from "../components/ItemList";
 import Button from "../components/Button";
 
-// ステータスタブの値（Header.jsxのsetFilterが使う"all"|"out"|"low"|"available"）に対応するラベル。
-// ダウンロードメニューで「表示中の◯◯ N件」のように絞り込み内容を説明するために使う
-const STATUS_LABELS = { out: "在庫切れ", low: "在庫少", available: "在庫あり" };
-function getFilterStatusLabel(filterValue, hasOtherFilters) {
-  if (STATUS_LABELS[filterValue]) return STATUS_LABELS[filterValue];
-  if (hasOtherFilters) return "絞り込み結果"; // 検索・カテゴリのみで絞り込んでいる場合
-  return null;
-}
+// ステータスタブの値（Header.jsxのsetFilterが使う"all"|"out"|"low"|"available"）に対応する表示名。
+// Header.jsxのタブ文言（「すべて」「在庫切れ」「在庫少」「在庫あり」）と統一し、
+// ダウンロードメニューのラベルに「（状態名 件数）」として表示するために使う
+const FILTER_LABELS = { all: "すべて", out: "在庫切れ", low: "在庫少", available: "在庫あり" };
 
 function readSkippedFromStorage(key) {
   try {
@@ -45,13 +41,9 @@ function Home() {
   const filter = searchParams.get("filter") || "all";
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
   // 検索ワード・カテゴリ・ステータスタブのいずれかがURLに存在する（＝既定値でない）場合、
-  // 絞り込み中と判定する。ダウンロードメニューの項目数の出し分け（2個 or 4個）に使う
+  // 絞り込み中と判定する。ダウンロードのファイル名を「在庫データ_絞り込み_...」にするかどうかに使う
   const hasFilterParams =
     searchParams.has("search") || searchParams.has("category") || searchParams.has("filter");
-  // ステータスタブ以外（検索・カテゴリ）での絞り込みがあるかどうか。ステータスタブが"all"のまま
-  // 検索・カテゴリだけで絞り込んでいる場合に「絞り込み結果」というラベルを出すための判定
-  const hasOtherFilterParams = searchParams.has("search") || searchParams.has("category");
-  const filterStatusLabel = getFilterStatusLabel(filter, hasOtherFilterParams);
 
   // 検索ワード・カテゴリ・ステータスタブ・ページ番号をURLクエリパラメータとして保持することで、
   // 商品詳細画面などを経由して一覧に戻ってきても絞り込み状態が失われないようにする。
@@ -132,47 +124,26 @@ function Home() {
     };
   }, [isDownloadMenuOpen]);
 
-  const downloadMenuItems = hasFilterParams
-    ? [
-        {
-          key: "excel-filtered",
-          label: `Excelでダウンロード（表示中の${filterStatusLabel} ${filteredItems.length}件）`,
-          disabled: filteredItems.length === 0,
-          onClick: () => downloadItemsAsExcel(filteredItems, `在庫データ_絞り込み_${todayStr}.xlsx`),
-        },
-        {
-          key: "excel-all",
-          label: `Excelでダウンロード（全${items.length}件）`,
-          disabled: items.length === 0,
-          onClick: () => downloadItemsAsExcel(items, `在庫データ_${todayStr}.xlsx`),
-        },
-        {
-          key: "csv-filtered",
-          label: `CSVでダウンロード（表示中の${filterStatusLabel} ${filteredItems.length}件）`,
-          disabled: filteredItems.length === 0,
-          onClick: () => downloadItemsAsCsv(filteredItems, `在庫データ_絞り込み_${todayStr}.csv`),
-        },
-        {
-          key: "csv-all",
-          label: `CSVでダウンロード（全${items.length}件・外部システム連携用）`,
-          disabled: items.length === 0,
-          onClick: () => downloadItemsAsCsv(items, `在庫データ_${todayStr}.csv`),
-        },
-      ]
-    : [
-        {
-          key: "excel",
-          label: `Excelでダウンロード（全${items.length}件）`,
-          disabled: items.length === 0,
-          onClick: () => downloadItemsAsExcel(items, `在庫データ_${todayStr}.xlsx`),
-        },
-        {
-          key: "csv",
-          label: `CSVでダウンロード（全${items.length}件・外部システム連携用）`,
-          disabled: items.length === 0,
-          onClick: () => downloadItemsAsCsv(items, `在庫データ_${todayStr}.csv`),
-        },
-      ];
+  // ダウンロード対象は常に「今画面に表示されている商品」（filteredItems）に連動させる。
+  // 絞り込みなし時はfilterItems()が全件を返すため、結果的に全商品がダウンロードされる
+  const downloadFilenameSuffix = hasFilterParams ? "_絞り込み" : "";
+  // ラベルの「（状態名 件数）」部分。状態名はステータスタブ（filter）の表示名のみを見る
+  // （検索・カテゴリでの絞り込みは件数には反映されるが、状態名としては区別しない）
+  const downloadCountLabel = `${FILTER_LABELS[filter] || "すべて"} ${filteredItems.length}件`;
+  const downloadMenuItems = [
+    {
+      key: "excel",
+      label: `Excelでダウンロード（${downloadCountLabel}）`,
+      disabled: filteredItems.length === 0,
+      onClick: () => downloadItemsAsExcel(filteredItems, `在庫データ${downloadFilenameSuffix}_${todayStr}.xlsx`),
+    },
+    {
+      key: "csv",
+      label: `CSVでダウンロード（${downloadCountLabel}）`,
+      disabled: filteredItems.length === 0,
+      onClick: () => downloadItemsAsCsv(filteredItems, `在庫データ${downloadFilenameSuffix}_${todayStr}.csv`),
+    },
+  ];
 
   const handleDownloadMenuItemClick = (item) => {
     if (item.disabled) return;
