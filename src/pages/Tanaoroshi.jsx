@@ -43,6 +43,12 @@ function Tanaoroshi() {
     }
   };
 
+  const commitQty = () => {
+    if (qty === "") return; // 空欄はプレースホルダー「0」表示のまま維持する
+    const n = parseInt(sanitizeDigits(String(qty)), 10);
+    setQty(Number.isNaN(n) ? "" : String(n));
+  };
+
   if (loading) {
     return (
       <div className="mx-auto max-w-[640px] px-6 py-24 text-center">
@@ -152,6 +158,7 @@ function Tanaoroshi() {
               type="text"
               value={qty}
               onChange={(e) => setQty(sanitizeDigits(e.target.value))}
+              onBlur={commitQty}
               onKeyDown={blurOnEnter}
               inputMode="numeric"
               pattern="[0-9]*"

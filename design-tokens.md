@@ -1248,6 +1248,26 @@ input[type="number"] {
 
 **実装・動作確認済み（2026/08/03）：** ▲▼スピナー非表示、先頭ゼロ正規化（半角・全角とも）、レイアウト崩れ修正、いずれもClaude Designで実装・確認済み。
 
+### 25-1. 棚卸し画面（Tanaoroshi.jsx）への横展開
+
+**経緯：** 本項の先頭ゼロ正規化（onBlur）は、ItemForm.jsx（登録・編集フォーム）とStockRecord.jsx（入出荷記録）には実装済みだったが、Tanaoroshi.jsx（棚卸し画面）の数量入力欄だけ抜けていた。全角→半角変換（`sanitizeDigits`）はonChangeで効いており、保存時も`Number(qty)`で正しく数値化されるため実害は小さいが、「0100」と入力してフォーカスを外しても画面表示が「0100」のまま残ってしまい、他の2画面と挙動が不一致になっていた。
+
+**修正内容：** StockRecord.jsxの`commitQty`と同じ考え方で、Tanaoroshi.jsxに`commitQty`を追加し、数量入力欄の`onBlur`に紐付けた。
+
+```js
+const commitQty = () => {
+  if (qty === "") return; // 空欄はプレースホルダー「0」表示のまま維持する
+  const n = parseInt(sanitizeDigits(String(qty)), 10);
+  setQty(Number.isNaN(n) ? "" : String(n));
+};
+```
+
+StockRecord.jsxの`commitQty`との違いは、棚卸しの数量は0件もあり得るため下限を1ではなく0にしている点（`Number.isNaN(n) ? "" : String(n)`とし、`n < 1`のような下限チェックを行わない）と、空欄（プレースホルダー「0」表示）はそのまま維持する点。
+
+**その他：** `toHalfWidthDigits`・`sanitizeDigits`がItemForm.jsx・StockRecord.jsx・Tanaoroshi.jsxの3ファイルにそれぞれ重複定義されている点は、動作に影響がないため今回の修正範囲には含めていない（共通化は別タスク）。
+
+**実装・動作確認済み（2026/08/17）：** lint・buildエラーなし。「0100」入力→フォーカスアウトで「100」に正規化されること、空欄のままフォーカスアウトしてもプレースホルダー「0」表示が維持されることをコードトレースで確認済み。
+
 ---
 
 ## 26. 商品未確定データのリセット（登録フォームの不具合修正）
