@@ -4,6 +4,7 @@ import { useItems } from "../context/ItemsContext";
 import { useToast } from "../context/ToastContext";
 import { useGoBack } from "../hooks/useGoBack";
 import Button from "../components/Button";
+import StepperButton from "../components/StepperButton";
 
 function toHalfWidthDigits(str) {
   return str.replace(/[０-９]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xfee0));
@@ -127,14 +128,9 @@ function StockRecord() {
             現在の在庫：{item.stock}{item.unit}
           </p>
           <div className="flex items-center justify-center gap-10">
-            <button
-              type="button"
-              onClick={() => setQty((prev) => Math.max(1, (Number(prev) || 0) - 1))}
-              className="h-[60px] w-[60px] shrink-0 cursor-pointer rounded-full border-2 text-[26px] font-bold transition-colors hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!"
-              style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
-            >
+            <StepperButton onClick={() => setQty((prev) => Math.max(1, (Number(prev) || 0) - 1))}>
               −
-            </button>
+            </StepperButton>
             <input
               type="text"
               value={qty}
@@ -147,14 +143,9 @@ function StockRecord() {
               className="box-border w-[220px] rounded-[var(--r-md)] border-2 p-1.5 text-center text-[44px] font-black transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!"
               style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
             />
-            <button
-              type="button"
-              onClick={() => setQty((prev) => (Number(prev) || 0) + 1)}
-              className="h-[60px] w-[60px] shrink-0 cursor-pointer rounded-full border-2 text-[26px] font-bold transition-colors hover:border-[var(--ink-soft)]! hover:bg-[var(--border)]!"
-              style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
-            >
+            <StepperButton onClick={() => setQty((prev) => (Number(prev) || 0) + 1)}>
               ＋
-            </button>
+            </StepperButton>
           </div>
           <div className="mt-3.5 flex justify-center gap-7">
             <div className="flex gap-2.5">
