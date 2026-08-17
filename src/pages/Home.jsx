@@ -63,7 +63,6 @@ function Home() {
     updateParam("search", value);
   };
 
-  const [addLoading, setAddLoading] = useState(false);
   const [testDataLoading, setTestDataLoading] = useState(false);
   const [deleteTestDataLoading, setDeleteTestDataLoading] = useState(false);
   const [deleteAllLoading, setDeleteAllLoading] = useState(false);
@@ -152,12 +151,7 @@ function Home() {
   };
 
   const handleAddNew = () => {
-    if (addLoading) return;
-    setAddLoading(true);
-    setTimeout(() => {
-      setAddLoading(false);
-      navigate("/items/new");
-    }, 500);
+    navigate("/items/new");
   };
 
   const handleLoadTestData = async () => {
@@ -481,12 +475,12 @@ function Home() {
               </ul>
             )}
           </div>
-          <Button variant="primary" loading={addLoading} onClick={handleAddNew} className="whitespace-nowrap">
+          <Button variant="primary" onClick={handleAddNew} className="whitespace-nowrap">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <line x1="10" y1="4" x2="10" y2="16" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
               <line x1="4" y1="10" x2="16" y2="10" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
             </svg>
-            {addLoading ? "登録しています..." : "新しい商品を登録"}
+            新しい商品を登録
           </Button>
         </div>
       </div>
