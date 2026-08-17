@@ -38,12 +38,16 @@ function Home() {
   const showToast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const category = searchParams.get("category") || "";
+  const manufacturer = searchParams.get("manufacturer") || "";
   const filter = searchParams.get("filter") || "all";
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
-  // 検索ワード・カテゴリ・ステータスタブのいずれかがURLに存在する（＝既定値でない）場合、
+  // 検索ワード・カテゴリ・メーカー・ステータスタブのいずれかがURLに存在する（＝既定値でない）場合、
   // 絞り込み中と判定する。ダウンロードのファイル名を「在庫データ_絞り込み_...」にするかどうかに使う
   const hasFilterParams =
-    searchParams.has("search") || searchParams.has("category") || searchParams.has("filter");
+    searchParams.has("search") ||
+    searchParams.has("category") ||
+    searchParams.has("manufacturer") ||
+    searchParams.has("filter");
 
   // 検索ワード・カテゴリ・ステータスタブ・ページ番号をURLクエリパラメータとして保持することで、
   // 商品詳細画面などを経由して一覧に戻ってきても絞り込み状態が失われないようにする。
@@ -89,14 +93,22 @@ function Home() {
     [items]
   );
 
+  const manufacturers = useMemo(
+    () =>
+      [...new Set(items.map((item) => item.manufacturer).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b, "ja")
+      ),
+    [items]
+  );
+
   const testDataCount = useMemo(
     () => items.filter((item) => /^テスト\d+$/.test(item.name)).length,
     [items]
   );
 
   const filteredItems = useMemo(
-    () => filterItems(items, { search: searchInput, category, filter }),
-    [items, searchInput, category, filter]
+    () => filterItems(items, { search: searchInput, category, manufacturer, filter }),
+    [items, searchInput, category, manufacturer, filter]
   );
 
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -380,6 +392,25 @@ function Home() {
             {categories.map((cat) => (
               <option key={cat} value={cat}>
                 {cat}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1.5 border-l pl-5" style={{ borderColor: "var(--border)" }}>
+          <label className="text-[13px] font-bold" style={{ color: "var(--ink-soft)" }}>
+            メーカー
+          </label>
+          <select
+            value={manufacturer}
+            onChange={(e) => updateParam("manufacturer", e.target.value)}
+            className="box-border min-h-12 cursor-pointer rounded-[var(--r-lg)] border-2 px-4.5 text-base transition-colors hover:border-[var(--ink-soft)]!"
+            style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+          >
+            <option value="">メーカー：すべて</option>
+            {manufacturers.map((m) => (
+              <option key={m} value={m}>
+                {m}
               </option>
             ))}
           </select>

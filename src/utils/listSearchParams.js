@@ -1,13 +1,13 @@
-// 商品一覧（Home.jsx）の検索ワード・カテゴリ・ステータスタブ・ページ番号の初期値（未指定状態）。
+// 商品一覧（Home.jsx）の検索ワード・カテゴリ・メーカー・ステータスタブ・ページ番号の初期値（未指定状態）。
 // これと同じ値が指定された場合はURLにクエリパラメータを付けない
-const LIST_PARAM_DEFAULTS = { search: "", category: "", filter: "all", page: 1 };
+const LIST_PARAM_DEFAULTS = { search: "", category: "", manufacturer: "", filter: "all", page: 1 };
 
 /**
- * 商品一覧のURLクエリパラメータ（search・category・filter・page）を更新した
+ * 商品一覧のURLクエリパラメータ（search・category・manufacturer・filter・page）を更新した
  * 新しいURLSearchParamsを返す。値が初期値の場合はパラメータ自体を削除し、URLをできるだけ
- * シンプルに保つ。search・category・filterのいずれかを更新した場合は、絞り込み結果の
+ * シンプルに保つ。search・category・manufacturer・filterのいずれかを更新した場合は、絞り込み結果の
  * ページ数が変わりうるためpageを1（＝パラメータなし）にリセットする。
- * Header.jsx（ステータスタブ）とHome.jsx（検索欄・カテゴリ・ページ送り）の両方から使う。
+ * Header.jsx（ステータスタブ）とHome.jsx（検索欄・カテゴリ・メーカー・ページ送り）の両方から使う。
  */
 export function updateListParams(currentParams, updates) {
   const next = new URLSearchParams(currentParams);

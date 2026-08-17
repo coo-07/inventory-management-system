@@ -8,6 +8,7 @@ import CategoryIcon, { getCategoryMeta } from "../components/CategoryIcon";
 import { getStockStatus } from "../utils/stockStatus";
 import { filterItems } from "../utils/filterItems";
 import { formatDate } from "../utils/formatDate";
+import { formatPrice } from "../utils/formatPrice";
 import { generateTestStockLogs } from "../utils/generateTestData";
 import StockLogList from "../components/StockLogList";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -72,11 +73,15 @@ function ItemDetail() {
   // 引き継いでいる場合は、その絞り込み結果を「次へ／前へ」の対象にする。パラメータが
   // 一つも無い場合（詳細ページを直接開いた等）は従来通り全商品を対象にする
   const hasFilterParams =
-    searchParams.has("search") || searchParams.has("category") || searchParams.has("filter");
+    searchParams.has("search") ||
+    searchParams.has("category") ||
+    searchParams.has("manufacturer") ||
+    searchParams.has("filter");
   const navItems = hasFilterParams
     ? filterItems(items, {
         search: searchParams.get("search") || "",
         category: searchParams.get("category") || "",
+        manufacturer: searchParams.get("manufacturer") || "",
         filter: searchParams.get("filter") || "all",
       })
     : items;
@@ -147,6 +152,22 @@ function ItemDetail() {
               >
                 単位：{item.unit}
               </span>
+              {item.manufacturer && (
+                <span
+                  className="inline-flex items-center rounded-full px-3 py-1 text-sm font-bold"
+                  style={{ background: "var(--border)", color: "var(--ink)" }}
+                >
+                  メーカー：{item.manufacturer}
+                </span>
+              )}
+              {(item.unitPrice !== null && item.unitPrice !== undefined) && (
+                <span
+                  className="inline-flex items-center rounded-full px-3 py-1 text-sm font-bold"
+                  style={{ background: "var(--border)", color: "var(--ink)" }}
+                >
+                  単価：{formatPrice(item.unitPrice)}
+                </span>
+              )}
             </div>
 
             <div

@@ -20,6 +20,8 @@ function toCamelItem(row) {
     stock: row.stock,
     threshold: row.threshold,
     unit: row.unit,
+    manufacturer: row.manufacturer,
+    unitPrice: row.unit_price,
     imageUrl: row.image_url,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -70,7 +72,7 @@ export function useItemsInternal() {
     const [itemsRes, logsRes] = await Promise.all([
       supabase
         .from("items")
-        .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at"),
+        .select("id,name,category,stock,threshold,unit,manufacturer,unit_price,image_url,created_at,updated_at"),
       supabase
         .from("stock_logs")
         .select("id,item_id,type,quantity,memo,after_stock,created_at"),
@@ -115,9 +117,11 @@ export function useItemsInternal() {
         stock: data.stock,
         threshold: data.threshold,
         unit: data.unit,
+        manufacturer: data.manufacturer || null,
+        unit_price: data.unitPrice === "" || data.unitPrice === undefined || data.unitPrice === null ? null : data.unitPrice,
         image_url: data.imageUrl || null,
       })
-      .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at")
+      .select("id,name,category,stock,threshold,unit,manufacturer,unit_price,image_url,created_at,updated_at")
       .single();
 
     if (error) {
@@ -139,11 +143,13 @@ export function useItemsInternal() {
         stock: data.stock,
         threshold: data.threshold,
         unit: data.unit,
+        manufacturer: data.manufacturer || null,
+        unit_price: data.unitPrice === "" || data.unitPrice === undefined || data.unitPrice === null ? null : data.unitPrice,
         image_url: data.imageUrl || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
-      .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at")
+      .select("id,name,category,stock,threshold,unit,manufacturer,unit_price,image_url,created_at,updated_at")
       .single();
 
     if (error) {
@@ -244,7 +250,7 @@ export function useItemsInternal() {
           image_url: item.imageUrl || null,
         }))
       )
-      .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at");
+      .select("id,name,category,stock,threshold,unit,manufacturer,unit_price,image_url,created_at,updated_at");
 
     if (error) {
       console.error("テストデータの追加に失敗しました", error);
@@ -272,7 +278,7 @@ export function useItemsInternal() {
           image_url: item.imageUrl || null,
         }))
       )
-      .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at");
+      .select("id,name,category,stock,threshold,unit,manufacturer,unit_price,image_url,created_at,updated_at");
 
     if (error) {
       console.error("商品の一括登録に失敗しました", error);
@@ -294,7 +300,7 @@ export function useItemsInternal() {
       .from("items")
       .update({ stock: finalStock, updated_at: now })
       .eq("id", itemId)
-      .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at")
+      .select("id,name,category,stock,threshold,unit,manufacturer,unit_price,image_url,created_at,updated_at")
       .single();
 
     if (itemError) {
@@ -412,7 +418,7 @@ export function useItemsInternal() {
         .from("items")
         .update({ stock: nextStock, updated_at: now })
         .eq("id", id)
-        .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at")
+        .select("id,name,category,stock,threshold,unit,manufacturer,unit_price,image_url,created_at,updated_at")
         .single();
 
       if (itemError) {
@@ -457,7 +463,7 @@ export function useItemsInternal() {
           .from("items")
           .update({ stock: actualStock, updated_at: now })
           .eq("id", id)
-          .select("id,name,category,stock,threshold,unit,image_url,created_at,updated_at")
+          .select("id,name,category,stock,threshold,unit,manufacturer,unit_price,image_url,created_at,updated_at")
           .single();
 
         if (itemError) {

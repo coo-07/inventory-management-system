@@ -4008,6 +4008,68 @@ npm install xlsx
 
 ---
 
+## 115. 商品項目「メーカー」「単価」の追加（登録・編集フォーム／商品詳細画面）
+
+Supabaseの`items`テーブルに`manufacturer`（text）・`unit_price`（numeric）の2列が追加されたのを受け、登録・編集フォームと商品詳細画面に対応した（2026/08/17）。今回はこの3画面のみが対象で、Excel取り込み・絞り込み・並び替えへの対応は次のステップで行う。
+
+**`src/hooks/useItems.js`：**
+- `toCamelItem`に`manufacturer: row.manufacturer`・`unitPrice: row.unit_price`の変換を追加
+- `addItem`・`updateItem`のSupabaseへのinsert/update対象に`manufacturer`・`unit_price`を追加。どちらも任意項目のため、空文字・undefined・nullの場合は`null`をSupabaseに送るようにし、必須項目（在庫数・発注点など）とは異なりエラーにはしない
+- `fetchAll`・`addItem`・`updateItem`に加え、`loadTestData`・`importItems`・`seedTestLogs`・`recordStock`・`recordCount`が使っている`.select(...)`の列指定にも`manufacturer,unit_price`を追加。これらの関数はいずれも`toCamelItem`を通した結果でitemsのstateを更新するため、列指定から漏れていると入出荷記録や棚卸しのたびにメーカー・単価がstate上でundefinedに上書きされてしまう（実質的に表示が消える）ことが分かったため、全8箇所を揃えて修正した
+
+**`src/utils/formatPrice.js`（新規作成）：**
+- `formatPrice(unitPrice)`をexport。`toLocaleString("ja-JP")`でカンマ区切りにし「円」を付けて返す（例：1280 → "1,280円"）。未設定（null/undefined）の場合は空文字を返す
+- 保存するデータ自体（Supabase・stateの値）はカンマなしの数値のまま保持し、表示のときだけこの関数を通す役割分担にした（将来の並び替え処理で数値のまま比較できるようにするため）
+
+**`src/pages/ItemForm.jsx`：**
+- 「単位」入力欄と同じ行（flex-wrapのグループ）に「メーカー（任意）」のテキスト入力欄と「単価（任意）」の数値入力欄（`type="number"`）を追加。どちらも必須項目にせず未入力のまま保存可能
+- 編集モードでは`existing.manufacturer`・`existing.unitPrice`があれば初期表示する
+- 見た目は既存の入力欄（`fieldBase`＋hover/focusのスタイル）と統一
+- 追記（2026/08/17）：メーカー入力欄をChromeがクレジットカード情報の入力欄と誤認識し、自動入力候補やカード情報保存の確認ポップアップが表示される不具合を確認。メーカー欄の`<input>`に`autoComplete="organization"`を追加して修正した。単価欄も念のため`autoComplete="off"`を追加し、同様の誤判定に巻き込まれないようにした
+- 追記2（2026/08/17）：`autoComplete="organization"`を追加した後もメーカー欄付近でChromeのクレジットカード自動入力候補・カード情報保存ポップアップが引き続き表示される問題が残っていたため、より確実な対策を追加した
+  - 単価入力欄を`type="number"`から`type="text"`＋`inputMode="numeric"`に変更（スマホ・タブレットでは数字キーボードが表示される）。`onChange`で半角数字のみを許可するバリデーション（カンマ・全角数字を含む非数字は入力を無視、変換はしない）を追加。保存先のデータ形式（Supabaseへ数値として送る処理）は変更していない
+  - メーカー欄・単価欄それぞれの`<input>`に`name="manufacturer_field"`・`name="unit_price_field"`を設定し、Chromeが決済関連フィールドとして推測しやすい`company`・`organization`等の一般的なname値を避けた
+  - ItemForm.jsx全体を囲む要素を`<div>`から`<form autoComplete="off">`に変更（元々`<form>`タグ自体が存在しなかったため新規追加。ボタン類はすべて`type="button"`のため、`<form>`化によるEnterキー等での意図しない送信は発生しない。念のため`onSubmit={(e) => e.preventDefault()}`も付与）
+- 追記3（2026/08/17）：メーカー入力欄に過去入力候補の`<datalist>`を追加。`useItems()`のitemsから`manufacturer`をユニーク抽出し`localeCompare("ja")`で五十音順に並べたものを候補にする（Home.jsxのメーカー絞り込み用の抽出ロジックと同じ考え方）。`<input>`に`list="manufacturer-options"`を追加し、対応する`<datalist id="manufacturer-options">`で候補を出す。あくまで候補であり、リストにない新しいメーカー名もそのまま自由入力できる
+- 追記4（2026/08/17）：単価入力欄（`type="text"`＋`inputMode="numeric"`）について、全角数字（０〜９）を入力した場合にこれまでは無視していたが、無視せず半角数字（0〜9）へ自動変換して受け付けるよう修正した。ファイル内に既存の`toHalfWidthDigits()`（在庫数・発注点の入力で使用）があったためそれを再利用し、変換後の文字列に対して従来通り半角数字のみ許可のバリデーション（カンマ等その他の非数字は引き続き無視）を適用する形にした。保存先のデータ形式（Supabaseへ数値として送る処理）は変更していない
+
+**`src/pages/ItemDetail.jsx`：**
+- カテゴリ・単位のバッジと同じ並びに、メーカー・単価のバッジを追加
+- 単価表示には`formatPrice()`を使用
+- どちらも値が設定されている場合のみ表示し、未設定の場合はバッジ自体を出さない
+
+**動作確認：** `npm run lint`・`npm run build`とも既存の警告（Fast refresh関連、CategoryIcon.jsx等）以外のエラー・警告なく通過した。追記2〜4の対応それぞれの実装後も再度`npm run lint`・`npm run build`を実行し、同様にエラー・警告なく通過することを確認済み。
+
+**ステータス：** 実装済み（2026/08/17）。Excel取り込み・絞り込み・並び替えへの対応は次回。
+
+---
+
+## 116. 商品一覧画面（Home.jsx）にメーカーによる絞り込み機能を追加
+
+115番で追加した`manufacturer`項目を使い、商品一覧画面（Home.jsx）にメーカー絞り込みを追加した（2026/08/17）。今回は絞り込みのみが対象で、単価による並び替え・Excel/CSV対応（列の追加等）は次のステップで行う。
+
+**`src/utils/filterItems.js`：**
+- `filterItems(items, { search, category, manufacturer, filter })`に`manufacturer`引数を追加。`!manufacturer || item.manufacturer === manufacturer`で判定し、既存の検索・カテゴリ・ステータスフィルターと同じAND条件に組み込んだ。この関数はHome.jsx（一覧の絞り込み）とItemDetail.jsx（「次へ／前へ」の対象商品の絞り込み）の両方で共有しているため、両画面に反映される
+
+**`src/utils/listSearchParams.js`：**
+- `LIST_PARAM_DEFAULTS`に`manufacturer: ""`を追加。既定値（未選択＝すべて）と同じ値が指定された場合はURLからクエリパラメータ自体を削除する、既存のsearch・categoryと同じ挙動にした
+
+**`src/pages/Home.jsx`：**
+- `manufacturers`をuseMemoで算出：`items`の`manufacturer`をユニーク抽出し、空欄・未設定（`filter(Boolean)`で除外）の商品は候補から除く。`localeCompare(b, "ja")`で五十音順に並び替え
+- 「商品の種類」プルダウンの隣に「メーカー」プルダウンを追加。見た目・スタイルは「商品の種類」と統一。先頭の選択肢は「メーカー：すべて」（value=""）
+- 選択したメーカーは`updateParam("manufacturer", ...)`で既存のsearchParams運用パターン（`updateListParams`経由）に乗せてURLクエリパラメータ（`?manufacturer=コクヨ`）に保持。ページ再読み込み・「戻る」操作でも復元される
+- `filteredItems`のuseMemoに`manufacturer`を渡すよう変更（依存配列にも追加）
+- `hasFilterParams`（ダウンロード機能の「絞り込み中」判定）の条件に`searchParams.has("manufacturer")`を追加
+
+**`src/pages/ItemDetail.jsx`（今回の依頼範囲外だが、機能として必要だったため対応）：**
+- 105番で実装した「次へ／前へ」の絞り込み連動（`hasFilterParams`・`navItems`の算出）に`manufacturer`を含めていないと、メーカーのみで絞り込んだ状態で商品詳細を開いた際に「次へ／前へ」が絞り込み前の全商品を対象にしてしまう不整合が生じる（Home.jsxの`onSelect`は現在のsearchParamsをそのままクエリに引き継ぐため、`manufacturer`パラメータ自体はItemDetail.jsxにも渡ってくる）。105番の設計意図（絞り込み結果と一致させる）を保つため、`hasFilterParams`の判定条件と`filterItems()`呼び出しの両方に`manufacturer`を追加した
+
+**動作確認：** `npm run lint`・`npm run build`とも既存の警告（Fast refresh関連）以外のエラー・警告なく通過した。
+
+**ステータス：** 実装済み（2026/08/17）。単価による並び替え・Excel/CSV対応（列追加・絞り込み項目化）は次回。
+
+---
+
 ## 未決定・次回検討事項
 
 - [x] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか → 対応済み（2026/08/17）。StockRecord.jsx・Tanaoroshi.jsxの数量±ボタン（丸型、classNameが完全に同一だった箇所）を`src/components/StepperButton.jsx`として共通化。増減ロジック（下限0/1など画面ごとに異なる部分）は呼び出し側の`onClick`に残し、見た目のみ共通化する形にした。ItemForm.jsxのステッパー（サイズ・角丸・エラー時の色分けが異なる別デザイン）、±5／±10のまとめ入力ボタン（`Button`コンポーネント使用済み）は対象外とし、あえて共通化しない判断とした

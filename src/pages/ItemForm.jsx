@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useItems } from "../context/ItemsContext";
 import { useToast } from "../context/ToastContext";
@@ -7,7 +7,17 @@ import Button from "../components/Button";
 
 const CATEGORY_OPTIONS = ["文房具", "雑貨", "食品", "飲み物", "ペット用品", "衣類", "美容・コスメ", "その他"];
 
-const emptyForm = { name: "", categorySelect: "文房具", categoryOther: "", stock: 0, threshold: 0, unit: "個", imageUrl: "" };
+const emptyForm = {
+  name: "",
+  categorySelect: "文房具",
+  categoryOther: "",
+  stock: 0,
+  threshold: 0,
+  unit: "個",
+  manufacturer: "",
+  unitPrice: "",
+  imageUrl: "",
+};
 
 function toHalfWidthDigits(str) {
   return str.replace(/[０-９]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xfee0));
@@ -29,9 +39,19 @@ function ItemForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const showToast = useToast();
-  const { loading, getItemById, addItem, updateItem } = useItems();
+  const { items, loading, getItemById, addItem, updateItem } = useItems();
   const isEdit = Boolean(id);
   const existing = isEdit ? getItemById(id) : null;
+
+  // メーカー入力欄のdatalist候補。既存商品のmanufacturerをユニーク抽出し、五十音順に並べる
+  // （Home.jsxのメーカー絞り込み用のmanufacturers抽出と同じ考え方）
+  const manufacturers = useMemo(
+    () =>
+      [...new Set(items.map((item) => item.manufacturer).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b, "ja")
+      ),
+    [items]
+  );
 
   const [form, setForm] = useState(emptyForm);
   const [fieldErrors, setFieldErrors] = useState({ name: "", stock: "", threshold: "" });
@@ -52,6 +72,8 @@ function ItemForm() {
         stock: existing.stock,
         threshold: existing.threshold,
         unit: existing.unit,
+        manufacturer: existing.manufacturer || "",
+        unitPrice: existing.unitPrice ?? "",
         imageUrl: existing.imageUrl || "",
       });
     }
@@ -91,6 +113,13 @@ function ItemForm() {
 
   const handleStockText = (e) => setForm((prev) => ({ ...prev, stock: sanitizeDigits(e.target.value) }));
   const handleThresholdText = (e) => setForm((prev) => ({ ...prev, threshold: sanitizeDigits(e.target.value) }));
+  // 全角数字は半角に自動変換したうえで受け付ける。カンマ等それ以外の非数字文字は引き続き無視する（空欄は許可）
+  const handleUnitPriceText = (e) => {
+    const converted = toHalfWidthDigits(e.target.value);
+    if (/^[0-9]*$/.test(converted)) {
+      setForm((prev) => ({ ...prev, unitPrice: converted }));
+    }
+  };
   const commitStock = () => {
     const n = parseInt(sanitizeDigits(String(form.stock)), 10);
     const v = Number.isNaN(n) ? 0 : n;
@@ -140,6 +169,8 @@ function ItemForm() {
         stock: Number(form.stock) || 0,
         threshold: Number(form.threshold) || 0,
         unit: form.unit,
+        manufacturer: form.manufacturer,
+        unitPrice: form.unitPrice === "" ? "" : Number(form.unitPrice),
         imageUrl: form.imageUrl,
       };
       if (isEdit) {
@@ -168,7 +199,11 @@ function ItemForm() {
     "box-border w-full rounded-[var(--r-md)] px-4 py-3.5 text-[17px]";
 
   return (
-    <div className="mx-auto max-w-[640px] px-6 py-5 md:max-w-[760px] lg:max-w-[960px]">
+    <form
+      autoComplete="off"
+      onSubmit={(e) => e.preventDefault()}
+      className="mx-auto max-w-[640px] px-6 py-5 md:max-w-[760px] lg:max-w-[960px]"
+    >
       <h1 className="mb-6 text-[26px] font-bold">{isEdit ? "商品を編集" : "商品を登録"}</h1>
 
       {showErrorSummary && errorSummaryItems.length > 0 && (
@@ -260,6 +295,41 @@ function ItemForm() {
                 value={form.unit}
                 onChange={(e) => setForm((prev) => ({ ...prev, unit: e.target.value }))}
                 placeholder="個・本・冊 など"
+                className={`${fieldBase} max-w-[160px] transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!`}
+                style={{ border: "2px solid var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+              />
+            </div>
+
+            <div className="min-w-[220px] flex-auto">
+              <label className="mb-2 block text-[15px] font-bold">メーカー（任意）</label>
+              <input
+                type="text"
+                name="manufacturer_field"
+                list="manufacturer-options"
+                value={form.manufacturer}
+                onChange={(e) => setForm((prev) => ({ ...prev, manufacturer: e.target.value }))}
+                autoComplete="organization"
+                placeholder="例：コクヨ"
+                className={`${fieldBase} transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!`}
+                style={{ border: "2px solid var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+              />
+              <datalist id="manufacturer-options">
+                {manufacturers.map((m) => (
+                  <option key={m} value={m} />
+                ))}
+              </datalist>
+            </div>
+
+            <div className="min-w-[160px] flex-auto">
+              <label className="mb-2 block text-[15px] font-bold">単価（任意）</label>
+              <input
+                type="text"
+                name="unit_price_field"
+                value={form.unitPrice}
+                onChange={handleUnitPriceText}
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="例：150"
                 className={`${fieldBase} max-w-[160px] transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!`}
                 style={{ border: "2px solid var(--border)", background: "var(--surface)", color: "var(--ink)" }}
               />
@@ -455,7 +525,7 @@ function ItemForm() {
           </div>
         </div>
       </div>
-    </div>
+    </form>
   );
 }
 
