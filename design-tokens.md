@@ -3990,6 +3990,24 @@ npm install xlsx
 
 ---
 
+## 114. 22-1（確認記録）ボタンのhover明示・処理中表示チェック結果
+
+入出荷記録・店舗情報画面のボタンについて、design-tokens 22番の分類基準（画面遷移のみ→hover明示のみ／実データ書き込みあり→hover明示＋処理中表示）に沿っているか確認した（2026/08/17）。
+
+対象と結果：
+
+- **ItemDetail.jsx**
+  - 「入出荷を記録」（画面遷移のみ、variant="secondarySoft"）→ hover明示のみ、正しい
+  - 「編集する」（画面遷移のみ、variant="secondarySoft"）→ hover明示のみ、正しい
+  - 「削除」（モーダルを開くだけ、variant="dangerOutline"）→ hover明示のみ、正しい
+  - 「テスト履歴を追加」（開発用・実データ書き込みあり、variant="secondary"）→ hover明示＋処理中表示（seedLoading）、正しい
+- **Shop.jsx**
+  - 「保存する」（実データ書き込みあり、variant="primary"）→ hover明示＋処理中表示（saveLoading）、正しい
+
+**結論：** 全ボタンとも22番の基準通りに実装済みで、追加修正は不要だった。Button.jsxのHOVER_CLASSオブジェクトでvariantごとにhoverスタイルを一元管理している設計のため、個別画面での実装漏れが起きにくい構造になっている。
+
+---
+
 ## 未決定・次回検討事項
 
 - [x] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか → 対応済み（2026/08/17）。StockRecord.jsx・Tanaoroshi.jsxの数量±ボタン（丸型、classNameが完全に同一だった箇所）を`src/components/StepperButton.jsx`として共通化。増減ロジック（下限0/1など画面ごとに異なる部分）は呼び出し側の`onClick`に残し、見た目のみ共通化する形にした。ItemForm.jsxのステッパー（サイズ・角丸・エラー時の色分けが異なる別デザイン）、±5／±10のまとめ入力ボタン（`Button`コンポーネント使用済み）は対象外とし、あえて共通化しない判断とした
