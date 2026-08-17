@@ -390,7 +390,7 @@ function ItemImport() {
   );
 
   return (
-    <div className="mx-auto max-w-[960px] px-6 py-5 xl:max-w-[1800px]">
+    <div className="mx-auto max-w-[960px] px-6 py-5 xl:max-w-[2400px]">
       <h1 className="mb-6 text-[26px] font-bold">Excelから取り込む</h1>
 
       <div
