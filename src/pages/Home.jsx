@@ -183,13 +183,19 @@ function Home() {
       key: "excel",
       label: `Excelでダウンロード（${downloadCountLabel}）`,
       disabled: filteredItems.length === 0,
-      onClick: () => downloadItemsAsExcel(filteredItems, `在庫データ${downloadFilenameSuffix}_${todayStr}.xlsx`),
+      onClick: () =>
+        downloadItemsAsExcel(filteredItems, `在庫データ${downloadFilenameSuffix}_${todayStr}.xlsx`, {
+          excludePrice: role === "staff",
+        }),
     },
     {
       key: "csv",
       label: `CSVでダウンロード（${downloadCountLabel}・外部システム連携用）`,
       disabled: filteredItems.length === 0,
-      onClick: () => downloadItemsAsCsv(filteredItems, `在庫データ${downloadFilenameSuffix}_${todayStr}.csv`),
+      onClick: () =>
+        downloadItemsAsCsv(filteredItems, `在庫データ${downloadFilenameSuffix}_${todayStr}.csv`, {
+          excludePrice: role === "staff",
+        }),
     },
   ];
 

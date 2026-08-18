@@ -4249,6 +4249,37 @@ Supabaseの`items`テーブルに`manufacturer`（text）・`unit_price`（numer
 
 ---
 
+## 123. スタッフに単価非表示・編集制限（商品詳細・登録編集フォーム・CSV/Excelエクスポートの3箇所）
+
+**経緯：** 単価（115番）はメーカーとあわせて管理・仕入れに関わる情報であり、「スタッフ（`role === "staff"`）には単価を見せない・編集させない」という権限差を持たせたいという要望を受け、122番で管理者限定にした「テスト用データ」メニューと同じ`useAuth()`のロール判定を使い、単価が表示・入力・出力されうる3箇所（商品詳細画面・登録編集フォーム・CSV/Excelエクスポート）すべてに制限をかけた（2026/08/18）。管理者（`role === "admin"`）には従来通りすべて表示・編集できる。
+
+**`src/pages/ItemDetail.jsx`：**
+- `useAuth()`から`role`を取得し、単価バッジの表示条件に`role !== "staff"`を追加。スタッフの場合は単価バッジ自体が表示されない（未設定時に非表示にする既存の条件はそのまま維持）
+
+**`src/pages/ItemForm.jsx`：**
+- `useAuth()`から`role`を取得し、単価入力欄を囲む`<div>`ブロック全体を`{role !== "staff" && (...)}`で条件分岐。スタッフの場合は単価入力欄自体が表示されない
+- 送信処理（`handleSubmit`内の`saved`オブジェクト構築、`addItem`/`updateItem`呼び出し）は変更していない。スタッフが編集画面を開いても`form.unitPrice`は初期値（既存商品の単価、または新規登録時は空欄）のままstateに保持されるため、保存時に既存の単価が消えたり書き換わったりすることはない（入力欄を非表示にするだけで、データそのものは触っていない設計）
+
+**`src/utils/itemExport.js`：**
+- `EXPORT_HEADERS`（文字列配列）を廃止し、列名と列幅をセットで持つ`EXPORT_COLUMNS`（`{ key, width }`の配列、9列）に置き換え
+- `getExportColumns(excludePrice)`を新規追加。`excludePrice`が`true`の場合、`単価`列を除いた配列を返す
+- `buildExportRows(items, { excludePrice = false } = {})`：`excludePrice`が`true`の場合、返すオブジェクトに`単価`キー自体を含めない（`""`や`null`で埋めるのではなく、キーごと存在しない状態にする）
+- `downloadItemsAsExcel(items, filename, { excludePrice = false } = {})`：`getExportColumns(excludePrice)`で列定義を取得し、`XLSX.utils.json_to_sheet(rows, { header: columns.map(c => c.key) })`で列順を明示指定。`worksheet["!cols"]`も`columns.map(c => ({ wch: c.width }))`に置き換え、除外時は列幅指定も自動的に1列分減る
+- `downloadItemsAsCsv(items, filename, { excludePrice = false } = {})`：同様に`getExportColumns(excludePrice)`からヘッダー行・各行の並びを作る
+
+**`src/pages/Home.jsx`：**
+- ダウンロードメニューの2つの呼び出し箇所（Excel・CSV）に、`{ excludePrice: role === "staff" }`を追加。`role`は122番の対応で既に`useAuth()`から取得済みのため、新たなフックの追加は不要だった
+
+**動作確認：**
+- `npm run lint`・`npm run build`とも既存の警告（Fast refresh関連）以外のエラー・警告なく通過した
+- Node上のスクラッチスクリプトで、`buildExportRows(items, { excludePrice: true })`が返すオブジェクトのキー一覧に`単価`が含まれないこと（`""`ではなくキー自体が存在しないこと）を確認済み
+- `EXPORT_HEADERS`という文字列がプロジェクト内に残っていないことをgrepで確認済み
+- Playwrightは本プロジェクトに導入されていないこと、また認証が必要な画面のため実ログインでのブラウザ確認はできないことから、今回はコードレベルでのロジック確認（上記Node検証、および各条件分岐の実装箇所の目視確認）にとどめている。実際にスタッフ・管理者それぞれでログインした際に、商品詳細の単価バッジ非表示・登録編集フォームの単価欄非表示・CSV/Excelの単価列除外が意図通りになっているかは、実ログインでの最終確認をお願いしたい
+
+**ステータス：** 実装済み（2026/08/18）。実ログインでの最終確認をお願いします。
+
+---
+
 ## 未決定・次回検討事項
 
 - [x] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか → 対応済み（2026/08/17）。StockRecord.jsx・Tanaoroshi.jsxの数量±ボタン（丸型、classNameが完全に同一だった箇所）を`src/components/StepperButton.jsx`として共通化。増減ロジック（下限0/1など画面ごとに異なる部分）は呼び出し側の`onClick`に残し、見た目のみ共通化する形にした。ItemForm.jsxのステッパー（サイズ・角丸・エラー時の色分けが異なる別デザイン）、±5／±10のまとめ入力ボタン（`Button`コンポーネント使用済み）は対象外とし、あえて共通化しない判断とした

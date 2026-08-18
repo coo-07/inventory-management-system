@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useItems } from "../context/ItemsContext";
+import { useAuth } from "../hooks/useAuth";
 import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useToast } from "../context/ToastContext";
 import { useGoBack } from "../hooks/useGoBack";
@@ -22,6 +23,7 @@ function ItemDetail() {
   const [searchParams] = useSearchParams();
   const showToast = useToast();
   const { items, loading, getItemById, getLogsByItemId, deleteItem, seedTestLogs } = useItems();
+  const { role } = useAuth();
   const { customIcons } = useCategoryIcons();
   const goBack = useGoBack();
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -165,7 +167,7 @@ function ItemDetail() {
                   メーカー：{item.manufacturer}
                 </span>
               )}
-              {(item.unitPrice !== null && item.unitPrice !== undefined) && (
+              {role !== "staff" && (item.unitPrice !== null && item.unitPrice !== undefined) && (
                 <span
                   className="inline-flex items-center rounded-full px-3 py-1 text-sm font-bold"
                   style={{ background: "var(--border)", color: "var(--ink)" }}

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useItems } from "../context/ItemsContext";
+import { useAuth } from "../hooks/useAuth";
 import { useToast } from "../context/ToastContext";
 import PhotoUpload from "../components/PhotoUpload";
 import Button from "../components/Button";
@@ -40,6 +41,7 @@ function ItemForm() {
   const navigate = useNavigate();
   const showToast = useToast();
   const { items, loading, getItemById, addItem, updateItem } = useItems();
+  const { role } = useAuth();
   const isEdit = Boolean(id);
   const existing = isEdit ? getItemById(id) : null;
 
@@ -320,20 +322,22 @@ function ItemForm() {
               </datalist>
             </div>
 
-            <div className="min-w-[160px] flex-auto">
-              <label className="mb-2 block text-[15px] font-bold">単価（任意）</label>
-              <input
-                type="text"
-                name="unit_price_field"
-                value={form.unitPrice}
-                onChange={handleUnitPriceText}
-                inputMode="numeric"
-                autoComplete="off"
-                placeholder="例：150"
-                className={`${fieldBase} max-w-[160px] transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!`}
-                style={{ border: "2px solid var(--border)", background: "var(--surface)", color: "var(--ink)" }}
-              />
-            </div>
+            {role !== "staff" && (
+              <div className="min-w-[160px] flex-auto">
+                <label className="mb-2 block text-[15px] font-bold">単価（任意）</label>
+                <input
+                  type="text"
+                  name="unit_price_field"
+                  value={form.unitPrice}
+                  onChange={handleUnitPriceText}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder="例：150"
+                  className={`${fieldBase} max-w-[160px] transition-colors hover:border-[var(--ink-soft)]! focus:border-[var(--blue)]! focus:shadow-[0_0_0_3px_var(--blue-light)]!`}
+                  style={{ border: "2px solid var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+                />
+              </div>
+            )}
           </div>
 
           <div className="order-3 flex flex-wrap gap-4 lg:order-3 lg:col-span-2">
