@@ -5,6 +5,7 @@ import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useToast } from "../context/ToastContext";
 import { generateTestItems } from "../utils/generateTestData";
 import { filterItems } from "../utils/filterItems";
+import { sortItems } from "../utils/sortItems";
 import { downloadItemsAsExcel, downloadItemsAsCsv } from "../utils/itemExport";
 import { updateListParams } from "../utils/listSearchParams";
 import ItemList from "../components/ItemList";
@@ -14,6 +15,16 @@ import Button from "../components/Button";
 // Header.jsxのタブ文言（「すべて」「在庫切れ」「在庫少」「在庫あり」）と統一し、
 // ダウンロードメニューのラベルに「（状態名 件数）」として表示するために使う
 const FILTER_LABELS = { all: "すべて", out: "在庫切れ", low: "在庫少", available: "在庫あり" };
+
+// 並び替えセレクトの選択肢（表示順のまま）
+const SORT_OPTIONS = [
+  { value: "stockAsc", label: "在庫が少ない順" },
+  { value: "stockDesc", label: "在庫が多い順" },
+  { value: "nameAsc", label: "名前順（あ→わ）" },
+  { value: "nameDesc", label: "名前順（わ→あ）" },
+  { value: "priceAsc", label: "単価が安い順" },
+  { value: "priceDesc", label: "単価が高い順" },
+];
 
 function readSkippedFromStorage(key) {
   try {
@@ -39,6 +50,7 @@ function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
   const category = searchParams.get("category") || "";
   const manufacturer = searchParams.get("manufacturer") || "";
+  const sort = searchParams.get("sort") || "stockAsc";
   const filter = searchParams.get("filter") || "all";
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
   // 検索ワード・カテゴリ・メーカー・ステータスタブのいずれかがURLに存在する（＝既定値でない）場合、
@@ -107,8 +119,8 @@ function Home() {
   );
 
   const filteredItems = useMemo(
-    () => filterItems(items, { search: searchInput, category, manufacturer, filter }),
-    [items, searchInput, category, manufacturer, filter]
+    () => sortItems(filterItems(items, { search: searchInput, category, manufacturer, filter }), sort),
+    [items, searchInput, category, manufacturer, filter, sort]
   );
 
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -150,7 +162,7 @@ function Home() {
     },
     {
       key: "csv",
-      label: `CSVでダウンロード（${downloadCountLabel}）`,
+      label: `CSVでダウンロード（${downloadCountLabel}・外部システム連携用）`,
       disabled: filteredItems.length === 0,
       onClick: () => downloadItemsAsCsv(filteredItems, `在庫データ${downloadFilenameSuffix}_${todayStr}.csv`),
     },
@@ -411,6 +423,24 @@ function Home() {
             {manufacturers.map((m) => (
               <option key={m} value={m}>
                 {m}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1.5 border-l pl-5" style={{ borderColor: "var(--border)" }}>
+          <label className="text-[13px] font-bold" style={{ color: "var(--ink-soft)" }}>
+            並び替え
+          </label>
+          <select
+            value={sort}
+            onChange={(e) => updateParam("sort", e.target.value)}
+            className="box-border min-h-12 cursor-pointer rounded-[var(--r-lg)] border-2 px-4.5 text-base transition-colors hover:border-[var(--ink-soft)]!"
+            style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink)" }}
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
               </option>
             ))}
           </select>

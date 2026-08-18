@@ -7,6 +7,7 @@ import { useGoBack } from "../hooks/useGoBack";
 import CategoryIcon, { getCategoryMeta } from "../components/CategoryIcon";
 import { getStockStatus } from "../utils/stockStatus";
 import { filterItems } from "../utils/filterItems";
+import { sortItems } from "../utils/sortItems";
 import { formatDate } from "../utils/formatDate";
 import { formatPrice } from "../utils/formatPrice";
 import { generateTestStockLogs } from "../utils/generateTestData";
@@ -69,22 +70,26 @@ function ItemDetail() {
   const logs = getLogsByItemId(id);
   const status = getStockStatus(item.stock, item.threshold);
   const meta = getCategoryMeta(item.category, customIcons);
-  // 一覧画面での絞り込み条件（search・category・filter）をクエリパラメータ経由で
+  // 一覧画面での絞り込み条件（search・category・manufacturer・filter）をクエリパラメータ経由で
   // 引き継いでいる場合は、その絞り込み結果を「次へ／前へ」の対象にする。パラメータが
-  // 一つも無い場合（詳細ページを直接開いた等）は従来通り全商品を対象にする
+  // 一つも無い場合（詳細ページを直接開いた等）は従来通り全商品を対象にする。
+  // 並び替え（sort）は絞り込みパラメータの有無にかかわらず、一覧画面と同じ並び順にするため常に適用する
   const hasFilterParams =
     searchParams.has("search") ||
     searchParams.has("category") ||
     searchParams.has("manufacturer") ||
     searchParams.has("filter");
-  const navItems = hasFilterParams
-    ? filterItems(items, {
-        search: searchParams.get("search") || "",
-        category: searchParams.get("category") || "",
-        manufacturer: searchParams.get("manufacturer") || "",
-        filter: searchParams.get("filter") || "all",
-      })
-    : items;
+  const navItems = sortItems(
+    hasFilterParams
+      ? filterItems(items, {
+          search: searchParams.get("search") || "",
+          category: searchParams.get("category") || "",
+          manufacturer: searchParams.get("manufacturer") || "",
+          filter: searchParams.get("filter") || "all",
+        })
+      : items,
+    searchParams.get("sort") || "stockAsc"
+  );
   const idx = navItems.findIndex((i) => i.id === id);
   const showNav = idx > 0 || (idx >= 0 && idx < navItems.length - 1);
 

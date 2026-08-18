@@ -4070,6 +4070,48 @@ Supabaseの`items`テーブルに`manufacturer`（text）・`unit_price`（numer
 
 ---
 
+## 117. 商品一覧画面（Home.jsx）に並び替え機能を追加
+
+商品一覧に、絞り込み（検索・カテゴリ・メーカー・在庫状態）とは別に並び替え機能を新規追加した（2026/08/18）。今回は並び替えのみが対象で、Excel/CSVのインポート・エクスポートへの反映は次のステップで行う。
+
+**`src/utils/sortItems.js`（新規作成）：**
+- `sortItems(items, sortKey)`をexport。元の配列は変更せず、`[...items]`をsortした新しい配列を返す
+- `sortKey`：`"recommended"`（既定値・並び替えなし）／`"newest"`／`"oldest"`（`createdAt`基準）／`"nameAsc"`／`"nameDesc"`（商品名、`localeCompare(..., "ja")`）／`"priceAsc"`／`"priceDesc"`（`unitPrice`基準）
+- `priceAsc`・`priceDesc`は、単価未設定（`null`/`undefined`）の商品を並び順にかかわらず常に末尾にまとめる専用の比較関数（`comparePrice`）を用意して対応
+- Node上のスクラッチスクリプトで全sortKeyの並び順・単価未設定商品が常に末尾になること・元配列が変更されないこと（非破壊）を確認済み
+
+**`src/utils/listSearchParams.js`：**
+- `LIST_PARAM_DEFAULTS`に`sort: "recommended"`を追加。既定値（おすすめ順）と同じ場合はURLからクエリパラメータを削除する、既存のsearch・category・manufacturerと同じ挙動にした
+
+**`src/pages/Home.jsx`：**
+- `SORT_OPTIONS`（表示順：おすすめ順／新しい順／古い順／商品名 A→Z／商品名 Z→A／単価が安い順／単価が高い順）を定義
+- 既存の「商品の種類」「メーカー」プルダウンの並びに「並び替え」プルダウンを追加。見た目・スタイルは既存プルダウンと統一。デフォルト選択は「おすすめ順」
+- 選択した並び替え条件は`updateParam("sort", ...)`で既存のsearchParams運用パターンに乗せてURLクエリパラメータ（`?sort=priceAsc`）に保持。ページ再読み込み・「戻る」操作でも復元される
+- `filteredItems`のuseMemoを`sortItems(filterItems(items, {...}), sort)`に変更し、「絞り込み→並び替え」の順で適用されるようにした（依存配列にも`sort`を追加）
+- `hasFilterParams`（ダウンロード機能の「絞り込み中」判定）には`sort`を含めていない。並び替えは表示件数を変えないため、既存の「検索・カテゴリ・メーカー・ステータスで絞り込んで件数が変わっているかどうか」という判定の意味とは別軸と判断した
+
+**`src/pages/ItemDetail.jsx`：**
+- 23-1番の「次へ／前へ」ナビゲーションが一覧画面の並び順とズレないよう、`navItems`の算出に`sortItems()`を追加。`hasFilterParams`の判定自体は`sort`を含めていない（絞り込みパラメータが一つも無くても`sort`だけが指定されているケースはあり得るため）が、`sortItems()`自体は`hasFilterParams`の真偽にかかわらず常に適用し、`sort`未指定時は`"recommended"`（並び替えなしと同じ）として動作するようにした
+
+**追記（2026/08/18）：並び替えの選択肢をおすすめ順／新しい順／古い順から、在庫数基準に変更**
+
+初回実装時の`"recommended"`（おすすめ順）・`"newest"`（新しい順）・`"oldest"`（古い順）を廃止し、代わりに在庫数基準の並び替えを追加した。
+
+- **`src/utils/sortItems.js`：** `"recommended"`・`"newest"`・`"oldest"`のcaseを削除し、`"stockAsc"`（在庫数が少ない順、`a.stock - b.stock`）・`"stockDesc"`（在庫数が多い順、`b.stock - a.stock`）を追加。`"nameAsc"`・`"nameDesc"`・`"priceAsc"`・`"priceDesc"`のロジックは変更なし。最終的なsortKeyは`stockAsc`／`stockDesc`／`nameAsc`／`nameDesc`／`priceAsc`／`priceDesc`の6種類。switch文のdefault（未知のsortKeyが渡された場合）は並び替えなしのまま返すフォールバックとして残した
+- **`src/utils/listSearchParams.js`：** `LIST_PARAM_DEFAULTS`の`sort`初期値を`"recommended"`から`"stockAsc"`に変更
+- **`src/pages/Home.jsx`：**
+  - `sort`のデフォルト値（`searchParams.get("sort") || ...`）を`"stockAsc"`に変更。並び替えプルダウンのデフォルト選択も自動的に「在庫が少ない順」になる
+  - `SORT_OPTIONS`を「在庫が少ない順／在庫が多い順／名前順（あ→わ）／名前順（わ→あ）／単価が安い順／単価が高い順」に変更。従来「商品名 A→Z」「商品名 Z→A」という英語表記だった箇所を「名前順（あ→わ）」「名前順（わ→あ）」という日本語表記に変更（対応する`nameAsc`／`nameDesc`のロジック自体は変更していない、表示ラベルのみの変更）
+  - ダウンロードメニューのCSVボタンのラベルを`` `CSVでダウンロード（${downloadCountLabel}）` ``から`` `CSVでダウンロード（${downloadCountLabel}・外部システム連携用）` ``に変更（例：「CSVでダウンロード（すべて20件・外部システム連携用）」）。Excelボタンのラベルは変更なし
+- **`src/pages/ItemDetail.jsx`：** 「次へ／前へ」ナビゲーション（`navItems`算出）内の`sort`未指定時のデフォルト値も`"stockAsc"`に変更し、Home.jsxと同じ既定の並び順になるよう揃えた
+- 削除した`"recommended"`／`"newest"`／`"oldest"`をこの3ファイル以外で直接文字列参照している箇所が残っていないか、`grep`でプロジェクト全体を確認済み（該当なし）
+
+**動作確認：** `npm run lint`・`npm run build`とも既存の警告（Fast refresh関連）以外のエラー・警告なく通過した。Node上のスクラッチスクリプトで`stockAsc`／`stockDesc`の並び順（在庫数の少ない順・多い順）も追加確認済み。
+
+**ステータス：** 実装済み（2026/08/18）。Excel/CSVのインポート・エクスポートへの反映は次回。
+
+---
+
 ## 未決定・次回検討事項
 
 - [x] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか → 対応済み（2026/08/17）。StockRecord.jsx・Tanaoroshi.jsxの数量±ボタン（丸型、classNameが完全に同一だった箇所）を`src/components/StepperButton.jsx`として共通化。増減ロジック（下限0/1など画面ごとに異なる部分）は呼び出し側の`onClick`に残し、見た目のみ共通化する形にした。ItemForm.jsxのステッパー（サイズ・角丸・エラー時の色分けが異なる別デザイン）、±5／±10のまとめ入力ボタン（`Button`コンポーネント使用済み）は対象外とし、あえて共通化しない判断とした
