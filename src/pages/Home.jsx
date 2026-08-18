@@ -147,6 +147,29 @@ function Home() {
     };
   }, [isDownloadMenuOpen]);
 
+  // 「🧪 テスト用データ」ボタンのメニュー開閉状態。ダウンロードメニューと同じ開閉パターン
+  // （外側クリック・Escキーで閉じる、トリガーボタン再クリックでトグル）
+  const [isDevMenuOpen, setIsDevMenuOpen] = useState(false);
+  const devMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!isDevMenuOpen) return;
+    const handlePointerDown = (e) => {
+      if (devMenuRef.current && !devMenuRef.current.contains(e.target)) {
+        setIsDevMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") setIsDevMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isDevMenuOpen]);
+
   // ダウンロード対象は常に「今画面に表示されている商品」（filteredItems）に連動させる。
   // 絞り込みなし時はfilterItems()が全件を返すため、結果的に全商品がダウンロードされる
   const downloadFilenameSuffix = hasFilterParams ? "_絞り込み" : "";
@@ -457,40 +480,65 @@ function Home() {
             ⚙️
           </button>
           {import.meta.env.DEV && (
-            <button
-              type="button"
-              onClick={handleLoadTestData}
-              disabled={testDataLoading}
-              title="開発用: テストデータ20件をSupabaseに追加します"
-              className="box-border inline-flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-md border px-3 text-[13px] font-bold whitespace-nowrap transition-colors hover:bg-[var(--bg)]! disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink-soft)" }}
-            >
-              {testDataLoading ? "読み込んでいます..." : "🧪 テストデータを読み込む"}
-            </button>
-          )}
-          {import.meta.env.DEV && (
-            <button
-              type="button"
-              onClick={handleDeleteTestData}
-              disabled={deleteTestDataLoading}
-              title="開発用: テスト名（テストN）の商品と履歴をSupabaseから削除します"
-              className="box-border inline-flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-md border px-3 text-[13px] font-bold whitespace-nowrap transition-colors hover:bg-[var(--bg)]! disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink-soft)" }}
-            >
-              {deleteTestDataLoading ? "削除しています..." : "🗑️ テストデータを削除する"}
-            </button>
-          )}
-          {import.meta.env.DEV && (
-            <button
-              type="button"
-              onClick={handleDeleteAllItems}
-              disabled={deleteAllLoading}
-              title="開発用: 全商品と履歴をSupabaseから削除します"
-              className="box-border inline-flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-md border px-3 text-[13px] font-bold whitespace-nowrap transition-colors hover:bg-[var(--bg)]! disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink-soft)" }}
-            >
-              {deleteAllLoading ? "削除しています..." : "🗑️ 全商品を削除する"}
-            </button>
+            <div className="relative" ref={devMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsDevMenuOpen((prev) => !prev)}
+                title="開発用: テストデータの操作メニュー"
+                className="box-border inline-flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-md border px-3 text-[13px] font-bold whitespace-nowrap transition-colors hover:bg-[var(--bg)]!"
+                style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink-soft)" }}
+              >
+                🧪 テスト用データ
+              </button>
+              {isDevMenuOpen && (
+                // 通常のボタン（青系のhover）とは区別できるよう、グレー系＋点線枠の見た目にする
+                // （開発用メニューであることが一目で分かるように。新規のCSSカスタムプロパティは追加せず
+                // 既存トークンの組み合わせのみで表現）
+                <ul
+                  role="menu"
+                  aria-label="テスト用データ"
+                  className="absolute left-0 z-30 mt-1 w-max min-w-[260px] overflow-hidden rounded-[var(--r-md)] border-2 border-dashed py-1 shadow-lg"
+                  style={{ borderColor: "var(--ink-soft)", background: "var(--bg)" }}
+                >
+                  <li role="none">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleLoadTestData}
+                      disabled={testDataLoading}
+                      className="block w-full cursor-pointer border-none bg-transparent px-4 py-2 text-left text-[13px] font-bold whitespace-nowrap transition-colors hover:bg-[var(--border)]! disabled:cursor-not-allowed disabled:opacity-60"
+                      style={{ color: "var(--ink-soft)" }}
+                    >
+                      {testDataLoading ? "読み込んでいます..." : "🧪 20件テストデータを読み込む"}
+                    </button>
+                  </li>
+                  <li role="none">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleDeleteTestData}
+                      disabled={deleteTestDataLoading}
+                      className="block w-full cursor-pointer border-none bg-transparent px-4 py-2 text-left text-[13px] font-bold whitespace-nowrap transition-colors hover:bg-[var(--border)]! disabled:cursor-not-allowed disabled:opacity-60"
+                      style={{ color: "var(--ink-soft)" }}
+                    >
+                      {deleteTestDataLoading ? "削除しています..." : "🗑️ テストデータを削除する"}
+                    </button>
+                  </li>
+                  <li role="none">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleDeleteAllItems}
+                      disabled={deleteAllLoading}
+                      className="block w-full cursor-pointer border-none bg-transparent px-4 py-2 text-left text-[13px] font-bold whitespace-nowrap transition-colors hover:bg-[var(--border)]! disabled:cursor-not-allowed disabled:opacity-60"
+                      style={{ color: "var(--ink-soft)" }}
+                    >
+                      {deleteAllLoading ? "削除しています..." : "🗑️ 全商品を削除する"}
+                    </button>
+                  </li>
+                </ul>
+              )}
+            </div>
           )}
           <Button variant="secondary" onClick={() => navigate("/items/import")} className="whitespace-nowrap">
             📄 Excelから取り込む
