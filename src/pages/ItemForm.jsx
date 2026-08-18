@@ -348,7 +348,7 @@ function ItemForm() {
               style={{ border: fieldErrors.stock ? "2px solid var(--red)" : "2px solid transparent", background: fieldErrors.stock ? "var(--red-light)" : "transparent" }}
             >
               <label className="mb-2 block text-[15px] font-bold">在庫数</label>
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center justify-center gap-2.5">
                 <button
                   type="button"
                   onClick={decStock}
@@ -428,7 +428,7 @@ function ItemForm() {
               style={{ border: fieldErrors.threshold ? "2px solid var(--red)" : "2px solid transparent", background: fieldErrors.threshold ? "var(--red-light)" : "transparent" }}
             >
               <label className="mb-2 block text-[15px] font-bold">発注点（ここ以下になったら知らせます）</label>
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center justify-center gap-2.5">
                 <button
                   type="button"
                   onClick={decThreshold}
