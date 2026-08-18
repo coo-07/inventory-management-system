@@ -9,7 +9,7 @@ const LIST_MAX_HEIGHT = 240;
  * （design-tokens.md 97番・102番）。このコンポーネントは開く直前に画面下側の残りスペースを
  * 見積もり、不足していれば選択肢一覧を上向きに開く。ページ自体はスクロールさせない。
  */
-function Dropdown({ value, options, onChange, placeholder, className = "", id }) {
+function Dropdown({ value, options, onChange, placeholder, className = "", id, label }) {
   const [isOpen, setIsOpen] = useState(false);
   const [openDirection, setOpenDirection] = useState("down");
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -128,6 +128,18 @@ function Dropdown({ value, options, onChange, placeholder, className = "", id })
           }`}
           style={{ borderColor: "var(--border)", background: "var(--surface)", maxHeight: LIST_MAX_HEIGHT }}
         >
+          {label && (
+            // 選択肢をスクロールしても今どの項目（商品名／カテゴリ／単価など）を選んでいるか
+            // 分かるよう、一覧の一番上に常に表示され続けるヘッダー行を追加する（選択肢としては機能しない）
+            <li
+              role="presentation"
+              aria-hidden="true"
+              className="sticky top-0 z-10 border-b px-4 py-2 text-[13px] font-bold"
+              style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--ink-soft)" }}
+            >
+              {label}
+            </li>
+          )}
           {options.map((opt, index) => (
             <li
               key={opt.value === null ? "__placeholder__" : opt.value}

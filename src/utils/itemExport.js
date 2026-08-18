@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 
-const EXPORT_HEADERS = ["商品名", "カテゴリ", "在庫数", "発注点", "単位", "登録日", "更新日"];
+const EXPORT_HEADERS = ["商品名", "カテゴリ", "在庫数", "発注点", "単位", "メーカー", "単価", "登録日", "更新日"];
 const BOM = "﻿";
 
 // ISO形式の日時文字列を「YYYY-MM-DD HH:mm」形式に変換する。xlsx・CSV両方の出力で共通利用する
@@ -19,6 +19,8 @@ export function buildExportRows(items) {
     在庫数: item.stock,
     発注点: item.threshold,
     単位: item.unit,
+    メーカー: item.manufacturer,
+    単価: item.unitPrice,
     登録日: formatDateForExport(item.createdAt),
     更新日: formatDateForExport(item.updatedAt),
   }));
@@ -35,6 +37,8 @@ export function downloadItemsAsExcel(items, filename) {
     { wch: 10 }, // 在庫数
     { wch: 10 }, // 発注点
     { wch: 8 }, // 単位
+    { wch: 24 }, // メーカー
+    { wch: 10 }, // 単価
     { wch: 18 }, // 登録日
     { wch: 18 }, // 更新日
   ];

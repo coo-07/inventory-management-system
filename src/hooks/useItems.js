@@ -275,6 +275,8 @@ export function useItemsInternal() {
           stock: item.stock,
           threshold: item.threshold,
           unit: item.unit,
+          manufacturer: item.manufacturer || null,
+          unit_price: item.unitPrice === "" || item.unitPrice === undefined ? null : item.unitPrice,
           image_url: item.imageUrl || null,
         }))
       )

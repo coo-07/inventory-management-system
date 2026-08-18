@@ -9,7 +9,15 @@ import CategoryIconPicker, { matchPresetIcon } from "../components/CategoryIconP
 import Button from "../components/Button";
 import Dropdown from "../components/Dropdown";
 
-const EMPTY_MAPPING = { name: null, category: null, stock: null, threshold: null, unit: null };
+const EMPTY_MAPPING = {
+  name: null,
+  category: null,
+  stock: null,
+  threshold: null,
+  unit: null,
+  manufacturer: null,
+  unitPrice: null,
+};
 
 const MAPPING_FIELDS = [
   { key: "name", label: "商品名", required: true },
@@ -17,6 +25,8 @@ const MAPPING_FIELDS = [
   { key: "stock", label: "在庫数", required: true },
   { key: "threshold", label: "発注点", required: false },
   { key: "unit", label: "単位", required: false },
+  { key: "manufacturer", label: "メーカー", required: false },
+  { key: "unitPrice", label: "単価", required: false },
 ];
 
 function toTrimmedString(value) {
@@ -54,6 +64,8 @@ function buildRawRow(row, columnMapping) {
     stock: get("stock"),
     threshold: get("threshold"),
     unit: get("unit"),
+    manufacturer: get("manufacturer"),
+    unitPrice: get("unitPrice"),
   };
 }
 
@@ -74,7 +86,21 @@ function evaluateRow(row, columnMapping) {
   const category = columnMapping.category !== null ? toTrimmedString(row[columnMapping.category]) || "その他" : "その他";
   const unit = columnMapping.unit !== null ? toTrimmedString(row[columnMapping.unit]) || "個" : "個";
 
-  return { skip: false, item: { name: nameStr, category, stock, threshold, unit } };
+  const manufacturer =
+    columnMapping.manufacturer !== null ? toTrimmedString(row[columnMapping.manufacturer]) || null : null;
+
+  // メーカーと異なり数値項目のため、値が入力されている場合のみ数値かどうかをチェックする。
+  // 空欄（マッピングなし、またはマッピングありで未入力）は単価未設定（null）として扱い、スキップ対象にはしない
+  let unitPrice = null;
+  if (columnMapping.unitPrice !== null) {
+    const unitPriceStr = toTrimmedString(row[columnMapping.unitPrice]);
+    if (unitPriceStr !== "") {
+      if (Number.isNaN(Number(unitPriceStr))) return { skip: true, reason: "単価が数値ではないため" };
+      unitPrice = Number(unitPriceStr);
+    }
+  }
+
+  return { skip: false, item: { name: nameStr, category, stock, threshold, unit, manufacturer, unitPrice } };
 }
 
 /**
@@ -464,6 +490,7 @@ function ItemImport() {
                         value={columnMapping[field.key]}
                         onChange={(value) => updateMapping(field.key, value)}
                         placeholder={field.required ? "選択してください" : "（マッピングしない）"}
+                        label={`${field.label}${field.required ? "（必須）" : "（任意）"}`}
                         options={[
                           { value: null, label: field.required ? "選択してください" : "（マッピングしない）" },
                           ...columnOptions,
