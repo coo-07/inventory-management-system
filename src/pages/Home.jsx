@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useItems } from "../context/ItemsContext";
+import { useAuth } from "../hooks/useAuth";
 import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useToast } from "../context/ToastContext";
 import { generateTestItems } from "../utils/generateTestData";
@@ -45,6 +46,7 @@ function formatRawCell(value) {
 function Home() {
   const { items, loading, loadTestData, deleteTestData, deleteAllItems } = useItems();
   const { customIcons } = useCategoryIcons();
+  const { role } = useAuth();
   const navigate = useNavigate();
   const showToast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -479,16 +481,20 @@ function Home() {
           >
             ⚙️
           </button>
-          {import.meta.env.DEV && (
+          {role === "admin" && (
             <div className="relative" ref={devMenuRef}>
               <button
                 type="button"
                 onClick={() => setIsDevMenuOpen((prev) => !prev)}
-                title="開発用: テストデータの操作メニュー"
-                className="box-border inline-flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-md border px-3 text-[13px] font-bold whitespace-nowrap transition-colors hover:bg-[var(--bg)]!"
+                title="テスト用データ操作"
+                className="box-border inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border text-base transition-colors hover:bg-[var(--bg)]!"
                 style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink-soft)" }}
               >
-                🧪 テスト用データ
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <line x1="3" y1="6" x2="17" y2="6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <line x1="3" y1="14" x2="17" y2="14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
               </button>
               {isDevMenuOpen && (
                 // 通常のボタン（青系のhover）とは区別できるよう、グレー系＋点線枠の見た目にする
