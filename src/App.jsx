@@ -59,7 +59,9 @@ function App() {
                 path="/settings/categories"
                 element={
                   <RequireAuth>
-                    <CategorySettings />
+                    <RequireAdmin>
+                      <CategorySettings />
+                    </RequireAdmin>
                   </RequireAuth>
                 }
               />

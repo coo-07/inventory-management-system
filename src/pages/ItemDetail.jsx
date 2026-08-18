@@ -221,14 +221,16 @@ function ItemDetail() {
             </svg>
             編集する
           </Button>
-          <Button variant="dangerOutline" onClick={() => setDeleteOpen(true)}>
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-              <rect x="5" y="7" width="10" height="9" rx="1.5" stroke="var(--red)" strokeWidth="1.6" />
-              <line x1="3" y1="5" x2="17" y2="5" stroke="var(--red)" strokeWidth="1.6" strokeLinecap="round" />
-              <line x1="8" y1="2.5" x2="12" y2="2.5" stroke="var(--red)" strokeWidth="1.6" strokeLinecap="round" />
-            </svg>
-            削除する
-          </Button>
+          {role !== "staff" && (
+            <Button variant="dangerOutline" onClick={() => setDeleteOpen(true)}>
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <rect x="5" y="7" width="10" height="9" rx="1.5" stroke="var(--red)" strokeWidth="1.6" />
+                <line x1="3" y1="5" x2="17" y2="5" stroke="var(--red)" strokeWidth="1.6" strokeLinecap="round" />
+                <line x1="8" y1="2.5" x2="12" y2="2.5" stroke="var(--red)" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+              削除する
+            </Button>
+          )}
           {import.meta.env.DEV && (
             <Button variant="secondary" loading={seedLoading} onClick={handleSeedTestData}>
               {seedLoading ? "追加しています..." : "🎲 テスト履歴を追加（20件）"}
