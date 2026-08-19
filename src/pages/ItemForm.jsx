@@ -204,7 +204,7 @@ function ItemForm() {
     <form
       autoComplete="off"
       onSubmit={(e) => e.preventDefault()}
-      className="mx-auto max-w-[640px] px-6 py-5 md:max-w-[760px] lg:max-w-[960px]"
+      className="mx-auto max-w-[640px] px-6 py-5 md:px-8 md:max-w-[760px] lg:px-10 lg:max-w-[900px] xl:max-w-[1500px] xl:px-10 2xl:max-w-[1700px] 2xl:px-12"
     >
       <h1 className="mb-6 text-[26px] font-bold">{isEdit ? "商品を編集" : "商品を登録"}</h1>
 
@@ -236,11 +236,11 @@ function ItemForm() {
       )}
 
       <div
-        className="rounded-[var(--r-xl)] border-2 p-7"
+        className="rounded-[var(--r-xl)] border-2 p-7 lg:p-8 xl:p-10 2xl:p-12"
         style={{ background: "var(--surface)", borderColor: "var(--border)" }}
       >
-        <div className="grid grid-cols-1 gap-5.5 lg:grid-cols-[7fr_3fr] lg:items-start lg:gap-5">
-          <div className="order-1 lg:order-1 lg:col-start-1">
+        <div className="grid grid-cols-1 gap-5.5 xl:grid-cols-[7fr_3fr] xl:items-start xl:gap-7 2xl:gap-8">
+          <div className="order-1 xl:order-1 xl:col-start-1">
             <label className="mb-2 block text-[15px] font-bold">商品名（必須）</label>
             <input
               ref={nameInputRef}
@@ -263,7 +263,7 @@ function ItemForm() {
             )}
           </div>
 
-          <div className="order-2 flex flex-wrap gap-4 lg:order-2 lg:col-start-1">
+          <div className="order-2 flex flex-wrap gap-4 xl:order-2 xl:col-start-1">
             <div className="min-w-[220px] flex-auto">
               <label className="mb-2 block text-[15px] font-bold">カテゴリ</label>
               <select
@@ -340,15 +340,15 @@ function ItemForm() {
             )}
           </div>
 
-          <div className="order-3 flex flex-wrap gap-4 lg:order-3 lg:col-span-2">
+          <div className="order-3 flex flex-wrap gap-5 xl:order-3 xl:col-span-2">
             <div
               ref={stockBoxRef}
               tabIndex={-1}
-              className="box-border min-w-[220px] flex-auto rounded-[var(--r-md)] p-2.5"
+              className="box-border min-w-[220px] w-fit flex-none rounded-[var(--r-md)] p-2.5"
               style={{ border: fieldErrors.stock ? "2px solid var(--red)" : "2px solid transparent", background: fieldErrors.stock ? "var(--red-light)" : "transparent" }}
             >
               <label className="mb-2 block text-[15px] font-bold">在庫数</label>
-              <div className="flex items-center justify-center gap-2.5">
+              <div className="flex items-center justify-center gap-6 xl:gap-7 2xl:gap-8">
                 <button
                   type="button"
                   onClick={decStock}
@@ -378,8 +378,8 @@ function ItemForm() {
                   ＋
                 </button>
               </div>
-              <div className="mt-3.5 flex justify-center gap-7">
-                <div className="flex gap-2.5">
+              <div className="mt-6 flex justify-center gap-7">
+                <div className="flex gap-6 xl:gap-7 2xl:gap-8">
                   <Button
                     variant="secondary"
                     disabled={(Number(form.stock) || 0) - 10 < 0}
@@ -397,7 +397,7 @@ function ItemForm() {
                     −5
                   </Button>
                 </div>
-                <div className="flex gap-2.5">
+                <div className="flex gap-6 xl:gap-7 2xl:gap-8">
                   <Button
                     variant="secondary"
                     onClick={() => setForm((prev) => ({ ...prev, stock: (Number(prev.stock) || 0) + 5 }))}
@@ -424,11 +424,11 @@ function ItemForm() {
             <div
               ref={thresholdBoxRef}
               tabIndex={-1}
-              className="box-border min-w-[220px] flex-auto rounded-[var(--r-md)] p-2.5"
+              className="box-border min-w-[220px] w-fit flex-none rounded-[var(--r-md)] p-2.5"
               style={{ border: fieldErrors.threshold ? "2px solid var(--red)" : "2px solid transparent", background: fieldErrors.threshold ? "var(--red-light)" : "transparent" }}
             >
               <label className="mb-2 block text-[15px] font-bold">発注点（ここ以下になったら知らせます）</label>
-              <div className="flex items-center justify-center gap-2.5">
+              <div className="flex items-center justify-center gap-6 xl:gap-7 2xl:gap-8">
                 <button
                   type="button"
                   onClick={decThreshold}
@@ -458,8 +458,8 @@ function ItemForm() {
                   ＋
                 </button>
               </div>
-              <div className="mt-3.5 flex justify-center gap-7">
-                <div className="flex gap-2.5">
+              <div className="mt-6 flex justify-center gap-7">
+                <div className="flex gap-6 xl:gap-7 2xl:gap-8">
                   <Button
                     variant="secondary"
                     disabled={(Number(form.threshold) || 0) - 10 < 0}
@@ -477,7 +477,7 @@ function ItemForm() {
                     −5
                   </Button>
                 </div>
-                <div className="flex gap-2.5">
+                <div className="flex gap-6 xl:gap-7 2xl:gap-8">
                   <Button
                     variant="secondary"
                     onClick={() => setForm((prev) => ({ ...prev, threshold: (Number(prev.threshold) || 0) + 5 }))}
@@ -502,18 +502,18 @@ function ItemForm() {
             </div>
           </div>
 
-          <div className="order-4 lg:order-1 lg:col-start-2 lg:row-span-2 lg:self-center">
+          <div className="order-4 xl:order-1 xl:col-start-2 xl:row-span-2 xl:self-center">
             <label className="mb-2 block text-[15px] font-bold">商品の写真（任意）</label>
             <PhotoUpload value={form.imageUrl} onChange={(imageUrl) => setForm((prev) => ({ ...prev, imageUrl }))} />
           </div>
 
-          <div className="order-5 mt-4 lg:order-4 lg:col-span-2">
-            <div className="flex gap-4 lg:justify-end">
+          <div className="order-5 mt-4 xl:order-4 xl:col-span-2">
+            <div className="flex gap-4 xl:justify-end">
               <Button
                 variant="secondary"
                 disabled={saveLoading}
                 onClick={handleCancel}
-                className="min-w-0 flex-1 lg:flex-none lg:min-w-[180px]"
+                className="min-w-0 flex-1 xl:flex-none xl:min-w-[180px]"
               >
                 キャンセル
               </Button>
@@ -521,7 +521,7 @@ function ItemForm() {
                 variant="primary"
                 loading={saveLoading}
                 onClick={handleSubmit}
-                className="min-w-0 flex-1 lg:flex-none lg:min-w-[180px]"
+                className="min-w-0 flex-1 xl:flex-none xl:min-w-[180px]"
               >
                 {saveLoading ? (isEdit ? "保存しています..." : "登録しています...") : isEdit ? "保存する" : "商品を登録する"}
               </Button>
