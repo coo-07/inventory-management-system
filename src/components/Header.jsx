@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useMatch, useNavigate, useSearchParams } from "react-router-dom";
 import { getStockStatus } from "../utils/stockStatus";
 import { useItems } from "../context/ItemsContext";
@@ -17,6 +17,7 @@ function useBackLink() {
   const isShop = useMatch("/shop");
   const isCategorySettings = useMatch("/settings/categories");
   const isReports = useMatch("/reports");
+  const isAccount = useMatch("/account");
 
   if (isTanaoroshiResults) return { label: "一覧へ戻る", to: "/items" };
   if (isReports) return { label: "一覧へ戻る", to: "/items" };
@@ -27,6 +28,7 @@ function useBackLink() {
   if (isRecord) return { label: "商品詳細へ戻る", to: `/items/${isRecord.params.id}` };
   if (isShop) return { label: "一覧へ戻る", to: "/items" };
   if (isCategorySettings) return { label: "一覧へ戻る", to: "/items" };
+  if (isAccount) return { label: "一覧へ戻る", to: "/items" };
   return null;
 }
 
@@ -48,6 +50,40 @@ function Header() {
     refetchItems();
     refetchShop();
   }, [location.pathname, refetchItems, refetchShop]);
+
+  // 「⚙️」設定メニューの開閉状態。Home.jsxの他メニュー（ダウンロード・テスト用データ）と
+  // 同じ開閉パターン（外側クリック・Escキーで閉じる、トリガーボタン再クリックでトグル）
+  const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
+  const settingsMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!isSettingsMenuOpen) return;
+    const handlePointerDown = (e) => {
+      if (settingsMenuRef.current && !settingsMenuRef.current.contains(e.target)) {
+        setIsSettingsMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") setIsSettingsMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isSettingsMenuOpen]);
+
+  const handleCategorySettingsClick = () => {
+    if (role !== "admin") return;
+    setIsSettingsMenuOpen(false);
+    navigate("/settings/categories");
+  };
+
+  const handleAccountSettingsClick = () => {
+    setIsSettingsMenuOpen(false);
+    navigate("/account");
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -223,6 +259,56 @@ function Header() {
             >
               📊 レポート
             </button>
+          )}
+          {role && (
+            <div className="relative" ref={settingsMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsSettingsMenuOpen((prev) => !prev)}
+                title="設定"
+                className="box-border inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border-2 text-base transition-colors hover:bg-[var(--bg)]!"
+                style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink-soft)" }}
+              >
+                ⚙️
+              </button>
+              {isSettingsMenuOpen && (
+                <ul
+                  role="menu"
+                  aria-label="設定"
+                  className="absolute right-0 z-30 mt-1 w-max min-w-[220px] overflow-hidden rounded-[var(--r-md)] border-2 py-1 shadow-lg"
+                  style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+                >
+                  <li role="none">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={role !== "admin"}
+                      onClick={handleCategorySettingsClick}
+                      title={role !== "admin" ? "管理者のみ利用できます" : undefined}
+                      className={`block w-full border-none bg-transparent px-4 py-2 text-left text-[15px] font-bold transition-colors ${
+                        role !== "admin"
+                          ? "cursor-not-allowed opacity-50"
+                          : "cursor-pointer hover:bg-[var(--blue-light)]! hover:text-[var(--blue-dark)]!"
+                      }`}
+                      style={{ color: "var(--ink)" }}
+                    >
+                      ⚙️ カテゴリ設定
+                    </button>
+                  </li>
+                  <li role="none">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleAccountSettingsClick}
+                      className="block w-full cursor-pointer border-none bg-transparent px-4 py-2 text-left text-[15px] font-bold transition-colors hover:bg-[var(--blue-light)]! hover:text-[var(--blue-dark)]!"
+                      style={{ color: "var(--ink)" }}
+                    >
+                      🔑 パスワード変更
+                    </button>
+                  </li>
+                </ul>
+              )}
+            </div>
           )}
           {role && (
             <button

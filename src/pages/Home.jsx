@@ -478,19 +478,6 @@ function Home() {
         </div>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          {role !== "staff" && (
-            // カテゴリ設定は管理者限定（/settings/categoriesもRequireAdmin化）のため、
-            // スタッフにはボタン自体を表示しない
-            <button
-              type="button"
-              onClick={() => navigate("/settings/categories")}
-              title="カテゴリアイコン設定"
-              className="box-border inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border text-base transition-colors hover:bg-[var(--bg)]!"
-              style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink-soft)" }}
-            >
-              ⚙️
-            </button>
-          )}
           {role === "admin" && (
             <div className="relative" ref={devMenuRef}>
               <button

@@ -13,6 +13,7 @@ import ItemForm from "./pages/ItemForm";
 import ItemImport from "./pages/ItemImport";
 import ItemDetail from "./pages/ItemDetail";
 import CategorySettings from "./pages/CategorySettings";
+import AccountSettings from "./pages/AccountSettings";
 import StockRecord from "./pages/StockRecord";
 import TanaoroshiResults from "./pages/TanaoroshiResults";
 import Reports from "./pages/Reports";
@@ -62,6 +63,14 @@ function App() {
                     <RequireAdmin>
                       <CategorySettings />
                     </RequireAdmin>
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/account"
+                element={
+                  <RequireAuth>
+                    <AccountSettings />
                   </RequireAuth>
                 }
               />
