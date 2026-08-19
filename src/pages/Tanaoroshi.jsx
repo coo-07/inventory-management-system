@@ -166,7 +166,7 @@ function Tanaoroshi() {
 
   if (!isSingleMode && completed) {
     return (
-      <div className="mx-auto flex max-w-[640px] flex-col items-center gap-3 px-6 py-24 text-center">
+      <div className="mx-auto flex min-h-[calc(100vh-76px)] max-w-[640px] flex-col items-center justify-center gap-3 px-6 text-center md:min-h-[calc(100vh-88px)]">
         <p className="text-2xl font-bold">🎉 棚卸しが完了しました。お疲れさまでした</p>
         <Link to="/" className="mt-2 text-sm underline" style={{ color: "var(--ink)" }}>
           トップへ戻る
