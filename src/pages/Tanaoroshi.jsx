@@ -129,7 +129,12 @@ function Tanaoroshi() {
             <span className="text-[36px]" aria-hidden="true">
               🗂
             </span>
-            すべて（{items.length}件）
+            <span className="flex flex-col items-center gap-0.5">
+              <span>すべて</span>
+              <span className="text-[13px] font-bold" style={{ color: "var(--ink-soft)" }}>
+                （{items.length}件）
+              </span>
+            </span>
           </button>
           {categoryOptions.map((category) => (
             <button
@@ -140,7 +145,12 @@ function Tanaoroshi() {
               style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--ink)" }}
             >
               <CategoryIcon category={category} size={36} customIcons={customIcons} />
-              {category}（{categoryCounts[category]}件）
+              <span className="flex flex-col items-center gap-0.5">
+                <span>{category}</span>
+                <span className="text-[13px] font-bold" style={{ color: "var(--ink-soft)" }}>
+                  （{categoryCounts[category]}件）
+                </span>
+              </span>
             </button>
           ))}
         </div>
