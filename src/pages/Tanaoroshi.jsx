@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useItems } from "../context/ItemsContext";
 import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useToast } from "../context/ToastContext";
+import { filterItems } from "../utils/filterItems";
 import CategoryIcon from "../components/CategoryIcon";
 import Button from "../components/Button";
 import StepperButton from "../components/StepperButton";
@@ -16,15 +17,20 @@ function sanitizeDigits(str) {
 
 /**
  * 利用者向けの棚卸し画面。商品を1件ずつ表示し、実際に数えた数を入力して記録する。
- * ?item=ID があれば単品モード（結果一覧からの再棚卸し用）、無ければ全商品を順番に回る通常モード。
+ * ?item=ID があれば単品モード（結果一覧からの再棚卸し用）、無ければ全商品（またはカテゴリで絞った商品）を
+ * 順番に回る通常モード。通常モードでは、開始前に?category=（"all"または特定カテゴリ名）を選ばせる。
  * ログイン不要でアクセス可能な画面のため、useItems() は認証不要のこのページ自身のインスタンスを使う。
  */
 function Tanaoroshi() {
   const navigate = useNavigate();
   const showToast = useToast();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const itemParam = searchParams.get("item");
   const isSingleMode = Boolean(itemParam);
+  const categoryParam = searchParams.get("category");
+  // 単品モードはカテゴリ選択を経由しない。通常モードは?categoryが存在するまで選択画面を表示する
+  const hasChosenCategory = isSingleMode || categoryParam !== null;
+  const selectedCategory = categoryParam && categoryParam !== "all" ? categoryParam : "";
 
   const { items, loading, getItemById, recordCount } = useItems();
   const { customIcons } = useCategoryIcons();
@@ -35,7 +41,30 @@ function Tanaoroshi() {
   const [recordLoading, setRecordLoading] = useState(false);
   const [completed, setCompleted] = useState(false);
 
-  const currentItem = isSingleMode ? getItemById(itemParam) : items[index];
+  // カテゴリ選択画面の選択肢。実際に商品が登録されているカテゴリのみを対象にする（0件のカテゴリは選択肢に出ない）
+  const categoryCounts = useMemo(() => {
+    const counts = {};
+    items.forEach((item) => {
+      if (!item.category) return;
+      counts[item.category] = (counts[item.category] || 0) + 1;
+    });
+    return counts;
+  }, [items]);
+  const categoryOptions = useMemo(
+    () => Object.keys(categoryCounts).sort((a, b) => a.localeCompare(b, "ja")),
+    [categoryCounts]
+  );
+
+  const scopedItems = useMemo(
+    () => (isSingleMode ? items : filterItems(items, { category: selectedCategory })),
+    [items, isSingleMode, selectedCategory]
+  );
+
+  const currentItem = isSingleMode ? getItemById(itemParam) : scopedItems[index];
+
+  const handleSelectCategory = (category) => {
+    setSearchParams({ category }, { replace: true });
+  };
 
   const blurOnEnter = (e) => {
     if (e.key === "Enter") {
@@ -80,6 +109,61 @@ function Tanaoroshi() {
     );
   }
 
+  if (!isSingleMode && !hasChosenCategory) {
+    return (
+      <div className="mx-auto flex max-w-[720px] flex-col items-center gap-10 px-6 py-20 text-center">
+        <div>
+          <p className="m-0 mb-2 text-[26px] font-black">棚卸しするカテゴリを選んでください</p>
+          <p className="m-0 text-[15px]" style={{ color: "var(--ink-soft)" }}>
+            カテゴリを絞ると、そのカテゴリの商品だけを順番に棚卸しできます
+          </p>
+        </div>
+
+        <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <button
+            type="button"
+            onClick={() => handleSelectCategory("all")}
+            className="box-border flex cursor-pointer flex-col items-center gap-2.5 rounded-[var(--r-xl)] border-2 p-6 text-[17px] font-bold transition-colors hover:border-[var(--blue)]! hover:bg-[var(--blue-light)]! hover:text-[var(--blue-dark)]!"
+            style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--ink)" }}
+          >
+            <span className="text-[36px]" aria-hidden="true">
+              🗂
+            </span>
+            すべて（{items.length}件）
+          </button>
+          {categoryOptions.map((category) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => handleSelectCategory(category)}
+              className="box-border flex cursor-pointer flex-col items-center gap-2.5 rounded-[var(--r-xl)] border-2 p-6 text-[17px] font-bold transition-colors hover:border-[var(--blue)]! hover:bg-[var(--blue-light)]! hover:text-[var(--blue-dark)]!"
+              style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--ink)" }}
+            >
+              <CategoryIcon category={category} size={36} customIcons={customIcons} />
+              {category}（{categoryCounts[category]}件）
+            </button>
+          ))}
+        </div>
+
+        <Link to="/" className="text-sm underline" style={{ color: "var(--ink-soft)" }}>
+          トップへ戻る
+        </Link>
+      </div>
+    );
+  }
+
+  // URLの?categoryを直接書き換えた場合など、選択肢に無いカテゴリが指定され対象が0件になるケースの保険
+  if (!isSingleMode && scopedItems.length === 0) {
+    return (
+      <div className="mx-auto flex max-w-[640px] flex-col items-center gap-3 px-6 py-24 text-center">
+        <p className="text-xl font-bold">選択したカテゴリに商品がありません</p>
+        <Link to="/tanaoroshi" className="mt-2 text-sm underline" style={{ color: "var(--ink)" }}>
+          カテゴリを選び直す
+        </Link>
+      </div>
+    );
+  }
+
   if (!isSingleMode && completed) {
     return (
       <div className="mx-auto flex max-w-[640px] flex-col items-center gap-3 px-6 py-24 text-center">
@@ -91,7 +175,7 @@ function Tanaoroshi() {
     );
   }
 
-  const isLast = isSingleMode || index >= items.length - 1;
+  const isLast = isSingleMode || index >= scopedItems.length - 1;
 
   const handleBack = () => {
     if (recordLoading || index === 0) return;
@@ -116,7 +200,7 @@ function Tanaoroshi() {
         navigate("/items/tanaoroshi-results");
         return;
       }
-      if (index >= items.length - 1) {
+      if (index >= scopedItems.length - 1) {
         setCompleted(true);
         return;
       }
@@ -129,7 +213,8 @@ function Tanaoroshi() {
     <div className="mx-auto max-w-[640px] px-6 py-5">
       {!isSingleMode && (
         <p className="m-0 mb-2 text-center text-sm font-bold" style={{ color: "var(--ink-soft)" }}>
-          {index + 1} / {items.length}件
+          {selectedCategory && `${selectedCategory}：`}
+          {index + 1} / {scopedItems.length}件
         </p>
       )}
 
