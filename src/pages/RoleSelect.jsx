@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 const ROLES = [
@@ -10,19 +10,23 @@ const ROLES = [
 /**
  * ログイン前のトップ画面。管理者・スタッフ・利用者を対等に並べ、
  * それぞれ専用の画面（ログイン画面／棚卸し画面）へ遷移する。
- * 既に同じ立場でログイン済みの場合は、ログイン画面を経由せず/itemsへ直接遷移する。
+ * 既にログイン済みの場合は、ロール選択カードを経由せず/itemsへ直接遷移する。
  */
 function RoleSelect() {
   const navigate = useNavigate();
-  const { role } = useAuth();
+  const { role, loading } = useAuth();
 
-  const handleSelect = (roleItem) => {
-    if (roleItem.key === role) {
-      navigate("/items");
-      return;
-    }
-    navigate(roleItem.to);
-  };
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-[720px] px-6 py-24 text-center">
+        <p style={{ color: "var(--ink-soft)" }}>読み込み中...</p>
+      </div>
+    );
+  }
+
+  if (role) {
+    return <Navigate to="/items" replace />;
+  }
 
   return (
     <div className="mx-auto flex max-w-[720px] flex-col items-center gap-10 px-6 py-20 text-center">
@@ -38,7 +42,7 @@ function RoleSelect() {
           <button
             key={roleOption.key}
             type="button"
-            onClick={() => handleSelect(roleOption)}
+            onClick={() => navigate(roleOption.to)}
             className="box-border flex cursor-pointer flex-col items-center gap-3 rounded-[var(--r-xl)] border-2 p-8 text-[19px] font-bold transition-colors hover:border-[var(--blue)]! hover:bg-[var(--blue-light)]! hover:text-[var(--blue-dark)]!"
             style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--ink)" }}
           >
