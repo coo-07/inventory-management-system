@@ -213,6 +213,7 @@ function Home() {
     if (testDataLoading) return;
     const confirmed = window.confirm("テストデータを20件追加します。よろしいですか？");
     if (!confirmed) return;
+    setIsDevMenuOpen(false);
     const maxNumber = items.reduce((max, item) => {
       const match = /^テスト(\d+)$/.exec(item.name);
       return match ? Math.max(max, Number(match[1])) : max;
@@ -241,6 +242,7 @@ function Home() {
     }
     const confirmed = window.confirm(`テストデータ（${testDataCount}件）を削除します。よろしいですか？`);
     if (!confirmed) return;
+    setIsDevMenuOpen(false);
     setDeleteTestDataLoading(true);
     try {
       const result = await deleteTestData();
@@ -265,6 +267,7 @@ function Home() {
     }
     const confirmed = window.confirm(`全商品（${items.length}件）を削除します。よろしいですか？`);
     if (!confirmed) return;
+    setIsDevMenuOpen(false);
     setDeleteAllLoading(true);
     try {
       const result = await deleteAllItems();
