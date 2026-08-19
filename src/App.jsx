@@ -118,9 +118,7 @@ function App() {
                 path="/shop"
                 element={
                   <RequireAuth>
-                    <RequireAdmin>
-                      <Shop />
-                    </RequireAdmin>
+                    <Shop />
                   </RequireAuth>
                 }
               />

@@ -147,26 +147,16 @@ function Header() {
             </div>
             <span className="text-[22px] leading-tight font-bold">やさしい在庫管理</span>
           </Link>
-          {role === "admin" ? (
-            <button
-              type="button"
-              onClick={() => navigate("/shop")}
-              className="flex w-fit cursor-pointer items-center gap-1.5 rounded-lg border-none bg-transparent px-2.5 py-1 text-[15px] font-semibold hover:bg-[var(--blue-light)]! hover:text-[var(--blue-dark)]!"
-              style={{ color: "var(--ink-soft)" }}
-            >
-              <span>🏪</span>
-              {shop && (shop.name || "店舗名を設定してください")}
-              <span aria-hidden="true">›</span>
-            </button>
-          ) : (
-            <span
-              className="flex w-fit items-center gap-1.5 rounded-lg border-none bg-transparent px-2.5 py-1 text-[15px] font-semibold"
-              style={{ color: "var(--ink-soft)" }}
-            >
-              <span>🏪</span>
-              {shop && (shop.name || "店舗名を設定してください")}
-            </span>
-          )}
+          <button
+            type="button"
+            onClick={() => navigate("/shop")}
+            className="flex w-fit cursor-pointer items-center gap-1.5 rounded-lg border-none bg-transparent px-2.5 py-1 text-[15px] font-semibold hover:bg-[var(--blue-light)]! hover:text-[var(--blue-dark)]!"
+            style={{ color: "var(--ink-soft)" }}
+          >
+            <span>🏪</span>
+            {shop && (shop.name || "店舗名を設定してください")}
+            <span aria-hidden="true">›</span>
+          </button>
         </div>
 
         <div className="flex flex-wrap items-center gap-3.5">
