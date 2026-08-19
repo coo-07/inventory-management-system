@@ -4720,6 +4720,16 @@ Supabaseの`items`テーブルに`manufacturer`（text）・`unit_price`（numer
 
 ---
 
+## 144. Vercel本番デプロイ完了・本番URL確定
+
+**内容：** 在庫管理システム「やさしい在庫管理」のVercel本番デプロイが完了した。本番URL：`https://inventory-management-system-lbbq.vercel.app/`。Vercelプロジェクト名は「在庫管理システム-lbbq」、GitHubリポジトリ`coo-07/inventory-management-system`のmainブランチと連携済み、状態は「準備ができて」。環境変数`VITE_SUPABASE_URL`・`VITE_SUPABASE_ANON_KEY`もVercel側に設定済みで、正常に動作している。
+
+**「完成」の定義達成：** これまで「完成」の定義としていた「Vercelデプロイ済みでURLアクセス可能な状態」がこの時点で達成された。以後の開発・改修は、本番稼働中のアプリに対する追加作業という位置づけになる。
+
+**次の作業：** プレゼン資料・企画書・台本の差し替え（データモデルスライドへのid・createdAt・updatedAt追記、在庫推移グラフ・ダウンロード機能の企画書への反映など）に着手可能な段階。
+
+---
+
 ## 未決定・次回検討事項
 
 - [x] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか → 対応済み（2026/08/17）。StockRecord.jsx・Tanaoroshi.jsxの数量±ボタン（丸型、classNameが完全に同一だった箇所）を`src/components/StepperButton.jsx`として共通化。増減ロジック（下限0/1など画面ごとに異なる部分）は呼び出し側の`onClick`に残し、見た目のみ共通化する形にした。ItemForm.jsxのステッパー（サイズ・角丸・エラー時の色分けが異なる別デザイン）、±5／±10のまとめ入力ボタン（`Button`コンポーネント使用済み）は対象外とし、あえて共通化しない判断とした
