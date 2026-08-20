@@ -7,6 +7,11 @@ import { useAuth } from "../hooks/useAuth";
 import { useGoBack } from "../hooks/useGoBack";
 import { updateListParams } from "../utils/listSearchParams";
 
+// ⚙️メニューの開く向き判定・幅計算に使う想定幅（通常時の幅の上限）・画面端からの余白。
+// Dropdown.jsxの上下方向の開閉判定（126番）と同じ考え方を左右方向に応用したもの
+const SETTINGS_MENU_WIDTH = 220;
+const SETTINGS_MENU_VIEWPORT_MARGIN = 20;
+
 function useBackLink() {
   const isTanaoroshiResults = useMatch("/items/tanaoroshi-results");
   const isDetail = useMatch("/items/:id");
@@ -54,7 +59,17 @@ function Header() {
   // 「⚙️」設定メニューの開閉状態。Home.jsxの他メニュー（ダウンロード・テスト用データ）と
   // 同じ開閉パターン（外側クリック・Escキーで閉じる、トリガーボタン再クリックでトグル）
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
+  // メニューの開く向き（左揃え／右揃え）。狭い画面幅でボタンが画面左寄りにある場合、
+  // 従来固定だった右揃え（right-0）のままだとメニューが画面外にはみ出すため、
+  // 開く直前にボタンの位置から左右どちらの余白が広いかを判定する（Dropdown.jsxの
+  // 上下方向の開閉判定・126番と同じ考え方を左右方向に応用したもの）
+  const [settingsMenuAlign, setSettingsMenuAlign] = useState("right");
+  // メニューに実際に適用する幅。通常はSETTINGS_MENU_WIDTH（220px）だが、画面幅そのものが
+  // 狭くどちらの向きに開いても220px確保できない場合（145番の追加確認事項）、メニューが
+  // ビューポート幅を超えて画面外にはみ出さないよう、開いた側の残りスペースに合わせて縮める
+  const [settingsMenuWidth, setSettingsMenuWidth] = useState(SETTINGS_MENU_WIDTH);
   const settingsMenuRef = useRef(null);
+  const settingsButtonRef = useRef(null);
 
   useEffect(() => {
     if (!isSettingsMenuOpen) return;
@@ -72,6 +87,52 @@ function Header() {
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
+  }, [isSettingsMenuOpen]);
+
+  // ⚙️ボタンの位置から、開く向き（左右どちらの残りスペースが広いか）と実際に適用する幅を
+  // 計算してstateへ反映する。メニューを開く瞬間と、開いたままウィンドウ幅がリサイズされた
+  // 際の両方から呼び出す共通処理（146番までは開く瞬間にしか呼んでおらず、開いたままリサイズ
+  // されると向き・幅が古いまま固定されてしまう不具合があった）
+  const updateSettingsMenuPosition = () => {
+    if (!settingsButtonRef.current) return;
+    const rect = settingsButtonRef.current.getBoundingClientRect();
+    // ボタンの左右それぞれの残りスペースを比較し、より広い側に開く（左右どちらも
+    // 220px確保できない狭い画面幅でも、常により崩れの少ない側を選ぶため）
+    const spaceRight = window.innerWidth - rect.left - SETTINGS_MENU_VIEWPORT_MARGIN;
+    const spaceLeft = rect.right - SETTINGS_MENU_VIEWPORT_MARGIN;
+    const align = spaceRight >= spaceLeft ? "left" : "right";
+    setSettingsMenuAlign(align);
+    // 実際に適用する幅は、選んだ側（align）の残りスペースを超えないようクランプする。
+    // ウィンドウ全体の幅だけを基準にすると、ボタンが画面端でなく中央寄りにある場合に
+    // 選んだ側の実際のスペースより広い幅になり、結局画面外にはみ出してしまうため
+    // （例：ボタンが中央付近にあると、左右どちらの残りスペースも「画面幅-40」より小さくなりうる）
+    setSettingsMenuWidth(Math.min(SETTINGS_MENU_WIDTH, align === "left" ? spaceRight : spaceLeft));
+  };
+
+  const handleToggleSettingsMenu = () => {
+    if (isSettingsMenuOpen) {
+      setIsSettingsMenuOpen(false);
+      return;
+    }
+    updateSettingsMenuPosition();
+    setIsSettingsMenuOpen(true);
+  };
+
+  // メニューが開いている間だけ、ウィンドウ幅のリサイズに追従して向き・幅を再計算する。
+  // resizeは連続発火しやすいため、100msのdebounceを挟んで計算頻度を抑える
+  useEffect(() => {
+    if (!isSettingsMenuOpen) return;
+    let debounceId;
+    const handleResize = () => {
+      clearTimeout(debounceId);
+      debounceId = setTimeout(updateSettingsMenuPosition, 100);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => {
+      clearTimeout(debounceId);
+      window.removeEventListener("resize", handleResize);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSettingsMenuOpen]);
 
   const handleCategorySettingsClick = () => {
@@ -253,8 +314,9 @@ function Header() {
           {role && (
             <div className="relative" ref={settingsMenuRef}>
               <button
+                ref={settingsButtonRef}
                 type="button"
-                onClick={() => setIsSettingsMenuOpen((prev) => !prev)}
+                onClick={handleToggleSettingsMenu}
                 title="設定"
                 className="box-border inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border-2 text-base transition-colors hover:bg-[var(--bg)]!"
                 style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--ink-soft)" }}
@@ -265,8 +327,10 @@ function Header() {
                 <ul
                   role="menu"
                   aria-label="設定"
-                  className="absolute right-0 z-30 mt-1 w-max min-w-[220px] overflow-hidden rounded-[var(--r-md)] border-2 py-1 shadow-lg"
-                  style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+                  className={`absolute z-30 mt-1 overflow-hidden rounded-[var(--r-md)] border-2 py-1 shadow-lg ${
+                    settingsMenuAlign === "left" ? "left-0" : "right-0"
+                  }`}
+                  style={{ borderColor: "var(--border)", background: "var(--surface)", width: settingsMenuWidth }}
                 >
                   <li role="none">
                     <button
