@@ -94,6 +94,9 @@ function StaffLogin() {
               )}
             </button>
           </div>
+          <p className="m-0 mt-2 text-xs" style={{ color: "var(--ink-soft)" }}>
+            デモ用パスワード：000000
+          </p>
           {(capsLockOn || isZenkaku) && (
             <div className="mt-2 flex flex-col gap-0.5 text-[13px] font-bold" style={{ color: "var(--orange-dark)" }}>
               {capsLockOn && <p className="m-0">⚠ Caps Lockがオンになっています</p>}
