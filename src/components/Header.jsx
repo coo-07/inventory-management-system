@@ -178,7 +178,7 @@ function Header() {
     >
       <a
         href="https://coo-portfolio.vercel.app"
-        className="flex w-full items-center justify-center gap-1.5 py-3 text-[15px] font-bold whitespace-nowrap text-white transition-opacity hover:underline hover:opacity-85"
+        className="flex w-full items-center justify-start gap-1.5 px-8 py-3 text-[15px] font-bold whitespace-nowrap text-white transition-opacity hover:underline hover:opacity-85"
         style={{ background: "var(--grad-brand)" }}
       >
         ← ポートフォリオに戻る
