@@ -176,21 +176,27 @@ function Header() {
       className="sticky top-0 z-20 border-b-2"
       style={{ background: "var(--surface)", borderColor: "var(--border)" }}
     >
+      <a
+        href="https://coo-portfolio.vercel.app"
+        className="flex w-full items-center justify-center gap-1.5 py-3 text-[15px] font-bold whitespace-nowrap text-white transition-opacity hover:underline hover:opacity-85"
+        style={{ background: "var(--grad-brand)" }}
+      >
+        ← ポートフォリオに戻る
+      </a>
       <div className="mx-auto flex max-w-[2400px] flex-wrap items-center justify-between gap-x-3.5 gap-y-2 px-8 py-3.5 md:py-5">
         <div className="flex items-center gap-3.5">
-          <div className="flex flex-col items-start gap-0.5">
-            <Link
-              to="/"
-              className="flex items-center gap-3 -mx-2 -my-1 rounded-lg px-2 py-1 transition-colors hover:bg-[var(--bg)]!"
+          <Link
+            to="/"
+            className="flex items-center gap-3 -mx-2 -my-1 rounded-lg px-2 py-1 transition-colors hover:bg-[var(--bg)]!"
+          >
+            <div
+              className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[var(--r-md)]"
+              style={{ background: "linear-gradient(180deg, color-mix(in srgb, var(--blue-light) 50%, var(--blue) 50%), var(--blue-dark))" }}
             >
-              <div
-                className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[var(--r-md)]"
-                style={{ background: "linear-gradient(180deg, color-mix(in srgb, var(--blue-light) 50%, var(--blue) 50%), var(--blue-dark))" }}
-              >
-                <svg width="39" height="35" viewBox="0 0 236.5 211" fill="none">
-                  <path
-                    fill="white"
-                    d="M1235 2188 c-29 -17 -1099 -873 -1116 -894 l-14 -17 0 -43 0 -44 27
+              <svg width="39" height="35" viewBox="0 0 236.5 211" fill="none">
+                <path
+                  fill="white"
+                  d="M1235 2188 c-29 -17 -1099 -873 -1116 -894 l-14 -17 0 -43 0 -44 27
 -27 28 -27 95 -4 95 -4 0 -480 0 -479 15 -29 c8 -16 24 -34 34 -40 l20 -10
 293 0 294 0 27 28 27 28 2 329 3 330 222 3 222 2 3 -334 3 -334 24 -26 24 -26
 301 0 300 0 28 27 28 27 0 492 0 492 96 4 97 4 28 32 29 32 0 29 c0 16 -3 37
@@ -203,22 +209,12 @@ function Header() {
 -11 19 -10 20 0 321 0 321 -25 24 -24 25 -260 0 -260 0 -28 -24 -28 -24 -5
 -339 -5 -338 -255 0 -255 0 -5 497 -5 496 -24 26 -24 26 -94 0 -93 0 0 9 c0
 15 1057 861 1076 861 6 0 105 -76 218 -170z"
-                    transform="translate(-10.5,220) scale(0.1,-0.1)"
-                  />
-                </svg>
-              </div>
-              <span className="text-[22px] leading-tight font-bold">やさしい在庫管理</span>
-            </Link>
-            <a
-              href="https://coo-portfolio.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-1 text-xs font-semibold whitespace-nowrap transition-colors hover:underline hover:text-[var(--red)]!"
-              style={{ color: "var(--orange-dark)" }}
-            >
-              ← ポートフォリオに戻る
-            </a>
-          </div>
+                  transform="translate(-10.5,220) scale(0.1,-0.1)"
+                />
+              </svg>
+            </div>
+            <span className="text-[22px] leading-tight font-bold">やさしい在庫管理</span>
+          </Link>
           <button
             type="button"
             onClick={() => navigate("/shop")}

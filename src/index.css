@@ -23,6 +23,8 @@
 
   --border: oklch(0.9 0.01 260);
 
+  --grad-brand: linear-gradient(to right, var(--orange), var(--red));
+
   --r-xl: 20px;
   --r-lg: 16px;
   --r-md: 14px;
