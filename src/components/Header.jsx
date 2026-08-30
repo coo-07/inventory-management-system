@@ -177,7 +177,7 @@ function Header() {
       style={{ background: "var(--surface)", borderColor: "var(--border)" }}
     >
       <a
-        href="https://coo-portfolio.vercel.app"
+        href="https://coo-portfolio.vercel.app/#project=zaiko"
         className="flex w-full items-center justify-start gap-1.5 px-8 py-3 text-[15px] font-bold whitespace-nowrap text-white transition-opacity hover:underline hover:opacity-85"
         style={{ background: "var(--grad-brand)" }}
       >
