@@ -124,7 +124,7 @@ function ItemDetail() {
       deleteItem(id);
       setDeleteLoading(false);
       setDeleteOpen(false);
-      navigate("/items");
+      goBack("/items");
     }, 1000);
   };
 

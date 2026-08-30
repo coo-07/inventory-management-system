@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useShop } from "../hooks/useShop";
 import { useAuth } from "../hooks/useAuth";
 import { useToast } from "../context/ToastContext";
+import { useGoBack } from "../hooks/useGoBack";
 import Button from "../components/Button";
 
 const emptyForm = { name: "", address: "", phone: "" };
@@ -10,7 +10,7 @@ const emptyForm = { name: "", address: "", phone: "" };
 function Shop() {
   const { shop, loading, updateShop } = useShop();
   const { role } = useAuth();
-  const navigate = useNavigate();
+  const goBack = useGoBack();
   const showToast = useToast();
   const [form, setForm] = useState(shop || emptyForm);
   const [saveLoading, setSaveLoading] = useState(false);
@@ -42,7 +42,7 @@ function Shop() {
         return;
       }
       showToast("✅ 保存しました");
-      navigate("/items");
+      goBack("/items");
     }, 1000);
   };
 

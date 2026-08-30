@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { useCategoryIcons } from "../hooks/useCategoryIcons";
 import { useItems } from "../context/ItemsContext";
 import { useToast } from "../context/ToastContext";
+import { useGoBack } from "../hooks/useGoBack";
 import { FIXED_CATEGORIES } from "../components/CategoryIcon";
 import CategoryIconPicker, { matchPresetIcon } from "../components/CategoryIconPicker";
 import Button from "../components/Button";
@@ -108,7 +108,7 @@ function evaluateRow(row, columnMapping) {
  * ファイルを選んで中身を表示 → 列マッピング・プレビュー → 重複チェック → Supabaseへの一括登録まで。
  */
 function ItemImport() {
-  const navigate = useNavigate();
+  const goBack = useGoBack();
   const [rows, setRows] = useState(null);
   const [fileName, setFileName] = useState("");
   const [status, setStatus] = useState("idle");
@@ -352,7 +352,7 @@ function ItemImport() {
     // navigateのstateではなくsessionStorageに保存する（ユーザーが「確認しました」を押すまで保持）
     sessionStorage.setItem("importSkippedReasons", JSON.stringify(skippedReasons));
     sessionStorage.setItem("importDuplicateResults", JSON.stringify(duplicateResults));
-    navigate("/items");
+    goBack("/items");
   };
 
   const saveCategoryIcon = async (category, icon) => {

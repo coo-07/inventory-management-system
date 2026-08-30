@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useItems } from "../context/ItemsContext";
 import { useAuth } from "../hooks/useAuth";
 import { useToast } from "../context/ToastContext";
+import { useGoBack } from "../hooks/useGoBack";
 import PhotoUpload from "../components/PhotoUpload";
 import Button from "../components/Button";
 
@@ -38,7 +39,7 @@ function validateNumber(v) {
  */
 function ItemForm() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const goBack = useGoBack();
   const showToast = useToast();
   const { items, loading, getItemById, addItem, updateItem } = useItems();
   const { role } = useAuth();
@@ -145,7 +146,7 @@ function ItemForm() {
   if (fieldErrors.threshold)
     errorSummaryItems.push({ key: "threshold", label: `発注点：${fieldErrors.threshold}`, ref: thresholdBoxRef });
 
-  const handleCancel = () => navigate(isEdit ? `/items/${id}` : "/items");
+  const handleCancel = () => goBack(isEdit ? `/items/${id}` : "/items");
 
   const handleSubmit = () => {
     if (saveLoading) return;
@@ -183,7 +184,7 @@ function ItemForm() {
           return;
         }
         showToast("✅ 保存しました");
-        navigate(`/items/${id}`);
+        goBack(`/items/${id}`);
       } else {
         const result = await addItem(saved);
         setSaveLoading(false);
@@ -192,7 +193,7 @@ function ItemForm() {
           return;
         }
         showToast("✅ 保存しました");
-        navigate("/items");
+        goBack("/items");
       }
     }, 1000);
   };
