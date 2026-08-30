@@ -157,6 +157,10 @@ function Header() {
   const todayStr = new Date().toISOString().slice(0, 10);
   const todayCount = logs.filter((l) => l.createdAt.slice(0, 10) === todayStr).length;
 
+  // ポートフォリオサイト経由でアクセスした時（?from=portfolio）のみ「ポートフォリオに戻る」
+  // バナーを表示する。ローカル開発環境やVercel URLへの直接アクセス時は表示しない
+  const showPortfolioBackBanner = searchParams.get("from") === "portfolio";
+
   const activeFilter = searchParams.get("filter") || "all";
   // 検索ワード・カテゴリなど他のクエリパラメータを保持したまま、ステータスタブのみを更新する
   // （以前は setSearchParams({ filter: value }) でURL全体を置き換えていたため、
@@ -176,13 +180,15 @@ function Header() {
       className="sticky top-0 z-20 border-b-2"
       style={{ background: "var(--surface)", borderColor: "var(--border)" }}
     >
-      <a
-        href="https://coo-portfolio.vercel.app/#project=zaiko"
-        className="flex w-full items-center justify-start gap-1.5 px-8 py-3 text-[15px] font-bold whitespace-nowrap text-white transition-opacity hover:underline hover:opacity-85"
-        style={{ background: "var(--grad-brand)" }}
-      >
-        ← ポートフォリオに戻る
-      </a>
+      {showPortfolioBackBanner && (
+        <a
+          href="https://coo-portfolio.vercel.app/#project=zaiko"
+          className="flex w-full items-center justify-start gap-1.5 px-8 py-3 text-[15px] font-bold whitespace-nowrap text-white transition-opacity hover:underline hover:opacity-85"
+          style={{ background: "var(--grad-brand)" }}
+        >
+          ← ポートフォリオに戻る
+        </a>
+      )}
       <div className="mx-auto flex max-w-[2400px] flex-wrap items-center justify-between gap-x-3.5 gap-y-2 px-8 py-3.5 md:py-5">
         <div className="flex items-center gap-3.5">
           <Link

@@ -4860,6 +4860,25 @@ Supabaseの`items`テーブルに`manufacturer`（text）・`unit_price`（numer
 
 ---
 
+## 150. Header.jsxの「← ポートフォリオに戻る」バナーの表示条件をURLパラメータ判定に変更
+
+**経緯：** 「← ポートフォリオに戻る」バナーが常時表示になっており、ローカル開発環境（`npm run dev`）やVercel本番URLへの直接アクセス時にも表示されてしまっていた。本来はポートフォリオサイト（`coo-portfolio.vercel.app`）経由でアクセスした場合のみ表示すべき導線のため、表示条件を修正した。
+
+**ルール：** 「← ポートフォリオに戻る」バナーは、URLのクエリパラメータが`?from=portfolio`の場合のみ表示する（`useSearchParams().get("from") === "portfolio"`で判定）。パラメータなしでの直接アクセス・ローカル開発環境では非表示。
+
+**変更内容（`src/components/Header.jsx`）：**
+- `showPortfolioBackBanner`（`searchParams.get("from") === "portfolio"`）を追加し、バナーの`<a>`要素をこの条件でラップして条件付き表示に変更
+- バナーのリンク先は`https://coo-portfolio.vercel.app/#project=zaiko`のまま（変更不要と確認）
+
+**確認内容：** ローカル環境（`http://localhost:5174/`）で以下3パターンをブラウザ実機確認済み
+- `?from=portfolio`付きでアクセス → バナー表示・リンク先URL（`https://coo-portfolio.vercel.app/#project=zaiko`）も正しいことを確認
+- パラメータなしでアクセス（直接アクセス想定） → バナー非表示
+- ローカル環境（`npm run dev`）でパラメータなし → バナー非表示
+
+**ステータス：** 実装済み・実機確認済み（2026/08/30）
+
+---
+
 ## 未決定・次回検討事項
 
 - [x] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか → 対応済み（2026/08/17）。StockRecord.jsx・Tanaoroshi.jsxの数量±ボタン（丸型、classNameが完全に同一だった箇所）を`src/components/StepperButton.jsx`として共通化。増減ロジック（下限0/1など画面ごとに異なる部分）は呼び出し側の`onClick`に残し、見た目のみ共通化する形にした。ItemForm.jsxのステッパー（サイズ・角丸・エラー時の色分けが異なる別デザイン）、±5／±10のまとめ入力ボタン（`Button`コンポーネント使用済み）は対象外とし、あえて共通化しない判断とした
