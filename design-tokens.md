@@ -4945,6 +4945,31 @@ Supabaseの`items`テーブルに`manufacturer`（text）・`unit_price`（numer
 
 ---
 
+## 154. PWA（ホーム画面に追加してアプリのように使える形）対応
+
+**経緯：** スマホ・タブレットのホーム画面にアイコンを追加し、アプリのように起動できるようにしたいという要望を受け、PWA（Progressive Web App）対応を実施した。`feature/pwa`ブランチで作業。
+
+**使用ライブラリ：** `vite-plugin-pwa`（v1.3.0、devDependencies）。`registerType: 'autoUpdate'`でService Workerの更新を自動化し、`generateSW`モード（デフォルト）でビルド時に`sw.js`・`workbox-*.js`・`manifest.webmanifest`・`registerSW.js`を自動生成する構成にした。`vite.config.js`に設定を追加（プロジェクトはTypeScriptを使っていないため`.ts`ではなく既存の`.js`のまま拡張）。
+
+**manifestの内容：**
+- `name`: 「やさしい在庫管理」／`short_name`: 「在庫管理」
+- `description`: 「小規模店舗・個人事業主向けのかんたん在庫管理アプリ」
+- `theme_color`: `#1f7dcf`／`background_color`: `#ffffff`
+- `display`: `standalone`／`start_url`: `/`
+- `icons`: `icon-192.png`（192×192）・`icon-512.png`（512×512）、いずれも`purpose: "any"`
+
+**アイコンの出典：** 新規デザインではなく、`Header.jsx`（198〜220行目）のロゴと同じ「グラデーション背景＋白い家アイコン」を踏襲。ヘッダーの46×46pxボックス内での家アイコンの縦横比・余白比率（幅39px／高さ35px、box内84.7%幅）をそのまま512×512に拡大して再現した。背景グラデーションの色は、Header.jsxが使っている`--blue-light`と`--blue`の`color-mix`50%（上端、実測値`#7eb5e7`）から`--blue-dark`（下端、`#004794`）への縦グラデーション。`theme-color`に指定した`#1f7dcf`は`--blue`トークンの実測hex値と一致している。アイコン生成は、SVGでヘッダーと同じpathデータ・グラデーションを再構成し、`qlmanage`（macOS標準のQuick Look）でラスタライズ→`sips`で192px・180pxに縮小する手順で作成（`icon-512.png`を親としてダウンスケール、`node_modules`にラスタライズ用ライブラリの追加インストールはしていない）。
+
+**apple-touch-icon：** iOS向けに`apple-touch-icon.png`（180×180）を`public/`に追加し、`index.html`に`<link rel="apple-touch-icon" href="/apple-touch-icon.png">`を追加。あわせて`<meta name="theme-color" content="#1f7dcf">`も追加した。
+
+**既存ファイルへの影響：** `public/favicon.svg`（ブラウザタブ用、白背景に紺色`#004794`の家アイコン）は変更していない。`index.html`の既存の`<link rel="icon" type="image/svg+xml" href="/favicon.svg" />`もそのまま維持し、PWA用のmanifest/apple-touch-icon関連タグを追加する形にとどめた。
+
+**ビルド確認：** `npm run build`・`npm run preview`とも正常終了。`dist/`に`manifest.webmanifest`・`sw.js`・`workbox-*.js`・`registerSW.js`・`icon-192.png`・`icon-512.png`・`apple-touch-icon.png`・`favicon.svg`（変更なし）がすべて生成されていることを確認。`npm run preview`をローカル起動し、ブラウザでトップページの表示・コンソールエラーなしを確認済み。
+
+**ステータス：** 実装・ビルド確認済み（2026/08/31）。`feature/pwa`ブランチにコミット済み、mainへのマージ・pushは未実施（本人確認待ち）。
+
+---
+
 ## 未決定・次回検討事項
 
 - [x] 上記をTailwindの共通クラス（例：`btn-primary`, `btn-danger` など）としてコンポーネント化するか → 対応済み（2026/08/17）。StockRecord.jsx・Tanaoroshi.jsxの数量±ボタン（丸型、classNameが完全に同一だった箇所）を`src/components/StepperButton.jsx`として共通化。増減ロジック（下限0/1など画面ごとに異なる部分）は呼び出し側の`onClick`に残し、見た目のみ共通化する形にした。ItemForm.jsxのステッパー（サイズ・角丸・エラー時の色分けが異なる別デザイン）、±5／±10のまとめ入力ボタン（`Button`コンポーネント使用済み）は対象外とし、あえて共通化しない判断とした
