@@ -4968,6 +4968,8 @@ Supabaseの`items`テーブルに`manufacturer`（text）・`unit_price`（numer
 
 **ステータス：** 実装・ビルド確認済み（2026/08/31）。`feature/pwa`ブランチにコミット済み、mainへのマージ・pushは未実施（本人確認待ち）。
 
+**実機確認済み（2026/08/31）：** Mac Chromeでインストール後の独立ウィンドウ起動を確認。Android Chromeでホーム画面へのインストール・アイコン表示を確認。本番URL（https://coo-zaiko-kanri.vercel.app/）でmanifest.webmanifest・icon-192.png・icon-512.png・apple-touch-icon.png・sw.jsすべて200 OKで配信されていることを確認済み。iPhoneでの確認は未実施。
+
 ---
 
 ## 未決定・次回検討事項
